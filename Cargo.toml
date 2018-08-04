@@ -1,0 +1,41 @@
+[package]
+name = "q-moose"
+version = "0.1.0"
+authors = ["Aleksey Zholobenko <aleshaleksey@googlemail.com>"]
+
+
+
+find_folder = "0.3.0"
+Inflector = "0.10.1"
+num = "0.1.40"
+num_cpus = "0.2.0"
+rand = "0.3.18"
+time = "0.1.38"
+glium = { version = "=0.20", optional = true }
+winit = { version = "=0.10", optional = true }
+conrod="=0.57.0"
+image="=0.18.0"
+rodio="=0.7.0"
+
+#hound and cpal are not actually dependencies
+#but rather used for some experiments.
+#cpal = "=0.8.1"
+#hound = "=3.4.0"
+
+[profile.dev]
+opt-level = 2
+debug = false
+rpath = false
+lto =false
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
