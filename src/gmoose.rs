@@ -1133,7 +1133,8 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		let mut button = widget::Button::new();
 		let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
 		
-		//Find a way to fix this clusterfuck.
+	//First thing that came to mind, each matrix button is a square of land.
+	//In future will use this method for "teleportation".
         while let Some(mut square) = world_matrix.next(ui) {
             let (r, c) = (square.row as usize, square.col as usize);
 			//if !tt_e_c_i_ll[0]{println!("{:?}",(r,c));};
