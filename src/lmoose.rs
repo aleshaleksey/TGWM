@@ -24,12 +24,52 @@
 extern crate conrod;
 extern crate std;
 
+use gmoose; 
 use std::fmt::{self, Display, Formatter};
 #[allow(unused_imports)] use std::ops::Deref;
 
 // Flow control structures. (TODO - also will be reworked several times).
 // Flow control structure for options
 // (eg Brightness variables, playlist, mute).	
+#[derive(Debug)] 
+pub struct SpriteBox {
+	pub att_index: usize,
+	pub def_index: usize,
+	pub turns_to_go: usize,			// Sprite must reach destination
+									// thus this must be dx/speed.
+	pub turns_init: f64,
+	pub def_coord: [f64;2],			// these are initial coordinates
+	pub att_coord: [f64;2],			// initial.			
+	pub damage: bool,				// did the attack to damage? Do sprites need to vibrate?
+}
+
+impl SpriteBox {
+	
+	//put a new SpriteBox into the Option<SpriteBox>
+	//NB it still needs to be initialised with the coordinates of the sprites.
+	pub fn new( timer:usize,
+				attacker:&(Lifeform,usize,[Option<[usize;2]>;2]),
+				a_i:usize,
+				defender:&(Lifeform,usize,[Option<[usize;2]>;2]),
+				d_i:usize,
+				attacker_pos:&[f64;2],
+				defender_pos:&[f64;2],
+				damage:bool)->SpriteBox {
+		
+		SpriteBox {
+			att_index: a_i,
+			def_index: d_i,
+			//by default 0.5 seconds (40 frames) approach at speed of 50.0
+			turns_to_go: (gmoose::FPS as f64*0.5*50.0/attacker.0.Speed_shade as f64) as usize,
+			turns_init: (gmoose::FPS as f64*0.5*50.0/attacker.0.Speed_shade as f64),
+			def_coord: [defender_pos[0],defender_pos[1]],
+			att_coord: [attacker_pos[0],attacker_pos[1]],
+			damage: damage,
+		}
+	}
+}
+
+
 #[derive(Debug)] 
 pub struct FlowCWin {
 	pub update_bgc: bool,
@@ -1172,7 +1212,7 @@ let slow=Spell{
  Light: false,
  Type: TIME,
  MP: 30.0,
- Power: 20.0,
+ Power: 23.0,
  target_boon: BOB,
  target_woe: TARGET,
  Health: 0.0,
@@ -1197,7 +1237,7 @@ let haste=Spell{
  Light: true,
  Type: TIME,
  MP: 30.0,
- Power: 20.0,
+ Power: 23.0,
  target_boon: TARGET,
  target_woe: BOB,
  Health: 0.0,
@@ -1270,7 +1310,7 @@ pub fn spark()->Spell{
 let spark=Spell{
  name: "Spark",
  Light: false,
- Type: ICE,
+ Type: LIGHTNING,
  MP: 30.0,
  Power: 17.0,
  target_boon: BOB,
@@ -1295,7 +1335,7 @@ pub fn lightning()->Spell{
 let lightning=Spell{
  name: "Lightning",
  Light: false,
- Type: ICE,
+ Type: LIGHTNING,
  MP: 100.0,
  Power: 28.0,
  target_boon: BOB,
@@ -1320,7 +1360,7 @@ pub fn lightningH()->Spell{
 let lightningH=Spell{
  name: "Jovian Lightning",
  Light: false,
- Type: ICE,
+ Type: LIGHTNING,
  MP: 500.0,
  Power: 40.0,
  target_boon: BOB,

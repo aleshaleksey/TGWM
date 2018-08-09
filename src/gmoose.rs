@@ -72,7 +72,7 @@ use std;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use conrod::widget::BorderedRectangle;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,SpriteBox,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -107,7 +107,7 @@ const SLIDE_H:f64 = 20.0;
 const AI_MEM_MIN:f64 = 10_000_000.0;
 const AI_MEM_MAX:f64 = 32_000_000_000.0;
 const AI_MEM_DEFAULT:usize = 500_000_000;
-const FPS:f32 = 20.0; //Frame rate, will make this variable later.
+pub const FPS:f32 = 20.0; //Frame rate, will make this variable later.
 
 
 
@@ -458,6 +458,48 @@ fn border_crawler_d(centre:conrod::Point, wh:conrod::Dimensions,
 	end[1] = if progress<wh[0] {min_h}else{min_h-wh[0]+progress};
 }
 
+//function to make a sprite attack another.
+//moves the attacker by the appropriate amount.
+//needs to be inside a "match sprite_boxer {" clause.
+fn sprite_approach (sprite_boxer:&SpriteBox)->[f64;2] {
+	
+	let factor = (sprite_boxer.turns_init-sprite_boxer.turns_to_go as f64)/sprite_boxer.turns_init;			 
+	let mut dx:f64 = (sprite_boxer.def_coord[0] - sprite_boxer.att_coord[0])*factor;
+	let mut dy:f64 = (sprite_boxer.def_coord[1] - sprite_boxer.att_coord[1])*factor;
+	
+	[sprite_boxer.att_coord[0]+dx,sprite_boxer.att_coord[1]+dy]
+}
+
+//it is imperative to decrement this at the end of each turn and make it disappear.
+//and to set the sprite to vibrate if the attack actually hits.
+fn sprite_box_dec_marker(){}
+fn sprite_box_decrement (sprite_boxer:&mut Option<SpriteBox>,
+						 timer:usize,
+						 shake_timer:&mut usize,
+						 shake_damage:&mut [bool;25]) {
+							 
+	//Borrow checker makes this annoying.
+	let mut nullify = false;
+			 
+	match *sprite_boxer {
+		Some(ref mut x) => {
+			x.turns_to_go-= 1;
+			if x.turns_to_go==0 {
+				nullify = true;
+				shake_damage[x.def_index] = x.damage;
+			};
+		},
+		_ => {},
+	};			
+	
+	if nullify {
+		*shake_timer = timer;
+		*sprite_boxer = None;
+		
+	};			 
+} 
+
+
 //Function to set spell list in battle.
 fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: &mut String,
 						spl: &Vec<Spell>,
@@ -739,15 +781,34 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				shaking_timer: usize,
 				battle_ifast: usize,
 				mut pos_bif:&mut (Option<conrod::Point>,[conrod::position::Scalar;2]),
-				mut sp: &mut Option<conrod::Point>) {
+				mut sp: &mut Option<conrod::Point>,
+				sprite_boxer:&mut Option<SpriteBox>,
+				sprite_pos: &mut [[f64;2];25],
+				mtrxp: [f64;2]) {
 					
 	//println!("Inside blv");				
 	let mut map_size = ui.wh_of(ids.middle_column).unwrap();	
 	while let Some(mut renegade) = mtrx.next(ui) {
 		let r = renegade.row as usize;
 		if r < group.len() {
+			
+			//get absolute position of thingies.
+			sprite_pos[group[r].1] = [mtrxp[0]+renegade.rel_x,mtrxp[1]+renegade.rel_y];
+			
 			let rel_pos = 5.0*shake_pos_a(timer,shaking_timer,shaking_dam[group[r].1]);
-			renegade.rel_x += rel_pos; 
+			renegade.rel_x += rel_pos;
+			
+			//If attacker is attackingm modify the position.
+			match *sprite_boxer {
+				Some(ref x) => {
+					if x.att_index==group[r].1 {
+						let pos = sprite_approach(&x);
+						renegade.rel_x = pos[0]-mtrxp[0];
+						renegade.rel_y = pos[1]-mtrxp[1];
+					};
+				},
+				_		=> {},
+			}; 
 					
 			if group[r].1==battle_ifast {
 				pos_bif.0 = *sp;
@@ -802,7 +863,10 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				shaking_timer: usize,
 				battle_ifast: usize,
 				mut pos_bif:&mut (Option<conrod::Point>,[conrod::position::Scalar;2]),
-				mut sp: &mut Option<conrod::Point>) {
+				mut sp: &mut Option<conrod::Point>,
+				sprite_boxer:&mut Option<SpriteBox>,
+				sprite_pos: &mut [[f64;2];25],
+				mtrxp: [f64;2]) {
 	
 	//Set the button sin the button matrix.
 	while let Some(mut renegade) = mtrx.next(ui) {
@@ -810,9 +874,25 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		let c = renegade.col as usize;
 		//Don't try to set monster buttons for monsters that don't exist.
 		if c < group.len() {			
+			
+			//get absolute position of thingies.
+			sprite_pos[group[c].1] = [mtrxp[0]+renegade.rel_x,mtrxp[1]+renegade.rel_y];
+			
 			//If hit, shake the button to show damage.
 			let rel_pos = 5.0*shake_pos_a(timer,shaking_timer,shaking_dam[group[c].1]);
 			renegade.rel_x += rel_pos; 
+			
+			//If attacker is attackingm modify the position.
+			match *sprite_boxer {
+				Some(ref x) => {
+					if x.att_index==group[c].1 {
+						let pos = sprite_approach(&x);
+						renegade.rel_x = pos[0]-mtrxp[0];
+						renegade.rel_y = pos[1]-mtrxp[1];
+					};
+				},
+				_		=> {},
+			};
 			
 			//If turn of this one, put the circle marker here.			
 			if group[c].1==battle_ifast {
@@ -869,13 +949,15 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  mut diff:i32,
 				  p_names:&mut Vec<String>,
 				  mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+				  sprite_boxer:&mut Option<SpriteBox>,
 				  p_loc:&mut Place,
 				  mut comm_text: &mut String,
 				  timer:usize,
 				  mut yt_adcwpe_bw: &mut [bool;9],
 				  mut sel_targets:&mut Vec<usize>,
 				  shaking_dam: &mut [bool;25],
-				  shaking_timer: usize,
+				  sprite_pos: &mut [[f64;2];25],
+				  shaking_timer: &mut usize,
 				  battle_ifast: usize,
 				  pause: bool) {
 					  
@@ -936,11 +1018,28 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.cell_padding(pad_w,0.0)
 			.set(ids.partyc_mtrx, ui);
 			
+	let wh_enc_cm = ui.xy_of(ids.partyc_mtrx).unwrap_or([0.0,0.0]);
+			
 	//println!("Inside set_battle_map B");
 	//NB: Party canvas is inlined directly. After all, why not.		
 	while let Some(mut renegade) = enc_c_matrix.next(ui) {
 		let c = renegade.col as usize;
-		let rel_pos = 5.0*shake_pos_a(timer,shaking_timer,shaking_dam[enc_c[c].1]);
+		//NB CURRENTLY ONLY REL POS. THIS NEEDS FIXED.
+		sprite_pos[enc_c[c].1] = [renegade.rel_x+wh_enc_cm[0],renegade.rel_y+wh_enc_cm[1]];
+		
+		//If attacker is attackingm modify the position.
+		match *sprite_boxer {
+			Some(ref x) => {
+				if x.att_index==enc_c[c].1 {
+					let pos = sprite_approach(&x);
+					renegade.rel_x = pos[0]-wh_enc_cm[0];
+					renegade.rel_y = pos[1]-wh_enc_cm[1];
+				};
+			},
+			_		=> {},
+		};
+		
+		let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
 		renegade.rel_x += rel_pos; 
 		
 		if c<enc_c.len(){
@@ -995,10 +1094,13 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			
 		//println!("enc_nl={}",enc_nl);
 		//println!("enc_n.len={}",enc_n.len());
-		spare_point = ui.xy_of(ids.enemyn_mtrx);	
+		spare_point = ui.xy_of(ids.enemyn_mtrx);
+		let point = ui.xy_of(ids.enemyn_mtrx).unwrap_or([0.0;2]);
+			
 		battle_line_h(ids,ui,mon_faces,enc_n_matrix,
 					  &enc_n,comm_text,timer,&mut yt_adcwpe_bw,font_size,
-					  &mut sel_targets,bh,shaking_dam,shaking_timer,battle_ifast,&mut pos_bif,&mut spare_point);
+					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
+					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
 	};
 	if enc_el>0 {
 		canvas_border(widget::Canvas::new()
@@ -1013,11 +1115,14 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemye_can)
 			.cell_padding(pad_w,pad_h/4.0)
 			.set(ids.enemye_mtrx, ui);
+			
 		spare_point = ui.xy_of(ids.enemye_mtrx);
+		let point = ui.xy_of(ids.enemye_mtrx).unwrap_or([0.0;2]);
 		
 		battle_line_v(ids,ui,mon_faces,enc_e_matrix,
 					  &enc_e,comm_text,timer,&mut yt_adcwpe_bw,font_size,
-					  &mut sel_targets,bh2,shaking_dam,shaking_timer,battle_ifast,&mut pos_bif,&mut spare_point);
+					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
+					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
 	};
 	if enc_sl>0 {
 		canvas_border(widget::Canvas::new()
@@ -1032,13 +1137,16 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemys_can)
 			.cell_padding(pad_w,0.0)
 			.set(ids.enemys_mtrx, ui);
+			
 		spare_point= ui.xy_of(ids.enemys_mtrx);
+		let point = ui.xy_of(ids.enemys_mtrx).unwrap_or([0.0;2]);
 		
 		//println!("enc_sl={}",enc_sl);
 		//println!("enc_s.len={}",enc_s.len());	
 		battle_line_h(ids,ui,mon_faces,enc_s_matrix,
 					  &enc_s,comm_text,timer,&mut yt_adcwpe_bw,font_size,
-					  &mut sel_targets,bh,shaking_dam,shaking_timer,battle_ifast,&mut pos_bif,&mut spare_point);
+					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
+					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
 	};
 	if enc_wl>0 {
 		canvas_border(widget::Canvas::new()
@@ -1053,11 +1161,14 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemyw_can)
 			.cell_padding(pad_w,pad_h/4.0)
 			.set(ids.enemyw_mtrx, ui);
+			
 		spare_point = ui.xy_of(ids.enemyw_mtrx);
+		let point = ui.xy_of(ids.enemyw_mtrx).unwrap_or([0.0;2]);
 		
 		battle_line_v(ids,ui,mon_faces,enc_w_matrix,
 					  &enc_w,comm_text,timer,&mut yt_adcwpe_bw,font_size,
-					  &mut sel_targets,bh2,shaking_dam,shaking_timer,battle_ifast,&mut pos_bif,&mut spare_point);
+					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
+					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
 	};
 	
 	//Set the wondering circle if target has not been murderified and game is not paused.
@@ -1065,6 +1176,9 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	if (encounter[battle_ifast].0.HP_shade>0.0) & !pause {
 		set_marker_of_go(ids,ui,pos_bif,timer,battle_ifast,encounter,base_h);	
 	};	 
+	
+	//decrement sprite box.
+	sprite_box_decrement(sprite_boxer,timer,shaking_timer,shaking_dam);
 	//println!("Exiting set_battle_map C"); 
 }
 
@@ -1133,8 +1247,7 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		let mut button = widget::Button::new();
 		let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
 		
-	//First thing that came to mind, each matrix button is a square of land.
-	//In future will use this method for "teleportation".
+		//Find a way to fix this clusterfuck.
         while let Some(mut square) = world_matrix.next(ui) {
             let (r, c) = (square.row as usize, square.col as usize);
 			//if !tt_e_c_i_ll[0]{println!("{:?}",(r,c));};
@@ -1458,7 +1571,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					mut dungeon_pointer: &mut usize,
 					mut truly_quit: &mut bool,
 					mut shaking_dam: &mut [bool;25],
-					shaking_timer: usize,
+					shaking_timer: &mut usize,
 					pause:bool,
 					mut scenery_index: &mut usize,
 					landscapes: &Landscapes,
@@ -1468,7 +1581,9 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					mut silent_sender: &mut SyncSender<bool>,
 					mut p_scape: &mut u8,
 					wo: &mut FlowCWin,
-					ipath:&mut Option<(usize,String)>) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
+					ipath:&mut Option<(usize,String)>,
+					sprite_boxer: &mut Option<SpriteBox>,
+					sprite_pos: &mut [[f64;2];25]) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
 	
 	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets A");};
 	//create an initial backup of comm_text					
@@ -1709,6 +1824,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						diff,
 						p_names,
 						encounter,
+						sprite_boxer,
 						if (*dungeon_pointer<2) | idungeon.is_none() {
 							p_loc
 						}else{
@@ -1718,7 +1834,9 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						timer,
 						&mut yt_adcwpe_bw,
 						&mut sel_targets,
-						shaking_dam,shaking_timer,
+						shaking_dam,
+						sprite_pos,
+						shaking_timer,
 						battle_ifast,
 						pause);
 			//println!("gmoose1046-exiting set_battle_map");
@@ -3913,7 +4031,9 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						mut to_hit: &mut Vec<(bool,bool)>,
 						mut pause: &mut bool,
 						mut shaking_timer: &mut usize,
-						mut shaking_dam: &mut [bool;25]) {
+						mut shaking_dam: &mut [bool;25],
+						mut sprite_boxer: &mut Option<SpriteBox>,
+						sprite_pos: &mut [[f64;2];25]) {
 
 	let mut turn_over = false;
 	if *yt_adcwpe_bw==[false,false,false,false,false,false,false,false,false] {
@@ -3980,6 +4100,7 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 			}else{
 				let p_t:usize = sel_targets[0];
 				println!("p_t: {}",p_t);
+				
 				*sel_targets = Vec::with_capacity(25);
 				let attack_result:(f32,usize) =  attack(encounter,
 												*battle_ifast,
@@ -3990,7 +4111,7 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 					encounter[attack_result.1].0.HP_shade-= attack_result.0;
 					if encounter[attack_result.1].0.HP_shade>0.0 {
 						shaking_dam[attack_result.1] = true;
-						*shaking_timer = timer;
+						//*shaking_timer = timer;
 					};
 				};
 					
@@ -4003,6 +4124,17 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						};
 					};
 				};
+				
+				*sprite_boxer = Some(SpriteBox::new(timer,&encounter[*battle_ifast],
+												*battle_ifast,
+												&encounter[p_t],
+												p_t,
+												&sprite_pos[*battle_ifast],
+												&sprite_pos[p_t],
+												shaking_dam[attack_result.1]
+				));
+				shaking_dam[attack_result.1] = false;
+				
 			};
 		}else if yt_adcwpe_bw[2] {
 			if sel_targets.len()==0 {
@@ -4205,7 +4337,9 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 						mut ai_turn_started: &mut bool,
 						mut ai_started_thinking: &mut bool,
 						mut thought_sender: &mut SyncSender<(usize,usize)>,
-						mut thought_receiver: &mut Receiver<(usize,usize)>
+						mut thought_receiver: &mut Receiver<(usize,usize)>,
+						mut sprite_boxer: &mut Option<SpriteBox>,
+						sprite_pos: &mut [[f64;2];25]
 						) {
 	//println!("Monster number {} to go.",battle_ifast);
 	
@@ -4356,7 +4490,8 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			
 		}else{};	
 		if exI==1 {			
-			//*comm_text = format!("{} from group {} attacks {} from group {}.", &ns[*battle_ifast],encounter[*battle_ifast].1, &ns[idm], &encounter[idm].1);		
+			//*comm_text = format!("{} from group {} attacks {} from group {}.", &ns[*battle_ifast],encounter[*battle_ifast].1, &ns[idm], &encounter[idm].1);	
+			
 			let attack_result:(f32,usize) =  attack(encounter,
 												*battle_ifast,
 												idm,
@@ -4367,7 +4502,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 				encounter[attack_result.1].0.HP_shade-= attack_result.0;
 				if encounter[attack_result.1].0.HP_shade>0.0 {
 					shaking_dam[attack_result.1] = true;
-					*shaking_timer = timer;
+					//*shaking_timer = timer;
 				};
 			};
 					
@@ -4378,6 +4513,19 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 					};
 				};
 			};
+			
+			
+			*sprite_boxer = Some(SpriteBox::new(timer,
+												&encounter[*battle_ifast],
+												*battle_ifast,
+												&encounter[idm],
+												idm,
+												&sprite_pos[*battle_ifast],
+												&sprite_pos[idm],
+												shaking_dam[attack_result.1]
+			));
+			shaking_dam[attack_result.1] = true;
+												
 		}else if exI==0 {
 			*comm_text = format!("{} from group {} takes a stance between {} from group {} and the world!", &ns[*battle_ifast],encounter[*battle_ifast].1, &ns[idm], &encounter[idm].1);			
 			encounter[idm].2[0] = Some([*battle_ifast,battle_ttakes[*battle_ifast]]);

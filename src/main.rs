@@ -88,7 +88,7 @@ mod dmoose;
 #[allow(unused_imports)] use conrod::UiCell;
 #[allow(unused_imports)] use conrod::widget::button::Interaction;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,SpriteBox,
 									 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 									 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 									 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -311,6 +311,7 @@ pub fn main() {
 	let mut encounter: Vec<(Lifeform,usize,[Option<[usize;2]>;2])> = Vec::with_capacity(25);
 	let mut enemies: Vec<(Lifeform,usize)> = Vec::with_capacity(20);
 	let mut field: Place = p_loc.clone();
+	let mut sprite_boxer:Option<SpriteBox> = None;
 	let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
 	let mut aftermath:(Lifeform,Lifeform,Vec<[u8;28]>) = (ghost(),ghost(),Vec::with_capacity(1001));
 	let mut sel_targets:Vec<usize> = Vec::with_capacity(25);
@@ -319,6 +320,7 @@ pub fn main() {
 	let mut shaking_timer:usize = 0;
 	let mut ai_turn_started:bool = false;
 	let mut ai_started_thinking:bool = false;
+	let mut sprite_pos:[[f64;2];25] = [[0.0;2];25];
 	
 	
 	//Create the world map
@@ -631,7 +633,7 @@ pub fn main() {
 					&mut dungeon_pointer,
 					&mut truly_quit,
 					&mut shaking_dam,
-					shaking_timer,
+					&mut shaking_timer,
 					pause,
 					&mut scenery_index,
 					&scapes,
@@ -641,7 +643,9 @@ pub fn main() {
 					&mut muse_silence_sender,
 					&mut p_scape,
 					&mut wo,
-					&mut ipath);
+					&mut ipath,
+					&mut sprite_boxer,
+					&mut sprite_pos);
 		
 		//reload backgrounds if graphical settings have been changed.			
 		if wo.update_bgc {		
@@ -828,7 +832,7 @@ pub fn main() {
 			};
 			
 			//Take turn if game is not paused.
-			if !pause {	
+			if !pause & sprite_boxer.is_none() {	
 				//if in battle, and time has elapsed, check for end game.	
 				gmoose::game_over  (&mut encounter,
 									&mut enemies,
@@ -862,6 +866,8 @@ pub fn main() {
 					shaking_dam = [false;25];
 					ai_turn_started = false;
 					ai_started_thinking = false;
+					sprite_boxer = None;
+					sprite_pos = [[0.0;2];25];
 					
 					//set p_scape as needed.
 					if idungeon.is_none() {
@@ -902,7 +908,9 @@ pub fn main() {
 										&mut ai_turn_started,
 										&mut ai_started_thinking,
 										&mut thought_sender,
-										&mut thought_receiver);
+										&mut thought_receiver,
+										&mut sprite_boxer,
+										&mut sprite_pos);
 						//println!("D");
 					}else if !pause & (encounter[battle_ifast].1==0) {
 						//Player tuen
@@ -933,7 +941,9 @@ pub fn main() {
 										&mut to_hit,
 										&mut pause,
 										&mut shaking_timer,
-										&mut shaking_dam);
+										&mut shaking_dam,
+										&mut sprite_boxer,
+										&mut sprite_pos);
 						if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
 						//println!("E");
 					};
