@@ -82,13 +82,15 @@ mod smoose;
 mod gmoose;
 mod omoose;
 mod dmoose;
+mod cmoose;
 
 //Imports
 #[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img,parse_music_config};
 #[allow(unused_imports)] use conrod::UiCell;
 #[allow(unused_imports)] use conrod::widget::button::Interaction;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,SpriteBox,
+#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
 									 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 									 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 									 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -311,16 +313,17 @@ pub fn main() {
 	let mut encounter: Vec<(Lifeform,usize,[Option<[usize;2]>;2])> = Vec::with_capacity(25);
 	let mut enemies: Vec<(Lifeform,usize)> = Vec::with_capacity(20);
 	let mut field: Place = p_loc.clone();
-	let mut sprite_boxer:Option<SpriteBox> = None;
 	let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
 	let mut aftermath:(Lifeform,Lifeform,Vec<[u8;28]>) = (ghost(),ghost(),Vec::with_capacity(1001));
 	let mut sel_targets:Vec<usize> = Vec::with_capacity(25);
+	let mut targets:Vec<usize> = Vec::with_capacity(25);
 	let mut to_cast:String = String::new();
 	let mut shaking_dam:[bool;25] = [false;25];
 	let mut shaking_timer:usize = 0;
 	let mut ai_turn_started:bool = false;
 	let mut ai_started_thinking:bool = false;
 	let mut sprite_pos:[[f64;2];25] = [[0.0;2];25];
+	let mut sprite_boxer:GraphicsBox = GraphicsBox::None;
 	
 	
 	//Create the world map
@@ -858,6 +861,7 @@ pub fn main() {
 					enemies = Vec::with_capacity(20);
 					to_hit = Vec::with_capacity(25);
 					sel_targets = Vec::with_capacity(25);
+					targets = Vec::with_capacity(25);
 					lore = Vec::with_capacity(500000);
 					battle_timer = Vec::with_capacity(25);
 					gmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
@@ -866,7 +870,7 @@ pub fn main() {
 					shaking_dam = [false;25];
 					ai_turn_started = false;
 					ai_started_thinking = false;
-					sprite_boxer = None;
+					sprite_boxer = GraphicsBox::None;
 					sprite_pos = [[0.0;2];25];
 					
 					//set p_scape as needed.
@@ -910,7 +914,8 @@ pub fn main() {
 										&mut thought_sender,
 										&mut thought_receiver,
 										&mut sprite_boxer,
-										&mut sprite_pos);
+										&mut sprite_pos,
+										&mut targets);
 						//println!("D");
 					}else if !pause & (encounter[battle_ifast].1==0) {
 						//Player tuen
@@ -943,7 +948,8 @@ pub fn main() {
 										&mut shaking_timer,
 										&mut shaking_dam,
 										&mut sprite_boxer,
-										&mut sprite_pos);
+										&mut sprite_pos,
+										&mut targets);
 						if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
 						//println!("E");
 					};

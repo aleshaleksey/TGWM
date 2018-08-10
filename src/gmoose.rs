@@ -72,7 +72,9 @@ use std;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use conrod::widget::BorderedRectangle;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,FlowCWin,SpriteBox,
+#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
+#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL};
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -107,6 +109,7 @@ const SLIDE_H:f64 = 20.0;
 const AI_MEM_MIN:f64 = 10_000_000.0;
 const AI_MEM_MAX:f64 = 32_000_000_000.0;
 const AI_MEM_DEFAULT:usize = 500_000_000;
+const ECLAIR_BALL:f64 = 25.0;
 pub const FPS:f32 = 20.0; //Frame rate, will make this variable later.
 
 
@@ -461,19 +464,20 @@ fn border_crawler_d(centre:conrod::Point, wh:conrod::Dimensions,
 //function to make a sprite attack another.
 //moves the attacker by the appropriate amount.
 //needs to be inside a "match sprite_boxer {" clause.
-fn sprite_approach (sprite_boxer:&SpriteBox)->[f64;2] {
+fn sprite_approach_marker(){}
+fn sprite_approach (sprite_box:&SpriteBox)-> [f64;2] {
 	
-	let factor = (sprite_boxer.turns_init-sprite_boxer.turns_to_go as f64)/sprite_boxer.turns_init;			 
-	let mut dx:f64 = (sprite_boxer.def_coord[0] - sprite_boxer.att_coord[0])*factor;
-	let mut dy:f64 = (sprite_boxer.def_coord[1] - sprite_boxer.att_coord[1])*factor;
+	let factor = (sprite_box.turns_init-sprite_box.turns_to_go as f64)/sprite_box.turns_init;			 
+	let mut dx:f64 = (sprite_box.def_coord[0] - sprite_box.att_coord[0])*factor;
+	let mut dy:f64 = (sprite_box.def_coord[1] - sprite_box.att_coord[1])*factor;
 	
-	[sprite_boxer.att_coord[0]+dx,sprite_boxer.att_coord[1]+dy]
+	[sprite_box.att_coord[0]+dx,sprite_box.att_coord[1]+dy]
 }
 
 //it is imperative to decrement this at the end of each turn and make it disappear.
 //and to set the sprite to vibrate if the attack actually hits.
 fn sprite_box_dec_marker(){}
-fn sprite_box_decrement (sprite_boxer:&mut Option<SpriteBox>,
+fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 						 timer:usize,
 						 shake_timer:&mut usize,
 						 shake_damage:&mut [bool;25]) {
@@ -482,19 +486,28 @@ fn sprite_box_decrement (sprite_boxer:&mut Option<SpriteBox>,
 	let mut nullify = false;
 			 
 	match *sprite_boxer {
-		Some(ref mut x) => {
-			x.turns_to_go-= 1;
-			if x.turns_to_go==0 {
-				nullify = true;
-				shake_damage[x.def_index] = x.damage;
-			};
+		Attack(ref mut x) => {
+				x.turns_to_go-= 1;
+				if x.turns_to_go==0 {
+					nullify = true;
+					shake_damage[x.def_index] = x.damage;
+				};
+		},
+		CastL(ref mut x) => {
+				x.turns_to_go-= 1;
+				if x.turns_to_go==0 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
 		},
 		_ => {},
 	};			
 	
 	if nullify {
 		*shake_timer = timer;
-		*sprite_boxer = None;
+		*sprite_boxer = GraphicsBox::None;
 		
 	};			 
 } 
@@ -765,6 +778,83 @@ fn text_maker_m(text: &str, col:Colour, x:u32) -> widget::Text {
 							.center_justify()
 }
 
+//Sets the lightning strike upon casting a lightning spell.
+fn set_lightning_marker(){}
+fn set_lightning(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbl:&mut SpellBoxL,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbl.caster_indx];
+	let mut eclair_matrix = widget::Matrix::new(25,1)
+							  .wh([0.0;2])
+							  .xy([0.0;2])
+							  .set(ids.eclair_matrix, ui);
+	let mut eclair_matrix_two = widget::Matrix::new(25,1)
+							  .wh([0.0;2])
+							  .xy([0.0;2])
+							  .set(ids.eclair_matrix_two, ui);
+	
+	if sbl.turns_to_go>0 {
+		for i in 0..sbl.targets.len() {
+			//extend lightning path for each target.
+			sprite_lightning_extender(&sprite_pos[sbl.targets[i]],
+									  &mut sbl.paths[i],
+									  sbl.turns_to_go,
+									  sbl.turns_init);
+			if let Some(mut thing) = eclair_matrix.next(ui) {
+				println!("We got a lightning rod!");
+				//thing.rel_x = sprite_pos[sbl.targets[i]][0];
+				//thing.rel_y = sprite_pos[sbl.targets[i]][1];
+				let mut path = widget::PointPath::abs(sbl.paths[i].clone())
+					.thickness((sbl.turns_to_go%3) as f64)
+					.color(color::BLUE.with_luminance(0.1*(sbl.turns_to_go%5) as f32));
+				thing.set(path,ui);
+			}
+		};
+	}else if (sbl.turns_after<(FPS as usize)) & (sbl.turns_after%2==0) {
+		for i in 0..sbl.targets.len() {
+			if let Some(mut thing) = eclair_matrix.next(ui) {
+				println!("We got a lightning rod!");
+				thing.rel_x = sprite_pos[sbl.targets[i]][0];
+				thing.rel_y = sprite_pos[sbl.targets[i]][1];
+				let circle = widget::Circle::fill_with(25.0,
+					color::BLUE.with_luminance(0.7).with_alpha(0.5)
+				);
+				thing.set(circle,ui);
+			}
+		};
+	};
+}
+
+// extends lightning path from last point towards target.
+fn sprite_lightning_extender_marker(){}
+fn sprite_lightning_extender(target_pos:&[f64;2],
+							 ref mut path:&mut Vec<[f64;2]>,
+							 n:usize,i:f64){
+	let var_gen = rand::thread_rng().gen_range(0,2) as f64; 
+	let last:[f64;2] = *path.last().unwrap_or(target_pos);
+	let factor = (i-n as f64)/i;
+	let mut dx:f64 = factor*(target_pos[0]-last[0]);
+	let mut dy:f64 = factor*(target_pos[1]-last[1]);
+	dx+= 0.2*dx*(var_gen);
+	dy+= 0.2*dy*(1.0-var_gen);
+	path.push([last[0]+dx,last[1]+dy]);
+}
+
+// Takes reference to GraphicsBox. Depending on what it contains,
+// sets the appropriate spell effect.
+// NB this function will be expanded as things get finished.
+fn spell_setter_marker(){}
+fn spell_setter(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sprite_boxer:&mut GraphicsBox,
+				 sprite_pos: &mut [[f64;2];25]) {
+	match sprite_boxer {
+		&mut GraphicsBox::None	  => {return},
+		&mut CastL(ref mut eclair)=> {set_lightning(ids,ui,eclair,sprite_pos);},
+		_			  	  		  => {return},
+	};			 
+}
+
 //set up the vertically aligned groups.
 //ie group east and west. (See battle_line_h for logic).
 fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
@@ -782,7 +872,7 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				battle_ifast: usize,
 				mut pos_bif:&mut (Option<conrod::Point>,[conrod::position::Scalar;2]),
 				mut sp: &mut Option<conrod::Point>,
-				sprite_boxer:&mut Option<SpriteBox>,
+				sprite_boxer:&mut GraphicsBox,
 				sprite_pos: &mut [[f64;2];25],
 				mtrxp: [f64;2]) {
 					
@@ -800,15 +890,15 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			
 			//If attacker is attackingm modify the position.
 			match *sprite_boxer {
-				Some(ref x) => {
+				Attack(ref mut x) => {
 					if x.att_index==group[r].1 {
 						let pos = sprite_approach(&x);
 						renegade.rel_x = pos[0]-mtrxp[0];
 						renegade.rel_y = pos[1]-mtrxp[1];
 					};
 				},
-				_		=> {},
-			}; 
+				_ => {},
+			};
 					
 			if group[r].1==battle_ifast {
 				pos_bif.0 = *sp;
@@ -864,7 +954,7 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				battle_ifast: usize,
 				mut pos_bif:&mut (Option<conrod::Point>,[conrod::position::Scalar;2]),
 				mut sp: &mut Option<conrod::Point>,
-				sprite_boxer:&mut Option<SpriteBox>,
+				sprite_boxer:&mut GraphicsBox,
 				sprite_pos: &mut [[f64;2];25],
 				mtrxp: [f64;2]) {
 	
@@ -884,14 +974,14 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			
 			//If attacker is attackingm modify the position.
 			match *sprite_boxer {
-				Some(ref x) => {
+				Attack(ref mut x) => {
 					if x.att_index==group[c].1 {
 						let pos = sprite_approach(&x);
 						renegade.rel_x = pos[0]-mtrxp[0];
 						renegade.rel_y = pos[1]-mtrxp[1];
 					};
 				},
-				_		=> {},
+				_ => {},
 			};
 			
 			//If turn of this one, put the circle marker here.			
@@ -949,7 +1039,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  mut diff:i32,
 				  p_names:&mut Vec<String>,
 				  mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-				  sprite_boxer:&mut Option<SpriteBox>,
+				  sprite_boxer:&mut GraphicsBox,
 				  p_loc:&mut Place,
 				  mut comm_text: &mut String,
 				  timer:usize,
@@ -1029,15 +1119,15 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		
 		//If attacker is attackingm modify the position.
 		match *sprite_boxer {
-			Some(ref x) => {
-				if x.att_index==enc_c[c].1 {
-					let pos = sprite_approach(&x);
-					renegade.rel_x = pos[0]-wh_enc_cm[0];
-					renegade.rel_y = pos[1]-wh_enc_cm[1];
-				};
-			},
-			_		=> {},
-		};
+				Attack(ref mut x) => {
+					if x.att_index==enc_c[c].1 {
+						let pos = sprite_approach(&x);
+						renegade.rel_x = pos[0]-wh_enc_cm[0];
+						renegade.rel_y = pos[1]-wh_enc_cm[1];
+					};
+				},
+				_ => {},
+			};
 		
 		let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
 		renegade.rel_x += rel_pos; 
@@ -1177,9 +1267,13 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		set_marker_of_go(ids,ui,pos_bif,timer,battle_ifast,encounter,base_h);	
 	};	 
 	
+	//Set spell effects if needs be.
+	spell_setter(ids,ui,sprite_boxer,sprite_pos);
+	
 	//decrement sprite box.
 	sprite_box_decrement(sprite_boxer,timer,shaking_timer,shaking_dam);
 	//println!("Exiting set_battle_map C"); 
+	println!("{:?}",sprite_boxer);
 }
 
 
@@ -1582,7 +1676,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					mut p_scape: &mut u8,
 					wo: &mut FlowCWin,
 					ipath:&mut Option<(usize,String)>,
-					sprite_boxer: &mut Option<SpriteBox>,
+					sprite_boxer: &mut GraphicsBox,
 					sprite_pos: &mut [[f64;2];25]) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
 	
 	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets A");};
@@ -2576,13 +2670,16 @@ widget_ids! {
 				opt_antlers_slider,
 				opt_antlers_reset_but,
 				
-		file_browser_can,
+		file_browser_can, //File browser for dealing with swapping out of songs.
 			fb_navi,
 			fb_select_but,
 			fb_back_but,
 			fb_cancel_but,
 			fb_standard_but,
 			fb_display_current,
+			
+		eclair_matrix, //Set lightning.
+		eclair_matrix_two //Set the lightning ends.
 				
 	}
 }
@@ -4032,11 +4129,14 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						mut pause: &mut bool,
 						mut shaking_timer: &mut usize,
 						mut shaking_dam: &mut [bool;25],
-						mut sprite_boxer: &mut Option<SpriteBox>,
-						sprite_pos: &mut [[f64;2];25]) {
+						mut sprite_boxer: &mut GraphicsBox,
+						sprite_pos: &mut [[f64;2];25],
+						targets:&mut Vec<usize>) {
 
 	let mut turn_over = false;
 	if *yt_adcwpe_bw==[false,false,false,false,false,false,false,false,false] {
+		*sel_targets = Vec::with_capacity(25);
+		*targets = Vec::with_capacity(25);
 		println!("Monster number {} to go.",battle_ifast);
 		//If button may not be pressed and nothing pressed, 						
 		let ttturns=byteru16(*battle_tturns);
@@ -4125,13 +4225,16 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 					};
 				};
 				
-				*sprite_boxer = Some(SpriteBox::new(timer,&encounter[*battle_ifast],
-												*battle_ifast,
-												&encounter[p_t],
-												p_t,
-												&sprite_pos[*battle_ifast],
-												&sprite_pos[p_t],
-												shaking_dam[attack_result.1]
+				*sprite_boxer = GraphicsBox::Attack
+									(SpriteBox::new
+										(timer,
+										&encounter[*battle_ifast],
+										*battle_ifast,
+										&encounter[p_t],
+										p_t,
+										&sprite_pos[*battle_ifast],
+										&sprite_pos[p_t],
+										shaking_dam[attack_result.1]
 				));
 				shaking_dam[attack_result.1] = false;
 				
@@ -4232,7 +4335,20 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						}else{};	
 					};
 					println!("Effects of spellcasting over");
-					*sel_targets = Vec::with_capacity(25);
+					if y[to_cast_ind].Type==LIGHTNING {
+						spell_targets_to_indices(&to_hit,targets);
+						*sprite_boxer = GraphicsBox::CastL
+									(SpellBoxL::new
+										(timer,
+										 &encounter[*battle_ifast],
+										 *battle_ifast,
+										 &targets,
+										 &sprite_pos,
+										 (*shaking_dam).clone()
+										)
+									);
+					};
+					//*sel_targets = Vec::with_capacity(25);
 					*to_hit = vec![(false,false);cms];	
 					yt_adcwpe_bw[3] = false;
 					yt_adcwpe_bw[7] = false;
@@ -4338,8 +4454,9 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 						mut ai_started_thinking: &mut bool,
 						mut thought_sender: &mut SyncSender<(usize,usize)>,
 						mut thought_receiver: &mut Receiver<(usize,usize)>,
-						mut sprite_boxer: &mut Option<SpriteBox>,
-						sprite_pos: &mut [[f64;2];25]
+						mut sprite_boxer: &mut GraphicsBox,
+						sprite_pos: &mut [[f64;2];25],
+						targets:&mut Vec<usize>
 						) {
 	//println!("Monster number {} to go.",battle_ifast);
 	
@@ -4347,6 +4464,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 	if !*ai_turn_started {
 		//if ai turn has not truly started, inititate recl and other important variables.
 		*shaking_dam = [false;25];
+		*targets = Vec::with_capacity(25);
 		let ttturns=byteru16(*battle_tturns);
 		//println!("Got minus A");
 		recl = [
@@ -4515,15 +4633,17 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			};
 			
 			
-			*sprite_boxer = Some(SpriteBox::new(timer,
-												&encounter[*battle_ifast],
-												*battle_ifast,
-												&encounter[idm],
-												idm,
-												&sprite_pos[*battle_ifast],
-												&sprite_pos[idm],
-												shaking_dam[attack_result.1]
-			));
+			*sprite_boxer = GraphicsBox::Attack
+								(SpriteBox::new
+									(timer,
+									&encounter[*battle_ifast],
+									*battle_ifast,
+									&encounter[idm],
+									idm,
+									&sprite_pos[*battle_ifast],
+									&sprite_pos[idm],
+									shaking_dam[attack_result.1])
+							);
 			shaking_dam[attack_result.1] = true;
 												
 		}else if exI==0 {
@@ -4601,6 +4721,22 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 							};
 						};
 					};
+				};
+				
+				//set graphics of spell (when more types are made,
+				//this will become another function.
+				if y[exj].Type==LIGHTNING {
+					spell_targets_to_indices(&to_hit,targets);
+					*sprite_boxer = GraphicsBox::CastL
+								(SpellBoxL::new
+									(timer,
+								     &encounter[*battle_ifast],
+								     *battle_ifast,
+								     &targets,
+								     &sprite_pos,
+								     (*shaking_dam).clone()
+								    )
+								);
 				};
 				in_battle_record[libr][5] = (in_battle_record[libr][5] as i32 + shades.1) as u8;
 			};
@@ -4737,6 +4873,13 @@ fn who_won(alive:&[bool;5])->(bool,Option<usize>){
 		out
 	}else{
 		out
+	}
+}
+
+fn spell_targets_to_indices(to_hit:&Vec<(bool,bool)>,targets:&mut Vec<usize>){
+	*targets = Vec::with_capacity(25);
+	for (i,x) in to_hit.iter().enumerate() {
+		if x.1 | x.0 {targets.push(i);};
 	}
 }
 //
