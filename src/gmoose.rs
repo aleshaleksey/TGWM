@@ -72,8 +72,8 @@ use std;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use conrod::widget::BorderedRectangle;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
-#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL};
+#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxH,SpellBoxD};
+#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI};
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -111,6 +111,7 @@ const AI_MEM_MAX:f64 = 32_000_000_000.0;
 const AI_MEM_DEFAULT:usize = 500_000_000;
 const ECLAIR_BALL:f64 = 25.0;
 pub const FPS:f32 = 20.0; //Frame rate, will make this variable later.
+pub const FPSU:usize = 20; 
 
 
 
@@ -494,8 +495,58 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 				};
 		},
 		CastL(ref mut x) => {
-				x.turns_to_go-= 1;
-				if x.turns_to_go==0 {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					x.turns_after+= 1;
+				};
+				if x.turns_after>FPSU*2 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
+		CastI(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					x.turns_after+= 1;
+				};
+				if x.turns_after>FPSU*2 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
+		CastF(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					x.turns_after+= 1;
+				};
+				if x.turns_after>FPSU {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
+		CastD(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
+		CastH(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
 					nullify = true;
 					for t in x.targets.iter() {
 						shake_damage[*t] = x.damage[*t];
@@ -510,6 +561,88 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 		*sprite_boxer = GraphicsBox::None;
 		
 	};			 
+}
+
+//Function to sill graphics box in accourdance with spell type.
+fn sprite_box_filler_marker(){}
+fn sprite_box_filler(magic_type:u8,gx_box:&mut GraphicsBox,
+					 caster:&(Lifeform,usize,[std::option::Option<[usize; 2]>;2]),
+					 bifast:usize,
+					 to_hit:&Vec<(bool,bool)>,
+					 targets: &mut Vec<usize>,
+					 sprite_pos: &[[f64;2];25],
+					 shaking_dam: &[bool;25]) {
+						 
+	spell_targets_to_indices(to_hit,targets);
+	
+	match magic_type {
+		LIGHTNING => {
+			*gx_box = GraphicsBox::CastL
+			(
+				SpellBoxL::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		ICE => {
+			*gx_box = GraphicsBox::CastI
+			(
+				SpellBoxI::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		FIRE => {
+			*gx_box = GraphicsBox::CastF
+			(
+				SpellBoxF::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		DEATH => {
+			*gx_box = GraphicsBox::CastD
+			(
+				SpellBoxD::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		HEALING => {
+			*gx_box = GraphicsBox::CastH
+			(
+				SpellBoxH::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		_	=> {},
+	};
 } 
 
 
@@ -789,11 +922,8 @@ fn set_lightning(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							  .wh([0.0;2])
 							  .xy([0.0;2])
 							  .set(ids.eclair_matrix, ui);
-	let mut eclair_matrix_two = widget::Matrix::new(25,1)
-							  .wh([0.0;2])
-							  .xy([0.0;2])
-							  .set(ids.eclair_matrix_two, ui);
 	
+	//Draw lightning strikes.
 	if sbl.turns_to_go>0 {
 		for i in 0..sbl.targets.len() {
 			//extend lightning path for each target.
@@ -802,26 +932,36 @@ fn set_lightning(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 									  sbl.turns_to_go,
 									  sbl.turns_init);
 			if let Some(mut thing) = eclair_matrix.next(ui) {
-				println!("We got a lightning rod!");
-				//thing.rel_x = sprite_pos[sbl.targets[i]][0];
-				//thing.rel_y = sprite_pos[sbl.targets[i]][1];
+				
 				let mut path = widget::PointPath::abs(sbl.paths[i].clone())
 					.thickness((sbl.turns_to_go%3) as f64)
 					.color(color::BLUE.with_luminance(0.1*(sbl.turns_to_go%5) as f32));
+					
 				thing.set(path,ui);
-			}
+			};
 		};
-	}else if (sbl.turns_after<(FPS as usize)) & (sbl.turns_after%2==0) {
+	//Draw hit spheres.
+	}else if (sbl.turns_after<FPSU*2) & (sbl.turns_after%4 != 0) {
+		let mut eclair_matrix_two = widget::Matrix::new(5,5)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.eclair_matrix_two, ui);
+
 		for i in 0..sbl.targets.len() {
-			if let Some(mut thing) = eclair_matrix.next(ui) {
-				println!("We got a lightning rod!");
+			if let Some(mut thing) = eclair_matrix_two.next(ui) {
+				//println!("We got a lightning rod!");
 				thing.rel_x = sprite_pos[sbl.targets[i]][0];
 				thing.rel_y = sprite_pos[sbl.targets[i]][1];
-				let circle = widget::Circle::fill_with(25.0,
-					color::BLUE.with_luminance(0.7).with_alpha(0.5)
+				let size = 20.0+2.0*(((sbl.turns_after+i)%12) as f64);
+				thing.w = size;
+				thing.h = size;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::BLUE.with_luminance(0.7).with_alpha(0.07)
 				);
+				
 				thing.set(circle,ui);
-			}
+			};
 		};
 	};
 }
@@ -836,9 +976,225 @@ fn sprite_lightning_extender(target_pos:&[f64;2],
 	let factor = (i-n as f64)/i;
 	let mut dx:f64 = factor*(target_pos[0]-last[0]);
 	let mut dy:f64 = factor*(target_pos[1]-last[1]);
+	dx+= 0.3*dx*(var_gen);
+	dy+= 0.3*dy*(1.0-var_gen);
+	path.push([last[0]+dx,last[1]+dy]);
+}
+
+//Set fireballs.
+fn set_fire_marker(){}
+fn set_fire(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbf:&mut SpellBoxF,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbf.caster_indx];
+	let mut fire_matrix = widget::Matrix::new(5,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.fire_matrix, ui);
+	
+	if (sbf.turns_to_go>0) & (sbf.turns_to_go%4 != 0) {
+		for i in 0..sbf.targets.len() {
+			//extend lightning path for each target.
+			sprite_fire_extender(&sprite_pos[sbf.targets[i]],
+									  &mut sbf.tracks[i],
+									  sbf.turns_to_go,
+									  sbf.turns_init);
+			if let Some(mut thing) = fire_matrix.next(ui) {
+				
+				thing.rel_x = sbf.tracks[i][0];
+				thing.rel_y = sbf.tracks[i][1];
+				let size = 10.0;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::RED.with_luminance(0.7).with_alpha(0.07)
+				);
+				thing.set(circle,ui);
+			};
+		};
+	}else if (sbf.turns_after<FPSU) & (sbf.turns_after%4 != 0) {
+		
+		for i in 0..sbf.targets.len() {
+			if let Some(mut thing) = fire_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbf.targets[i]][0];
+				thing.rel_y = sprite_pos[sbf.targets[i]][1];
+				let size = 20.0+4.0*((sbf.turns_after%FPSU) as f64);
+				thing.w = size;
+				thing.h = size;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::RED.with_luminance(0.7).with_alpha(0.07)
+				);
+				thing.set(circle,ui);
+			};
+		};
+	};
+}
+
+//throw the "fireball" at targets.
+fn sprite_fire_extender_marker(){}
+fn sprite_fire_extender(target_pos:&[f64;2],
+							 path:&mut [f64;2],
+							 n:usize,i:f64){
+	let var_gen = rand::thread_rng().gen_range(0,2) as f64; 
+	let last:[f64;2] = [path[0],path[1]];
+	let factor = (i-n as f64)/i;
+	let mut dx:f64 = factor*(target_pos[0]-last[0]);
+	let mut dy:f64 = factor*(target_pos[1]-last[1]);
 	dx+= 0.2*dx*(var_gen);
 	dy+= 0.2*dy*(1.0-var_gen);
-	path.push([last[0]+dx,last[1]+dy]);
+	*path = [last[0]+dx,last[1]+dy];
+}
+
+//Set ice effects.
+fn set_ice_marker(){}
+fn set_ice(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbi:&mut SpellBoxI,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbi.caster_indx];
+	let mut ice_matrix = widget::Matrix::new(5,5)
+							  .wh([50.0*5.0;2])
+							  .xy([0.0;2])
+							  .set(ids.ice_matrix, ui);
+	//println!("in ice");
+	//Draw lightning strikes.
+	if sbi.turns_to_go>0 {
+		for (i,tar) in sbi.targets.iter().enumerate() {
+			//println!("in ice part 1: sbi.tracks.len()={}\nturns_to_go={}",sbi.tracks.len(),sbi.turns_to_go);
+			//extend lightning path for each target.
+			sprite_ice_extender(&sprite_pos[*tar],
+									  &mut sbi.tracks[i],
+									  sbi.turns_to_go,
+									  sbi.turns_init);
+			//println!("in ice part 1a: sbi.tracks.len()={}",sbi.tracks.len());					  
+			if let Some(mut thing) = ice_matrix.next(ui) {
+				//println!("in thingy 1 i={}",i);
+				thing.rel_x = sbi.tracks[i][0];
+				//println!("in thingy 1a-: about to get coordinates for poly");
+				thing.rel_y = sbi.tracks[i][1];
+				//println!("in thingy 1a: about to get coordinates for poly");
+				let size:f64 = 20.0+2.0*(((sbi.turns_to_go+i)%12) as f64);
+				thing.w = size;
+				thing.h = size;
+				//println!("in thingy 1b: about to get coordinates for poly");		
+				let points = poly_round(size,5,&sbi.tracks[i]);
+				//println!("in thingy 1c: about to poly construct");		
+				let mut poly = widget::Polygon::abs_outline(points)
+						.color(color::BLUE.with_luminance(0.8).with_alpha(0.6));
+				//println!("in thingy 2: poly contructed");	
+				thing.set(poly,ui);
+				//println!("in thingy 3: poly set");
+			};
+		};
+	//Draw hit spheres.
+	}else if (sbi.turns_after<FPSU*2) & (sbi.turns_after%6 != 0) {
+
+		for i in 0..sbi.targets.len() {
+			//println!("in ice part 2");
+			if let Some(mut thing) = ice_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbi.targets[i]][0];
+				thing.rel_y = sprite_pos[sbi.targets[i]][1];
+				let size = 20.0+2.0*(((sbi.turns_after+i)%12) as f64);
+				thing.w = size;
+				thing.h = size;
+				
+				let points = poly_round(size,5,&sprite_pos[sbi.targets[i]]);
+				
+				let mut poly = widget::Polygon::abs_fill(points)
+						.color(color::BLUE.with_luminance(0.8).with_alpha(0.06));
+				
+				thing.set(poly,ui);
+			};
+		};
+	};
+}
+
+//Move crystals from source.
+fn sprite_ice_extender_marker(){}
+fn sprite_ice_extender(target_pos:&[f64;2],
+							 path:&mut [f64;2],
+							 n:usize,i:f64){
+	//println!("extending ice");
+	let var_gen = rand::thread_rng().gen_range(0,2) as f64; 
+	let last:[f64;2] = [path[0],path[1]];
+	let factor = (i-n as f64)/i;
+	let mut dx:f64 = factor*(target_pos[0]-last[0]);
+	let mut dy:f64 = factor*(target_pos[1]-last[1]);
+	dx+= 0.2*dx*(var_gen);
+	dy+= 0.2*dy*(1.0-var_gen);
+	*path = [last[0]+dx,last[1]+dy];
+	//println!("extended ice");
+}
+
+//Set Death based spells.
+fn set_death_marker(){}
+fn set_death(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbd:&mut SpellBoxD,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbd.caster_indx];
+	let mut death_matrix = widget::Matrix::new(5,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.death_matrix, ui);
+	
+	if (sbd.turns_to_go>0) & (sbd.turns_to_go%5 != 0) {
+		for i in 0..sbd.targets.len() {
+			//extend lightning path for each target.
+			if let Some(mut thing) = death_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbd.targets[i]][0];
+				thing.rel_y = sprite_pos[sbd.targets[i]][1];
+				let size = (sbd.turns_init-sbd.turns_to_go as f64)*4.0;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::outline(size)
+					.color(color::BLACK.with_alpha(0.5));
+					
+				thing.set(circle,ui);
+			};
+		};
+	};
+}
+
+//Set healing effects..
+fn set_heal(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbh:&mut SpellBoxH,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbh.caster_indx];
+	let mut health_matrix = widget::Matrix::new(5,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.death_matrix, ui);
+	
+	if (sbh.turns_to_go>0) & (sbh.turns_to_go%7 != 0) {
+		for i in 0..sbh.targets.len() {
+			//extend lightning path for each target.
+			if let Some(mut thing) = health_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbh.targets[i]][0];
+				thing.rel_y = sprite_pos[sbh.targets[i]][1];
+				let size = (sbh.turns_to_go as f64)*4.0;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::fill(size)
+					.color(color::GREEN.with_alpha(0.1));
+					
+				thing.set(circle,ui);
+			};
+		};
+	};
 }
 
 // Takes reference to GraphicsBox. Depending on what it contains,
@@ -851,6 +1207,10 @@ fn spell_setter(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	match sprite_boxer {
 		&mut GraphicsBox::None	  => {return},
 		&mut CastL(ref mut eclair)=> {set_lightning(ids,ui,eclair,sprite_pos);},
+		&mut CastF(ref mut flair) => {set_fire(ids,ui,flair,sprite_pos);},
+		&mut CastD(ref mut death) => {set_death(ids,ui,death,sprite_pos);},
+		&mut CastH(ref mut health)=> {set_heal(ids,ui,health,sprite_pos);},
+		&mut CastI(ref mut ice)   => {set_ice(ids,ui,ice,sprite_pos);},
 		_			  	  		  => {return},
 	};			 
 }
@@ -1273,7 +1633,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	//decrement sprite box.
 	sprite_box_decrement(sprite_boxer,timer,shaking_timer,shaking_dam);
 	//println!("Exiting set_battle_map C"); 
-	println!("{:?}",sprite_boxer);
+	//println!("{:?}",sprite_boxer);
 }
 
 
@@ -2679,7 +3039,11 @@ widget_ids! {
 			fb_display_current,
 			
 		eclair_matrix, //Set lightning.
-		eclair_matrix_two //Set the lightning ends.
+		eclair_matrix_two, //Set the lightning ends.
+		fire_matrix, //Set fire.
+		ice_matrix, //set ice.
+		healing_matrix,
+		death_matrix,
 				
 	}
 }
@@ -4335,19 +4699,18 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						}else{};	
 					};
 					println!("Effects of spellcasting over");
-					if y[to_cast_ind].Type==LIGHTNING {
-						spell_targets_to_indices(&to_hit,targets);
-						*sprite_boxer = GraphicsBox::CastL
-									(SpellBoxL::new
-										(timer,
-										 &encounter[*battle_ifast],
-										 *battle_ifast,
-										 &targets,
-										 &sprite_pos,
-										 (*shaking_dam).clone()
-										)
-									);
-					};
+
+					//Fills the graphics box with the appropriate information,
+					//to launch the sprites into tomorrow.
+					sprite_box_filler(y[to_cast_ind].Type,sprite_boxer,
+						 &encounter[*battle_ifast],
+						 *battle_ifast,
+						 &to_hit,
+						 targets,
+						 &sprite_pos,
+						 shaking_dam
+					);
+										
 					//*sel_targets = Vec::with_capacity(25);
 					*to_hit = vec![(false,false);cms];	
 					yt_adcwpe_bw[3] = false;
@@ -4723,21 +5086,16 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 					};
 				};
 				
-				//set graphics of spell (when more types are made,
-				//this will become another function.
-				if y[exj].Type==LIGHTNING {
-					spell_targets_to_indices(&to_hit,targets);
-					*sprite_boxer = GraphicsBox::CastL
-								(SpellBoxL::new
-									(timer,
-								     &encounter[*battle_ifast],
-								     *battle_ifast,
-								     &targets,
-								     &sprite_pos,
-								     (*shaking_dam).clone()
-								    )
-								);
-				};
+				//Fills the graphics box with the appropriate information,
+				//to launch the sprites into tomorrow.
+				sprite_box_filler(y[exj].Type,sprite_boxer,
+					 &encounter[*battle_ifast],
+					 *battle_ifast,
+					 &to_hit,
+					 targets,
+					 &sprite_pos,
+					 shaking_dam);
+				
 				in_battle_record[libr][5] = (in_battle_record[libr][5] as i32 + shades.1) as u8;
 			};
 		}else{};
@@ -7200,4 +7558,59 @@ fn saw_tooth_img(base:usize,x_ind:usize,attenuation:usize)->usize {
 	}else{
 		ini/attenuation
 	}
+}
+
+
+//parabolic sin and cos function for quick and dirty graphical trig.
+//Very dirty and inaccurate.
+fn cospt(angle:f64,base:f64)->f64 {
+	let b4 = base/4.0;
+	let x = angle%base;
+	let x4 = x%b4;
+	if x<b4 {
+		1.0-(x4/b4)*(x4/b4)
+	}else if x<2.0*b4 {
+		-(1.0-((b4-x4)/b4)*((b4-x4)/b4))
+	}else if x<3.0*b4 {
+		-(1.0-(x4/b4)*(x4/b4))
+	}else{
+		1.0-((b4-x4)/b4)*((b4-x4)/b4)
+	}
+}
+
+//parabolic sin and cos function for quick and dirty graphical trig.
+fn sinpt(angle:f64,base:f64)->f64 {
+	let b4 = base/4.0;
+	let x = angle%base;
+	let x4 = x%b4;
+	if x<b4 {
+		1.0-((b4-x4)/b4)*((b4-x4)/b4)
+	}else if x<2.0*b4 {
+		1.0-(x4/b4)*(x4/b4)
+	}else if x<3.0*b4 {
+		-(1.0-((b4-x4)/b4)*((b4-x4)/b4))
+	}else{
+		-(1.0-(x4/b4)*(x4/b4))
+	}	
+}
+
+// Function to generate a series of points around a centre
+// for the creation of a polygon.
+// NB this is not a safe function. It will try to make a polygon
+// out of ZERO,ONE or TWO points.
+fn poly_round_marker(){}
+fn poly_round(r:f64,n:usize,c:&[f64;2])->Vec<[f64;2]> {
+	//println!("entering polygonal");
+	//if less than three points 
+	let mut output:Vec<[f64;2]> = Vec::with_capacity(n); 
+	let mut total_angle:f64 = 0.0;
+	let step_angle:f64 = 360.0/n as f64;
+	for _ in 0..n {
+		let x = r*(cospt(total_angle,360.0)+rand::thread_rng().gen_range(-0.3,0.3));
+		let y = r*(sinpt(total_angle,360.0)+rand::thread_rng().gen_range(-0.3,0.3));
+		total_angle+= step_angle;
+		output.push([x+c[0],y+c[1]]);
+	}
+	//println!("exiting polygonal: outuput={:?}",output);
+	output
 }

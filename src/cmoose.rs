@@ -10,7 +10,8 @@ use gmoose;
 
 extern crate std;
 
-
+// NB: Some of these structures are currently the same internally.
+// But in order to be able to change later, they're kept the same.
 //Structure for drawing lightning spells.
 #[derive(Debug)]
 pub struct SpellBoxL {
@@ -23,9 +24,52 @@ pub struct SpellBoxL {
 	pub damage: [bool;25],
 }
 
+//Structure for drawing ice spells.
+#[derive(Debug)]
+pub struct SpellBoxI {
+	pub caster_indx: usize,
+	pub targets: Vec<usize>,
+	pub turns_to_go: usize,		//lightning will be faster for higher BM.
+	pub turns_after:usize,
+	pub turns_init: f64,
+	pub tracks: Vec<[f64;2]>,
+	pub damage: [bool;25],
+}
+
+//Structure for drawing fire spells.
+#[derive(Debug)]
+pub struct SpellBoxF {
+	pub caster_indx: usize,
+	pub targets: Vec<usize>,
+	pub turns_to_go: usize,		//lightning will be faster for higher BM.
+	pub turns_after:usize,     //useful.
+	pub turns_init: f64,
+	pub tracks: Vec<[f64;2]>,  //records each point on the lightning path.
+	pub damage: [bool;25],
+}
+
+//Structure for drawing healing spells.
+#[derive(Debug)]
+pub struct SpellBoxH {
+	pub caster_indx: usize,
+	pub targets: Vec<usize>,
+	pub turns_to_go: usize,		//lightning will be faster for higher BM.
+	pub turns_init: f64,
+	pub damage: [bool;25],
+}
+
+//Structure for drawing darkness spells.
+#[derive(Debug)]
+pub struct SpellBoxD {
+	pub caster_indx: usize,
+	pub targets: Vec<usize>,
+	pub turns_to_go: usize,		//lightning will be faster for higher BM.
+	pub turns_init: f64,
+	pub damage: [bool;25],
+}
+
 impl SpellBoxL { //NB, positions from the position structure will be used.
-	pub fn new(timer: usize,
-			   caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
 			   a_i: usize,
 			   targets: &Vec<usize>,
 			   positions: &[[f64;2];25],
@@ -41,15 +85,110 @@ impl SpellBoxL { //NB, positions from the position structure will be used.
 		SpellBoxL {
 			caster_indx: a_i,
 			targets: fin_targets,
-			turns_to_go: caster.0.BM_shade as usize,
+			turns_to_go: (gmoose::FPS as f64*2.0*100.0/caster.0.BM_shade as f64) as usize,
 			turns_after: 0,
-			turns_init: (caster.0.BM_shade as usize) as f64,
+			turns_init: (gmoose::FPS as f64*2.0*100.0/caster.0.BM_shade as f64),
 			paths: paths,
 			damage: damage.clone(),
 		}
 	}
 }
 
+impl SpellBoxI {
+	
+	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+			   a_i: usize,
+			   targets: &Vec<usize>,
+			   positions: &[[f64;2];25],
+			   damage: [bool;25])->SpellBoxI{
+		
+		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
+		let mut paths:Vec<[f64;2]> = Vec::with_capacity(25);
+		for x in targets.iter() {
+			fin_targets.push(*x);
+			paths.push(positions[a_i]);
+		}
+		
+		SpellBoxI {
+			caster_indx: a_i,
+			targets: fin_targets,
+			turns_to_go: (gmoose::FPS as f64*2.0*100.0/caster.0.BM_shade as f64) as usize,
+			turns_after: 0,
+			turns_init: gmoose::FPS as f64*2.0*100.0/caster.0.BM_shade as f64,
+			tracks: paths,
+			damage: damage.clone(),
+		}
+	}
+}
+
+impl SpellBoxF {
+	
+	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+			   a_i: usize,
+			   targets: &Vec<usize>,
+			   positions: &[[f64;2];25],
+			   damage: [bool;25])->SpellBoxF {
+		
+		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
+		let mut paths:Vec<[f64;2]> = Vec::with_capacity(25);
+		for x in targets.iter() {
+			fin_targets.push(*x);
+			paths.push(positions[a_i]);
+		}
+			
+		SpellBoxF {
+			caster_indx: a_i,
+			targets: fin_targets,
+			turns_to_go: (gmoose::FPS as f64*1.0*100.0/caster.0.BM_shade as f64) as usize,
+			turns_after: 0,
+			turns_init: (gmoose::FPS as f64*1.0*100.0/caster.0.BM_shade as f64),
+			tracks: paths,
+			damage: damage.clone(),
+		}
+	}
+}
+
+impl SpellBoxH {
+	
+	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+			   a_i: usize,
+			   targets: &Vec<usize>,
+			   positions: &[[f64;2];25],
+			   damage: [bool;25])->SpellBoxH{
+		
+		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
+		for x in targets.iter() {fin_targets.push(*x);}
+		
+		SpellBoxH {
+			caster_indx: a_i,
+			targets: fin_targets,
+			turns_to_go: (gmoose::FPS as f64*2.0*100.0/caster.0.WM_shade as f64) as usize,
+			turns_init: gmoose::FPS as f64*2.0*100.0/caster.0.WM_shade as f64,
+			damage: damage.clone(),
+		}
+	}
+}
+
+impl SpellBoxD {
+	
+	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+			   a_i: usize,
+			   targets: &Vec<usize>,
+			   positions: &[[f64;2];25],
+			   damage: [bool;25])->SpellBoxD{
+		
+		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
+		for x in targets.iter() {fin_targets.push(*x);}
+		
+		SpellBoxD {
+			caster_indx: a_i,
+			targets: fin_targets,
+			turns_to_go: (gmoose::FPS as f64*3.0*100.0/caster.0.BM_shade as f64) as usize,
+			turns_init: gmoose::FPS as f64*3.0*100.0/caster.0.BM_shade as f64,
+			damage: damage.clone(),
+		}
+	}
+}
 
 //Structure for instructions for moving sprites
 //following attacks.
@@ -94,6 +233,10 @@ impl SpriteBox {
 pub enum GraphicsBox {
 	Attack(SpriteBox),
 	CastL(SpellBoxL),
+	CastI(SpellBoxI),
+	CastF(SpellBoxF),
+	CastH(SpellBoxH),
+	CastD(SpellBoxD),
 	None,
 }
 
