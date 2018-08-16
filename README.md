@@ -37,7 +37,8 @@ music is half-hearted and the in-game song list can be changed.
 ***Graphics:***
 
 Widget buttons as sprites. Uses images as backgrounds. World map is generated from instructions in the executable.
-In battle sprite shake on damage. Currenly no other "effects".
+In battle sprite shake on damage.
+*Update 11-08-2018: Some graphics for spell effects and attacks have been implemented.*
 
 ***Mechanics:***
 
@@ -68,18 +69,23 @@ small chance of winning or losing. In fact it's problematic in general and needs
 Notes on compiling
 ------------------
 Originally compiled with Rust  1.1.9-nightly to 1.2.4-nightly.
-There are a lot of indirect dependencies which may go horribly wrong when compiling,
+There are a lot of indirect dependencies which may go horribly wrong when compiling (see below),
 therefore I have included an old Cargo.lock file for troubleshooting.
 
 NB: for a clean, release version add " --release -C link-args="-Wl,--subsystem,windows" "
 
-***linux:***
+***Linux:***
 
 cargo run --release --features="winit glium"
 
-***windows (x64):***
+***Windows (x64):***
 
 cargo rustc q-moose --release --features="winit glium" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
+
+***Dependencies:***
+
+TGWM uses conrod 0.57.0 (newer versions may or may not work). However the compiled program seems to work correctly only if the dependencies to conrod are specified as *exact* (eg: glium = "=0.20"). However the dependencies on the glium and winit *also* have to be specified as exact (modify the Cargo.toml on the dependencies).
+
 
 License
 -------
