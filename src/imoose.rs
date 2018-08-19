@@ -41,400 +41,410 @@ use time::PreciseTime;
 pub fn ai_part_a(x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 			 ii:usize,                             	//ifast from main battle.
 			 turn:usize,
-			 lore:&Vec<Vec<[u8;28]>>,  //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
+			 lore:Vec<Vec<[u8;28]>>,  //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
 			 now:&[u8;28],              //recl essentially.
 			 lsum:i32,
-			 order:Vec<(u8,u8)>)->(usize,usize){
+			 order:Vec<(u8,u8)>)->(usize,usize,Vec<Vec<[u8;28]>>){
 	let mut action=1;
 	let mut idm=255;
-	let t0=PreciseTime::now();	
-			 
-	let selfl= x[ii].clone();                                 	//Lifeform acting.
-	let ii8= ii as u8;									//self index as u8.
-	let t_u8= byteru16(turn as u16);					//turn as u8.
-	let mut chosen_battles:Vec<&Vec<[u8;28]>>= Vec::new();	//vector of battles fulfilling criteria.
-	let mut vict_c_battles:Vec<&Vec<[u8;28]>>= Vec::new();	//vector of battles fulfilling criteria which were "won".
-	let mut all_groups= Vec::new();						//vector of groups following normal indexing.
-	let mut uniq_group= Vec::new();						//vector of unique group listing.
-	let mut chosen_stats:Vec<(u8,u8,usize)>= Vec::new();		//vector of action, target and group for chosen battle lines.
-	let mut vict_c_stats:Vec<(u8,u8,usize)>= Vec::new();		//vector of action, target and group for victorious battle lines.
-	let mut last_c_stat:Vec<[u8;4]>= Vec::new();	
-	let mut last_v_stat:Vec<[u8;4]>= Vec::new();	
-	let mut ids=Vec::new();
-	let mut ids8=Vec::new();
-	let cms=x.len();
+	let t0=PreciseTime::now();
+	let lore_len = lore.len();
+	
+	let mut best_act_pm:usize=1;	//Primary choice action
+	let mut best_tar_pm:usize=255;	//Primary choice target
+	{		 
+		let selfl= x[ii].clone();                                 	//Lifeform acting.
+		let ii8= ii as u8;									//self index as u8.
+		let t_u8= byteru16(turn as u16);					//turn as u8.
+		let mut chosen_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria.
+		let mut vict_c_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria which were "won".
+		let mut all_groups= Vec::with_capacity(25);											//vector of groups following normal indexing.
+		let mut uniq_group= Vec::with_capacity(25);											//vector of unique group listing.
+		let mut chosen_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for chosen battle lines.
+		let mut vict_c_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for victorious battle lines.
+		let mut last_c_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
+		let mut last_v_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
+		let mut ids=Vec::new();
+		let mut ids8=Vec::new();
+		let cms=x.len();
+			
+		for y in x.iter(){									 //make by group vector.
+			all_groups.push(y.1);
+			ids.push(y.0.id);
+			ids8.push(y.0.id as u8)
+		};           
+		uniq_group= uniq(&all_groups);               //make unique group vector,
+		println!("All groups by [i]: {:?}\n All ids by [i]: {:?}\n Unique groups: {:?}",all_groups,ids,uniq_group);     
+		println!("Owng: {}",x[ii].1);																					
 		
-	for y in x.iter(){									 //make by group vector.
-		all_groups.push(y.1);
-		ids.push(y.0.id);
-		ids8.push(y.0.id as u8)
-	};           
-	uniq_group= uniq(all_groups.clone());               //make unique group vector,
-	println!("All groups by [i]: {:?}\n All ids by [i]: {:?}\n Unique groups: {:?}",all_groups,ids,uniq_group);     
-	println!("Owng: {}",x[ii].1);																					
-	
-	let mut d_battles:Vec<Vec<[i16;28]>>=Vec::new();
-	let mut act_consequences:Vec<[i16;26]>=Vec::new();
+		let mut d_battles:Vec<Vec<[i16;28]>>=Vec::new();
+		let mut act_consequences:Vec<[i16;26]>=Vec::new();
 
 
-	//let (v_lore,l_lore):(Vec<&Vec<[u8;28]>>,Vec<&Vec<[u8;28]>>)=lore.into_iter().partition(|&q| goal(&x,ii,&q[q.len()-1],&all_groups)==true);
-	//println!("V-lore length: {}\nL-Lore length:{}",v_lore.len(),l_lore.len());
-	//for y in v_lore[1].iter(){println!("{:?}",y)};
-	//panic!("I want to pause here. FOREVER.");
-	let mut v_paths:Vec<Vec<Vec<[u8;3]>>> = Vec::new();  //unique paths to victory from trigger point.
-	let mut l_paths:Vec<Vec<Vec<[u8;3]>>> = Vec::new();   //unique paths to defeat from trigger point.
-	let mut v_count:Vec<usize> = Vec::new();  //victory count at each trigger.
-	let mut l_count:Vec<usize> = Vec::new();   //defeat count at each trigger.
-	let mut trigs:Vec<[u8;3]> = Vec::new();       				//unique triggers
-	trigs.push([255,255,255]);
-	l_paths.push(vec!(vec!([255,255,255]);100000));
-	v_paths.push(vec!(vec!([255,255,255])));     //NB this is a complex structure.	
-	l_count.push(100000);
-	v_count.push(0);
-	
-	//println!("got A");
-	for y in lore.iter(){ 		//create unique paths for everything. Curently pathed out.
-		//let mut temp_pather:Vec<[u8;3]>=Vec::new();
-		//for z in y.iter(){temp_pather.push([z[2],z[3],z[4]])};
-		//temp_pather.remove(0);
-		//temp_pather.remove(0);
-		//temp_pather.remove(0);
-		let mut lxsum:i32=0;
-		for i in 3..y.len(){
-//			let mut orders:Vec<(u8,u8)>=Vec::new();
-//			if i>3{
-//				for j in permit_a(i-1)..(i){orders.push((y[j][4],0))}
-//			}else{orders=vec![(0,0)]};
-//			let orders_fulfilled=order_matcher(&orders,&order);
+		//let (v_lore,l_lore):(Vec<&Vec<[u8;28]>>,Vec<&Vec<[u8;28]>>)=lore.into_iter().partition(|&q| goal(&x,ii,&q[q.len()-1],&all_groups)==true);
+		//println!("V-lore length: {}\nL-Lore length:{}",v_lore.len(),l_lore.len());
+		//for y in v_lore[1].iter(){println!("{:?}",y)};
+		//panic!("I want to pause here. FOREVER.");
+		let mut v_paths:Vec<Vec<Vec<[u8;3]>>> = Vec::new();  //unique paths to victory from trigger point.
+		let mut l_paths:Vec<Vec<Vec<[u8;3]>>> = Vec::new();   //unique paths to defeat from trigger point.
+		let mut v_count:Vec<usize> = Vec::new();  //victory count at each trigger.
+		let mut l_count:Vec<usize> = Vec::new();   //defeat count at each trigger.
+		let mut trigs:Vec<[u8;3]> = Vec::new();       				//unique triggers
+		trigs.push([255,255,255]);
+		l_paths.push(vec!(vec!([255,255,255]);100000));
+		v_paths.push(vec!(vec!([255,255,255])));     //NB this is a complex structure.	
+		l_count.push(100000);
+		v_count.push(0);
+		
+		//println!("got A");
+		for y in lore.iter(){ 		//create unique paths for everything. Curently pathed out.
+			//let mut temp_pather:Vec<[u8;3]>=Vec::new();
+			//for z in y.iter(){temp_pather.push([z[2],z[3],z[4]])};
 			//temp_pather.remove(0);
-//			let now_m=state_matcher(&now,&y[i],cms,2);
-			lxsum+=(y[i][5] as i32)-128;
-			let mut light=true;
-			if (y[i][4]==ii8) & (now[6..28]==y[i][6..28]) & (y[i][2]!=0) & (i>=turn) & light==true{					//Condition.
-				let temp_trig:[u8;3]=[y[i][2],y[i][3],y[i][4]];
-				let j=i+1;
-				//let mut temp_path=temp_pather.clone();
-				if lhas(&trigs,&temp_trig)==false{			//branch
-					trigs.push(temp_trig);
-					if goal(&x,ii,&y[y.len()-1],&all_groups)==true{
-						//v_paths.push(vec![vec![[255,255,255]]]);
-						v_count.push(0);
-						let lng=v_paths.len()-1;
-						//v_paths[lng].push(temp_path.clone());
-						v_count[lng]+= 1;
-						//l_paths.push(vec![vec![[255,255,255]]]);
-						l_count.push(1)
-					}else{
-						//v_paths.push(vec![vec![[255,255,255]]]);
-						v_count.push(0);
-						//l_paths.push(vec![vec![[255,255,255]]]);
-						l_count.push(1);
-						let lng=v_paths.len()-1;
-						//l_paths[lng].push(temp_path.clone());
-						l_count[lng]+= 1;						
-					}
-				}else{
-					if goal(&x,ii,&y[y.len()-1],&all_groups)==true{
-						//v_paths[vvwhich(&trigs,temp_trig)[0]].push(temp_path);
-						v_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
-					}else{
-						//l_paths[vvwhich(&trigs,temp_trig)[0]].push(temp_path);
-						l_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
-					}
-				}
-			}else{};
-			light=light_m(lsum,lxsum.clone());
-		}
-	};
-	
-	//generate vectors of unique paths in order to count and assess. Currently commented out as unique paths are not used.
-	let trigs_l=trigs.len();
-	//let l_p_thread=thread::spawn(move||{
-	//	for i in 1..trigs_l{l_paths[i]=uniq_m(l_paths[i].clone())};
-	//		l_paths
-	//	});
-	//let v_p_thread=thread::spawn(move||{
-	//	for i in 1..trigs_l{v_paths[i]=uniq_m(v_paths[i].clone())};
-	//		v_paths
-	//	});
-	//l_paths=l_p_thread.join().expect("L-path crashed");
-	//v_paths=v_p_thread.join().expect("V-path crashed");
-
-
-	let mut l_v:Vec<f64>=Vec::new();
-	let mut l_v_by_count:Vec<f64> = Vec::new();
-	for i in 0..trigs_l{
-		l_v_by_count.push((l_count[i] as f64)/((v_count[i]+l_count[i]) as f64));
-		//if (v_paths[i].len()>0) & (l_paths[i].len()>0){ Path out.
-		//	let lp=l_paths[i].len() as f64;
-		//	let vp=v_paths[i].len() as f64;
-		//	l_v.push(lp/vp)			
-		//}else{
-		//	l_v.push(std::f64::MAX);
-		//}
-	};
-	
-	
-	//let all_paths_to_rome = v_paths.iter().fold(0,|acc,ref x| acc + x.len()); Path out.
-	let total_victories = v_count.iter().fold(0,|acc,x| acc + x);
-	let mut i_best_path:usize=0;    //Primary choice
-	let mut i_best_count:usize=0;   //Alternative choice
-	let mut best_act_pm:usize=1;	//Primary choice
-	let mut best_tar_pm:usize=255;	//Primary choice
-	let mut best_act_sec:usize=1;	//Secondary choices.
-	let mut best_tar_sec:usize=255;	//Secondary choice
-	println!("Paths to rome = {}",
-	                              //all_paths_to_rome,
-	                              total_victories);
-	
-	if total_victories<1 {
-		println!("Survival strategy failed. Herp (all_paths = {}). Derp (v_paths = {})",
-																						total_victories,
-																						//all_paths_to_rome,
-																						v_paths.len());
-		
-		println!("Got A");
-		for y in lore.iter(){        //Make chosen_battles battles list.  ((lsum-7)<=xlsum) & (xlsum<=(lsum+7)) &
-			let mut xlsum:i32=0;
+			//temp_pather.remove(0);
+			//temp_pather.remove(0);
+			let mut lxsum:i32=0;
 			for i in 3..y.len(){
-				//Insert xlsum and orders script here.
-				//NB this is a modified permissive script.
-				if (y[i][4]==ii8) & (y[i][6+ii]==now[6+ii]){				
-					chosen_battles.push(y);
-					chosen_stats.push((y[i][2],y[i][3],all_groups[ii]));
-					if goal(&x,ii,&y[y.len()-1],&all_groups) {vict_c_battles.push(y)}else{};
-				}else{}
+	//			let mut orders:Vec<(u8,u8)>=Vec::new();
+	//			if i>3{
+	//				for j in permit_a(i-1)..(i){orders.push((y[j][4],0))}
+	//			}else{orders=vec![(0,0)]};
+	//			let orders_fulfilled=order_matcher(&orders,&order);
+				//temp_pather.remove(0);
+	//			let now_m=state_matcher(&now,&y[i],cms,2);
+				lxsum+=(y[i][5] as i32)-128;
+				let mut light=true;
+				if (y[i][4]==ii8) & (now[6..28]==y[i][6..28]) & (y[i][2]!=0) & (i>=turn) & light {					//Condition.
+					let temp_trig:[u8;3]=[y[i][2],y[i][3],y[i][4]];
+					let j=i+1;
+					//let mut temp_path=temp_pather.clone();
+					if lhas(&trigs,&temp_trig)==false{			//branch
+						trigs.push(temp_trig);
+						if goal(&x,ii,&y[y.len()-1],&all_groups) {
+							//v_paths.push(vec![vec![[255,255,255]]]);
+							v_count.push(0);
+							let lng=v_paths.len()-1;
+							//v_paths[lng].push(temp_path.clone());
+							v_count[lng]+= 1;
+							//l_paths.push(vec![vec![[255,255,255]]]);
+							l_count.push(1)
+						}else{
+							//v_paths.push(vec![vec![[255,255,255]]]);
+							v_count.push(0);
+							//l_paths.push(vec![vec![[255,255,255]]]);
+							l_count.push(1);
+							let lng=v_paths.len()-1;
+							//l_paths[lng].push(temp_path.clone());
+							l_count[lng]+= 1;						
+						}
+					}else{
+						if goal(&x,ii,&y[y.len()-1],&all_groups) {
+							//v_paths[vvwhich(&trigs,temp_trig)[0]].push(temp_path);
+							v_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
+						}else{
+							//l_paths[vvwhich(&trigs,temp_trig)[0]].push(temp_path);
+							l_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
+						}
+					}
+				}else{};
+				light=light_m(lsum,lxsum.clone());
+			}
+		};
+		
+		//generate vectors of unique paths in order to count and assess. Currently commented out as unique paths are not used.
+		let trigs_l=trigs.len();
+		//let l_p_thread=thread::spawn(move||{
+		//	for i in 1..trigs_l{l_paths[i]=uniq_m(l_paths[i].clone())};
+		//		l_paths
+		//	});
+		//let v_p_thread=thread::spawn(move||{
+		//	for i in 1..trigs_l{v_paths[i]=uniq_m(v_paths[i].clone())};
+		//		v_paths
+		//	});
+		//l_paths=l_p_thread.join().expect("L-path crashed");
+		//v_paths=v_p_thread.join().expect("V-path crashed");
+
+
+		let mut l_v:Vec<f64>=Vec::new();
+		let mut l_v_by_count:Vec<f64> = Vec::new();
+		for i in 0..trigs_l{
+			l_v_by_count.push((l_count[i] as f64)/((v_count[i]+l_count[i]) as f64));
+			//if (v_paths[i].len()>0) & (l_paths[i].len()>0){ Path out.
+			//	let lp=l_paths[i].len() as f64;
+			//	let vp=v_paths[i].len() as f64;
+			//	l_v.push(lp/vp)			
+			//}else{
+			//	l_v.push(std::f64::MAX);
+			//}
+		};
+		
+		
+		//let all_paths_to_rome = v_paths.iter().fold(0,|acc,ref x| acc + x.len()); Path out.
+		let total_victories = v_count.iter().fold(0,|acc,x| acc + x);
+		let mut i_best_path:usize=0;    //Primary choice
+		let mut i_best_count:usize=0;   //Alternative choice
+		
+		let mut best_act_sec:usize=1;	//Secondary choices.
+		let mut best_tar_sec:usize=255;	//Secondary choice
+		println!("Paths to rome = {}",
+									  //all_paths_to_rome,
+									  total_victories);
+		
+		if total_victories<1 {
+			println!("Survival strategy failed. Herp (all_paths = {}). Derp (v_paths = {})",
+																							total_victories,
+																							//all_paths_to_rome,
+																							v_paths.len());
+			
+			println!("Got A");
+			for number in 0..lore.len(){        //Make chosen_battles battles list.  ((lsum-7)<=xlsum) & (xlsum<=(lsum+7)) &
+				let mut xlsum:i32=0;
+				for i in 3..lore[number].len(){
+					//Insert xlsum and orders script here.
+					//NB this is a modified permissive script.
+					if (lore[number][i][4]==ii8) & (lore[number][i][6+ii]==now[6+ii]){				
+						chosen_battles.push(&lore[number]);
+						chosen_stats.push((lore[number][i][2],lore[number][i][3],all_groups[ii]));
+						if goal(&x,ii,&lore[number][lore[number].len()-1],&all_groups) {vict_c_battles.push(&lore[number])}else{};
+					}else{}
+				};
 			};
-		};
-		println!("Got B");
+			println!("Got B");
 
-//		for y in chosen_battles.iter(){
-//			let mut temp_index=Vec::new();		
-//			for z in y.iter().rev(){	
-//				temp_index.push(z[4]);
-//				if z[4]==ii8{	
-//					if lhas(&temp_index,&ii8)==true{
-//						last_c_stat.push([z[2],z[3],z[6+ii],now[6+(z[3] as usize)]]);
-//						break
-//					}else{}
-//				}else{};
-//			}
-//		};
+	//		for y in chosen_battles.iter(){
+	//			let mut temp_index=Vec::new();		
+	//			for z in y.iter().rev(){	
+	//				temp_index.push(z[4]);
+	//				if z[4]==ii8{	
+	//					if lhas(&temp_index,&ii8)==true{
+	//						last_c_stat.push([z[2],z[3],z[6+ii],now[6+(z[3] as usize)]]);
+	//						break
+	//					}else{}
+	//				}else{};
+	//			}
+	//		};
 
-		for y in chosen_battles.iter(){
-			let y_l=y.len()-1;
-			if y[y_l][4]==ii8{
-				last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
-			}else{};
-		};
-		println!("Got C");
-//		for y in vict_c_battles.iter(){
-//			let mut temp_index=Vec::new();
-//			let mut lasty=y[y.len()-1];
-//			for z in y.iter().rev(){	
-//				temp_index.push(z[4]);
-//				if z[4]==ii8{	
-//					if lhas(&temp_index,&ii8)==true{
-//						last_v_stat.push([z[2],z[3],z[6+ii],now[6+(z[3] as usize)]]);
-//						break
-//					}else{}
-//				}else{};
-//			}
-//		};
-
-		let mut lv_effects:Vec<[i16;23]>=Vec::new();
-		if vict_c_battles.len()>0{
-			for y in vict_c_battles.iter(){
+			for y in chosen_battles.iter(){
 				let y_l=y.len()-1;
-				let mut temp_sub:[i16;23]=[0;23];
-				for i in 0..23{temp_sub[i]=(now[5+i] as i16)-(y[y_l][5+i] as i16)};
-				lv_effects.push(temp_sub);
 				if y[y_l][4]==ii8{
 					last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
 				}else{};
 			};
-			lv_effects.remove(0);
-			println!("Got D");
-			let mut uniq_cl_stat=uniq(last_c_stat.clone());
-			let mut last_index=vec!([1,255,5,5]);
-			println!("Got Da");
-			for y in uniq_cl_stat.into_iter(){
-				if (y[2]==0)||(y[3]==0){}else{last_index.push(y)}
-			};
-			println!("Got Db");
-			let l_c_count:Vec<f64>=vcount(&last_index,&last_c_stat);
-			let l_v_count:Vec<f64>=vcount(&last_index,&last_v_stat);
-			println!("Got Dc");
-			let last_ratios:Vec<f64>=vf64ratio(&l_v_count,&l_c_count);
-			println!("Got DcII");
-			let salvation=last_index[vnmaxi(&last_ratios)];
-			println!("Got Dd");
-			best_act_pm=salvation[0] as usize;
-			best_tar_pm=salvation[1] as usize;
-	
-			println!("Last ratios len: {}", last_ratios.len());
-			println!("Last valid actions len: {}",last_index.len())
-		}else{
-			println!("No victories detected.");
-			best_act_pm=1;
-			best_tar_pm=255;
-		};
-		   //SCOPING OUT
-		  //SCOPING OUT
-		 //SCOPING OUT
-		//SCOPING OUT 
-		let not_now=true;
-		if not_now {
-		for x in lore.iter(){
-			let mut temp_d_battle:Vec<[i16;28]>=Vec::new();
-			if x.len()>2{
-				for i in 4..x.len(){
-					temp_d_battle.push([x[i-1][0] as i16,
-								    x[i-1][1] as i16,
-								    x[i-1][2] as i16,
-								    x[i-1][3] as i16,
-								    x[i-1][4] as i16,
-								    (x[i-1][5] as i16)-x[i][5] as i16,
-								    (x[i-1][6] as i16)-x[i][6] as i16,
-								    (x[i-1][7] as i16)-x[i][7] as i16,
-								    (x[i-1][8] as i16)-x[i][8] as i16,
-								    (x[i-1][9] as i16)-x[i][9] as i16,
-								    (x[i-1][10] as i16)-x[i][10] as i16,
-								    (x[i-1][11] as i16)-x[i][11] as i16,
-								    (x[i-1][12] as i16)-x[i][12] as i16,
-								    (x[i-1][13] as i16)-x[i][13] as i16,
-								    (x[i-1][14] as i16)-x[i][14] as i16,
-								    (x[i-1][15] as i16)-x[i][15] as i16,
-								    (x[i-1][16] as i16)-x[i][16] as i16,
-								    (x[i-1][17] as i16)-x[i][17] as i16,
-								    (x[i-1][18] as i16)-x[i][18] as i16,
-								    (x[i-1][19] as i16)-x[i][19] as i16,
-								    (x[i-1][20] as i16)-x[i][20] as i16,
-								    (x[i-1][21] as i16)-x[i][21] as i16,
-								    (x[i-1][22] as i16)-x[i][22] as i16,
-								    (x[i-1][23] as i16)-x[i][23] as i16,
-								    (x[i-1][24] as i16)-x[i][24] as i16,
-								    (x[i-1][25] as i16)-x[i][25] as i16,
-								    (x[i-1][26] as i16)-x[i][26] as i16,
-								    (x[i-1][27] as i16)-x[i][27] as i16]);
-					if x[i][4]==ii8{
-						act_consequences.push([ x[i-1][2] as i16,
-					    					x[i-1][3] as i16,
-											x[i-1][4] as i16,
-											(x[i-1][5] as i16)-x[i][5] as i16,
-											(x[i-1][6] as i16)-x[i][6] as i16,
-											(x[i-1][7] as i16)-x[i][7] as i16,
-											(x[i-1][8] as i16)-x[i][8] as i16,
-											(x[i-1][9] as i16)-x[i][9] as i16,
-											(x[i-1][10] as i16)-x[i][10] as i16,
-											(x[i-1][11] as i16)-x[i][11] as i16,
-											(x[i-1][12] as i16)-x[i][12] as i16,
-											(x[i-1][13] as i16)-x[i][13] as i16,
-											(x[i-1][14] as i16)-x[i][14] as i16,
-											(x[i-1][15] as i16)-x[i][15] as i16,
-											(x[i-1][16] as i16)-x[i][16] as i16,
-											(x[i-1][17] as i16)-x[i][17] as i16,
-											(x[i-1][18] as i16)-x[i][18] as i16,
-											(x[i-1][19] as i16)-x[i][19] as i16,
-											(x[i-1][20] as i16)-x[i][20] as i16,
-											(x[i-1][21] as i16)-x[i][21] as i16,
-											(x[i-1][22] as i16)-x[i][22] as i16,
-											(x[i-1][23] as i16)-x[i][23] as i16,
-											(x[i-1][24] as i16)-x[i][24] as i16,
-											(x[i-1][25] as i16)-x[i][25] as i16,
-											(x[i-1][26] as i16)-x[i][26] as i16,
-											(x[i-1][27] as i16)-x[i][27] as i16])
-					}else{}	
-				}
-			}else{};
-			d_battles.push(temp_d_battle)
-		};
-		println!("Delta(battles): {}\nact_consequences: {}",d_battles.len(),act_consequences.len());
-		let mut cause_effect:(Vec<[i16;3]>,Vec<Vec<[i16;23]>>)=(Vec::new(),Vec::new());
-		let mut temp_b=[0;23];	
-		let temp_a=[act_consequences[0][0],act_consequences[0][1],act_consequences[0][2]];
-		for i in 3..26{temp_b[i-3]=act_consequences[0][i]};	
-		cause_effect.0.push(temp_a);
-		cause_effect.1.push(vec!(temp_b));
-			
-		for x in act_consequences.iter(){		
-			let mut temp_b=[0;23];	
-			let temp_a=[x[0],x[1],x[2]];
-			for i in 3..26{temp_b[i-3]=x[i]};
-			if lhas(&cause_effect.0,&temp_a)==true{			
-				cause_effect.1[vvwhich(&cause_effect.0,temp_a)[0]].push(temp_b)
+			println!("Got C");
+	//		for y in vict_c_battles.iter(){
+	//			let mut temp_index=Vec::new();
+	//			let mut lasty=y[y.len()-1];
+	//			for z in y.iter().rev(){	
+	//				temp_index.push(z[4]);
+	//				if z[4]==ii8{	
+	//					if lhas(&temp_index,&ii8)==true{
+	//						last_v_stat.push([z[2],z[3],z[6+ii],now[6+(z[3] as usize)]]);
+	//						break
+	//					}else{}
+	//				}else{};
+	//			}
+	//		};
+
+			let mut lv_effects:Vec<[i16;23]>=Vec::new();
+			if vict_c_battles.len()>0{
+				for y in vict_c_battles.iter(){
+					let y_l=y.len()-1;
+					let mut temp_sub:[i16;23]=[0;23];
+					for i in 0..23{temp_sub[i]=(now[5+i] as i16)-(y[y_l][5+i] as i16)};
+					lv_effects.push(temp_sub);
+					if y[y_l][4]==ii8{
+						last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
+					}else{};
+				};
+				lv_effects.remove(0);
+				println!("Got D");
+				let mut uniq_cl_stat=uniq(&last_c_stat);
+				let mut last_index=vec!([1,255,5,5]);
+				println!("Got Da");
+				for y in uniq_cl_stat.into_iter(){
+					if (y[2]==0)||(y[3]==0){}else{last_index.push(y)}
+				};
+				println!("Got Db");
+				let l_c_count:Vec<f64>=vcount(&last_index,&last_c_stat);
+				let l_v_count:Vec<f64>=vcount(&last_index,&last_v_stat);
+				println!("Got Dc");
+				let last_ratios:Vec<f64>=vf64ratio(&l_v_count,&l_c_count);
+				println!("Got DcII");
+				let salvation=last_index[vnmaxi(&last_ratios)];
+				println!("Got Dd");
+				best_act_pm=salvation[0] as usize;
+				best_tar_pm=salvation[1] as usize;
+		
+				println!("Last ratios len: {}", last_ratios.len());
+				println!("Last valid actions len: {}",last_index.len())
 			}else{
-				cause_effect.0.push(temp_a);
-				cause_effect.1.push(vec!(temp_b))
-			}
-		};
-		std::mem::drop(act_consequences);
-		
-		let mut cause_meffect:(Vec<[i16;3]>,Vec<[i16;23]>)=(Vec::new(),Vec::new());
-		for i in 0..cause_effect.0.len(){
-			cause_meffect.0.push(cause_effect.0[i]);
-			cause_meffect.1.push(vmode(&cause_effect.1[i]))		
-		};
-		println!("Causes length:{}\nEffects length:{}",cause_effect.0.len(),cause_effect.1.len());
-		println!("Cause[1]: {:?}\nMode Effect[1]:{:?}",cause_meffect.0[0],cause_meffect.1[0]);
-		std::mem::drop(cause_effect);
-		println!("lv_effects.len()=={}",lv_effects.len());
-		
-		//give up if you're going to crash.
-		if lv_effects.len()==0 {
-			println!("lv_effects.len()==0, so we're giving up and doing things the dumb way. Herp derp.");
-			return (255,255);
-		};
-		let (good,bad):([i16;23],[f64;23])=essential_n(lv_effects);
-		println!("Good: {:?}\n Bad: {:?}",good,bad);
-		let to_good=rms23(good,now);
-		let to_bad=rms23_special(bad,now);
-		println!("Good: {:?}\n Bad: {:?}",to_good,to_bad);
-		
-		
-		
-		
-		//println!("Causes:\n{:?}",cause_effect.0);
-		}; //SCOPING OUT OVER
-		  //SCOPING OUT OVER
-		 //SCOPING OUT OVER
-		//SCOPING OUT OVER
-		
+				println!("No victories detected.");
+				best_act_pm=1;
+				best_tar_pm=255;
+			};
+			   //SCOPING OUT
+			  //SCOPING OUT
+			 //SCOPING OUT
+			//SCOPING OUT 
+			//Experimental Engine for telling causes and consequences.
+			let not_now = false;
+			if not_now {
+			//This needs to be shifted out of this function and into the main function.
+			for x in lore.iter(){
+				let mut temp_d_battle:Vec<[i16;28]>=Vec::new();
+				if x.len()>2{
+					for i in 4..x.len(){
+						temp_d_battle.push([x[i-1][0] as i16,
+										x[i-1][1] as i16,
+										x[i-1][2] as i16,
+										x[i-1][3] as i16,
+										x[i-1][4] as i16,
+										(x[i-1][5] as i16)-x[i][5] as i16,
+										(x[i-1][6] as i16)-x[i][6] as i16,
+										(x[i-1][7] as i16)-x[i][7] as i16,
+										(x[i-1][8] as i16)-x[i][8] as i16,
+										(x[i-1][9] as i16)-x[i][9] as i16,
+										(x[i-1][10] as i16)-x[i][10] as i16,
+										(x[i-1][11] as i16)-x[i][11] as i16,
+										(x[i-1][12] as i16)-x[i][12] as i16,
+										(x[i-1][13] as i16)-x[i][13] as i16,
+										(x[i-1][14] as i16)-x[i][14] as i16,
+										(x[i-1][15] as i16)-x[i][15] as i16,
+										(x[i-1][16] as i16)-x[i][16] as i16,
+										(x[i-1][17] as i16)-x[i][17] as i16,
+										(x[i-1][18] as i16)-x[i][18] as i16,
+										(x[i-1][19] as i16)-x[i][19] as i16,
+										(x[i-1][20] as i16)-x[i][20] as i16,
+										(x[i-1][21] as i16)-x[i][21] as i16,
+										(x[i-1][22] as i16)-x[i][22] as i16,
+										(x[i-1][23] as i16)-x[i][23] as i16,
+										(x[i-1][24] as i16)-x[i][24] as i16,
+										(x[i-1][25] as i16)-x[i][25] as i16,
+										(x[i-1][26] as i16)-x[i][26] as i16,
+										(x[i-1][27] as i16)-x[i][27] as i16]);
+						if x[i][4]==ii8{
+							act_consequences.push([ x[i-1][2] as i16,
+												x[i-1][3] as i16,
+												x[i-1][4] as i16,
+												(x[i-1][5] as i16)-x[i][5] as i16,
+												(x[i-1][6] as i16)-x[i][6] as i16,
+												(x[i-1][7] as i16)-x[i][7] as i16,
+												(x[i-1][8] as i16)-x[i][8] as i16,
+												(x[i-1][9] as i16)-x[i][9] as i16,
+												(x[i-1][10] as i16)-x[i][10] as i16,
+												(x[i-1][11] as i16)-x[i][11] as i16,
+												(x[i-1][12] as i16)-x[i][12] as i16,
+												(x[i-1][13] as i16)-x[i][13] as i16,
+												(x[i-1][14] as i16)-x[i][14] as i16,
+												(x[i-1][15] as i16)-x[i][15] as i16,
+												(x[i-1][16] as i16)-x[i][16] as i16,
+												(x[i-1][17] as i16)-x[i][17] as i16,
+												(x[i-1][18] as i16)-x[i][18] as i16,
+												(x[i-1][19] as i16)-x[i][19] as i16,
+												(x[i-1][20] as i16)-x[i][20] as i16,
+												(x[i-1][21] as i16)-x[i][21] as i16,
+												(x[i-1][22] as i16)-x[i][22] as i16,
+												(x[i-1][23] as i16)-x[i][23] as i16,
+												(x[i-1][24] as i16)-x[i][24] as i16,
+												(x[i-1][25] as i16)-x[i][25] as i16,
+												(x[i-1][26] as i16)-x[i][26] as i16,
+												(x[i-1][27] as i16)-x[i][27] as i16])
+						}else{}	
+					}
+				}else{};
+				d_battles.push(temp_d_battle)
+			};
+			println!("Delta(battles): {}\nact_consequences: {}",d_battles.len(),act_consequences.len());
+			let mut cause_effect:(Vec<[i16;3]>,Vec<Vec<[i16;23]>>)=(Vec::new(),Vec::new());
+			let mut temp_b=[0;23];	
+			let temp_a=[act_consequences[0][0],act_consequences[0][1],act_consequences[0][2]];
+			for i in 3..26{temp_b[i-3]=act_consequences[0][i]};	
+			cause_effect.0.push(temp_a);
+			cause_effect.1.push(vec!(temp_b));
 				
-	}else{
-		//i_best_path = vnmini(&l_v);
-		i_best_count = vnmini(&l_v_by_count);
-		best_act_pm = trigs[i_best_count][0] as usize;
-		best_tar_pm = trigs[i_best_count][1] as usize;
-	};
-	//println!("Herp Derp's i_best_path = {}",i_best_path);
-	//println!("Min L/V (path) = {} (number {})",l_v[vnmini(&l_v)],vnmini(&l_v));
-	println!("Min L/V (count)= {} (number {})",l_v_by_count[vnmini(&l_v_by_count)],vnmini(&l_v_by_count));
-	if l_v_by_count[vnmaxi(&l_v_by_count)]==0.0 {
-		println!("By count method has failed us. Going by unique paths.");
-		best_act_pm = trigs[i_best_path][0] as usize;
-		best_tar_pm = trigs[i_best_path][1] as usize;
-	};
-	//println!("got D");
-	let t1=PreciseTime::now();	
-	//println!("L-paths length: {}\nV-paths length:{}\n",l_paths.len(),v_paths.len());
-	//println!("L-paths[1] length: {}\nV-paths[1] length:{}",l_paths[0].len(),v_paths[0].len());
-	for i in 0..trigs.len(){println!("{}.) Trigs: {:?}, Ratio(paths,counts): ({})",
-																					 i,
-																					 &trigs[i],
-																					 //&l_v[i],
-																					 &l_v_by_count[i])};    
-	if best_tar_pm<x.len(){
-		println!("Best target: {} aka {} from group {}",best_tar_pm,x[best_tar_pm].0.name,x[best_tar_pm].1) 
-	}else{
-		println!("Survival strategy failure. Herp derp.")
-	};
+			for x in act_consequences.iter(){		
+				let mut temp_b=[0;23];	
+				let temp_a=[x[0],x[1],x[2]];
+				for i in 3..26{temp_b[i-3]=x[i]};
+				if lhas(&cause_effect.0,&temp_a) {			
+					cause_effect.1[vvwhich(&cause_effect.0,temp_a)[0]].push(temp_b)
+				}else{
+					cause_effect.0.push(temp_a);
+					cause_effect.1.push(vec!(temp_b))
+				}
+			};
+			std::mem::drop(act_consequences);
+			
+			let mut cause_meffect:(Vec<[i16;3]>,Vec<[i16;23]>)=(Vec::new(),Vec::new());
+			for i in 0..cause_effect.0.len(){
+				cause_meffect.0.push(cause_effect.0[i]);
+				cause_meffect.1.push(vmode(&cause_effect.1[i]))		
+			};
+			println!("Causes length:{}\nEffects length:{}",cause_effect.0.len(),cause_effect.1.len());
+			println!("Cause[1]: {:?}\nMode Effect[1]:{:?}",cause_meffect.0[0],cause_meffect.1[0]);
+			std::mem::drop(cause_effect);
+			println!("lv_effects.len()=={}",lv_effects.len());
+			
+			//give up if you're going to crash.
+			if lv_effects.len()==0 {
+				println!("lv_effects.len()==0, so we're giving up and doing things the dumb way. Herp derp.");
+				std::mem::drop(chosen_battles);
+				 best_act_pm = 255;
+				 best_tar_pm = 255;
+			}else{
+				let (good,bad):([i16;23],[f64;23])=essential_n(lv_effects);
+				println!("Good: {:?}\n Bad: {:?}",good,bad);
+				let to_good=rms23(good,now);
+				let to_bad=rms23_special(bad,now);
+				println!("Good: {:?}\n Bad: {:?}",to_good,to_bad);
+			};
+			
+			
+			
+			//println!("Causes:\n{:?}",cause_effect.0);
+			}; //SCOPING OUT OVER
+			  //SCOPING OUT OVER
+			 //SCOPING OUT OVER
+			//SCOPING OUT OVER
+			
+					
+		}else{
+			//i_best_path = vnmini(&l_v);
+			i_best_count = vnmini(&l_v_by_count);
+			best_act_pm = trigs[i_best_count][0] as usize;
+			best_tar_pm = trigs[i_best_count][1] as usize;
+		};
+		//println!("Herp Derp's i_best_path = {}",i_best_path);
+		//println!("Min L/V (path) = {} (number {})",l_v[vnmini(&l_v)],vnmini(&l_v));
+		
+		if best_tar_pm != 255 {
+			println!("Min L/V (count)= {} (number {})",l_v_by_count[vnmini(&l_v_by_count)],vnmini(&l_v_by_count));
+			if l_v_by_count[vnmaxi(&l_v_by_count)]==0.0 {
+				println!("By count method has failed us. Going by unique paths.");
+				best_act_pm = trigs[i_best_path][0] as usize;
+				best_tar_pm = trigs[i_best_path][1] as usize;
+			};
+			//println!("got D");
+			
+			//println!("L-paths length: {}\nV-paths length:{}\n",l_paths.len(),v_paths.len());
+			//println!("L-paths[1] length: {}\nV-paths[1] length:{}",l_paths[0].len(),v_paths[0].len());
+			for i in 0..trigs.len(){println!("{}.) Trigs: {:?}, Ratio(paths,counts): ({})",
+																							 i,
+																							 &trigs[i],
+																							 //&l_v[i],
+																							 &l_v_by_count[i])};    
+			if best_tar_pm<x.len(){
+				println!("Best target: {} aka {} from group {}",best_tar_pm,x[best_tar_pm].0.name,x[best_tar_pm].1) 
+			}else{
+				println!("Survival strategy failure. Herp derp.")
+			};
+		};
+	};	
 	println!("Best action: {}",best_act_pm);                                 
-	
+	let t1=PreciseTime::now();	
 	println!("Thinking time: {}",t0.to(t1));		                         
-	//panic!("I want to pause here. FOREVER.");	                             
-				
-	(best_act_pm,best_tar_pm)                             //returns best action and best target.
+	//panic!("I want to pause here. FOREVER.");			
+	(best_act_pm,best_tar_pm,lore)                             //returns best action and best target.
 }
 
 //The winning team from the winning team's perspective;
@@ -704,13 +714,13 @@ let state:u8=
 state
 }
 
-fn uniq<T:Copy + PartialOrd>(mvec:Vec<T>)->Vec<T>{
+fn uniq<T:Copy + PartialOrd>(mvec:&Vec<T>)->Vec<T>{
 	let mut uniq:Vec<T>=Vec::new();
-	for x in mvec.into_iter(){
+	for x in mvec.iter(){
 		if uniq.len()==0{
-			uniq.push(x)
-		}else if lhas(&uniq,&x)==false{
-			uniq.push(x)
+			uniq.push(*x)
+		}else if lhas(&uniq,x)==false{
+			uniq.push(*x)
 		}else{};
 	};
 	uniq
@@ -845,7 +855,7 @@ fn light_m(now_l:i32,observed_l:i32)->bool{
 }
 
 fn vmode<T:PartialOrd+Copy> (data:&Vec<T>)->T{
-	let uniq_t=uniq(data.to_vec());
+	let uniq_t=uniq(data);
 	let count_t=vcount(&uniq_t,&data);
 	let index=vnmaxi(&count_t);
 	uniq_t[index]

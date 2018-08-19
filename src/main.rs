@@ -131,6 +131,7 @@ mod cmoose;
 #[allow(unused_must_use)]
 #[allow(dead_code)]
 pub fn main() {
+	println!("A");
 	const WIDTH: u32 = 1080;
 	const HEIGHT: u32 = 800;
 	const MIN_W: u32 = 640;
@@ -138,17 +139,17 @@ pub fn main() {
 	const SHAKE_DURATION:usize = 20;
 	
 	//Initiation of most flow control variables.
-	
+
 	// A kind of timer to time frames. freeze_timer is used to compare.
 	// And background colour.
 	let mut timer:usize = 0;
 	let mut freeze_timer:usize = 0;
-	
+
 	//Initiate new option controller.
 	// (silence, update backgrounds, brightness, and music paths.)
 	let mut wo = FlowCWin::new();
 	let mut ipath:Option<(usize,String)> = None;
-	
+
 	//Variable to determine if extra buttons for character creation are visible or not.
 	let mut mutm_box_vis = false;
 	let mut new_game_init = false; //Is a game in progress.
@@ -201,43 +202,44 @@ pub fn main() {
 	let (mut muse_silence_sender,mut muse_silence_receiver) = std::sync::mpsc::sync_channel(1);
 						
 	let mut player_input:String = "Input into me.".to_owned();
-	println!("got A");
+	println!("B");
 	// Build the window.
 	// NB, it may be better to use .with_fullscreen(true)
+	//Next line crashes for no reason.
 	let mut events_loop = glium::glutin::EventsLoop::new();
-	println!("got B");
+	println!("events_loop built");
 	let mut window = glium::glutin::WindowBuilder::new()
 					  .with_title("TGWM")
 					  .with_dimensions(WIDTH, HEIGHT)
 					  .with_min_dimensions(MIN_W,MIN_H)
 					  .with_visibility(true);
-	println!("got C");
+	println!("window build");
 	let context = glium::glutin::ContextBuilder::new()
 					   .with_vsync(true)
 					   .with_multisampling(4);
-	println!("got D");
+	println!("context built");
 	let mut display = glium::Display::new(window, context, &events_loop).unwrap();
-	println!("got E");
+	println!("display initialised");
 	// construct our `Ui`.
 	let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
-	println!("got F");
+	println!("ui built");
 	// The image map describing each of our widget->image mappings (in our case, none).
 	let mut image_map = conrod::image::Map
 	//::<glium::texture::Texture2d>
 	::new();
-	println!("got F");
+	
 	// Instantiate the generated list of widget identifiers.
 	let ids = &mut gmoose::Ids::new(ui.widget_id_generator());
-	println!("got G");
+	
 	// Add a `Font` to the `Ui`'s `font::Map` from file.
 	let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("as").unwrap();
 	let font_path = assets.join("NotoSans/NotoSans-Regular.ttf");
 	ui.fonts.insert_from_file(font_path).unwrap();
-	println!("gotG");
+	
 	// A type used for converting `conrod::render::Primitives` into `Command`s that can be used
 	// for drawing to the glium `Surface`.
 	let mut renderer = Renderer::new(&display).unwrap();
-	println!("got H");
+	
 	//preliminary draw
 	{
 		let primitives = ui.draw();
@@ -247,7 +249,7 @@ pub fn main() {
 		renderer.draw(&mut display, &mut target, &mut image_map,1.0,1.0).unwrap();
 		target.finish().unwrap();
 	}
-	println!("got I");
+	
 	// Load images for monsters. NB must be loaded into the vector of images in the order of monster ids (see lmoose)
 	// NB currently not generic over monster numbers. Perhaps do after world tree. 
 	let mut mons_faces: Vec<[conrod::image::Id;3]> = Vec::with_capacity(27);
@@ -888,14 +890,14 @@ pub fn main() {
 				}else{
 					if (encounter[battle_ifast].1!=0) & !pause {	
 						//Computer turn.	
-						gmoose::ai_battle_turn(&mut encounter,&mut enc_names,
+						lore = gmoose::ai_battle_turn(&mut encounter,&mut enc_names,
 										if (dungeon_pointer<2) | idungeon.is_none() {
 											&mut p_loc
 										}else{
 											&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
 										},
 										&sp_list,
-										&mut lore,cms,
+										lore,cms,
 										&mut battle_fast,
 										&mut battle_ifast,
 										&mut battle_ttakes,

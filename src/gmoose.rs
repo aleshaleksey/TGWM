@@ -72,8 +72,9 @@ use std;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use conrod::widget::BorderedRectangle;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxH,SpellBoxD};
-#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI};
+#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,
+									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno};
+#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI,CastS,CastR,CastInferno};
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -105,6 +106,7 @@ const BORDER:f64 = 3.0;
 const BORDER_COLOUR:color::Colour = Color::Rgba(237.0/255.0, 212.0/255.0, 0.0, 128.0/255.0);
 const BACKGR_COLOUR:color::Colour = color::BLACK;
 const BUTTON_COLOUR:color::Colour = color::DARK_RED;
+const HOLY_COLOUR:color::Colour = Color::Rgba(255.0/255.0,222.2/255.0,222.2/255.0,200.0/255.0);
 const SLIDE_H:f64 = 20.0;
 const AI_MEM_MIN:f64 = 10_000_000.0;
 const AI_MEM_MAX:f64 = 32_000_000_000.0;
@@ -479,6 +481,7 @@ fn sprite_approach (sprite_box:&SpriteBox)-> [f64;2] {
 //and to set the sprite to vibrate if the attack actually hits.
 fn sprite_box_dec_marker(){}
 fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
+						 wo:&mut FlowCWin,
 						 timer:usize,
 						 shake_timer:&mut usize,
 						 shake_damage:&mut [bool;25]) {
@@ -553,6 +556,27 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 					};
 				};
 		},
+		CastS(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
+		CastR(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					nullify = true;
+					wo.bgc+= x.lightness;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
 		_ => {},
 	};			
 	
@@ -565,7 +589,8 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 
 //Function to sill graphics box in accourdance with spell type.
 fn sprite_box_filler_marker(){}
-fn sprite_box_filler(magic_type:u8,gx_box:&mut GraphicsBox,
+fn sprite_box_filler(magic:&Spell,
+					 gx_box:&mut GraphicsBox,
 					 caster:&(Lifeform,usize,[std::option::Option<[usize; 2]>;2]),
 					 bifast:usize,
 					 to_hit:&Vec<(bool,bool)>,
@@ -575,7 +600,7 @@ fn sprite_box_filler(magic_type:u8,gx_box:&mut GraphicsBox,
 						 
 	spell_targets_to_indices(to_hit,targets);
 	
-	match magic_type {
+	match magic.Type {
 		LIGHTNING => {
 			*gx_box = GraphicsBox::CastL
 			(
@@ -637,6 +662,34 @@ fn sprite_box_filler(magic_type:u8,gx_box:&mut GraphicsBox,
 					 bifast,
 					 targets,
 					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		HOLY => {
+			*gx_box = GraphicsBox::CastS
+			(
+				SpellBoxS::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone()
+				)
+			);
+		},
+		RADIANT => {
+			*gx_box = GraphicsBox::CastR
+			(
+				SpellBoxR::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 magic.Light,
+					 magic.Illumination,
 					 (*shaking_dam).clone()
 				)
 			);
@@ -1022,7 +1075,7 @@ fn set_fire(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				
 				thing.rel_x = sprite_pos[sbf.targets[i]][0];
 				thing.rel_y = sprite_pos[sbf.targets[i]][1];
-				let size = 20.0+4.0*((sbf.turns_after%FPSU) as f64);
+				let size = 20.0+5.0*((sbf.turns_after%FPSU) as f64);
 				thing.w = size;
 				thing.h = size;
 				
@@ -1100,7 +1153,7 @@ fn set_ice(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				
 				thing.rel_x = sprite_pos[sbi.targets[i]][0];
 				thing.rel_y = sprite_pos[sbi.targets[i]][1];
-				let size = 20.0+2.0*(((sbi.turns_after+i)%12) as f64);
+				let size = 12.0+5.0*(((sbi.turns_after+i)%12) as f64);
 				thing.w = size;
 				thing.h = size;
 				
@@ -1166,6 +1219,7 @@ fn set_death(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 }
 
 //Set healing effects..
+fn set_heal_marker(){}
 fn set_heal(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				 sbh:&mut SpellBoxH,
 				 sprite_pos: &mut [[f64;2];25]) {
@@ -1175,7 +1229,7 @@ fn set_heal(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							  //.wh_of(ids.middle_column)
 							  .wh([5.0*100.0,5.0*100.0])
 							  .xy([0.0;2])
-							  .set(ids.death_matrix, ui);
+							  .set(ids.healing_matrix, ui);
 	
 	if (sbh.turns_to_go>0) & (sbh.turns_to_go%7 != 0) {
 		for i in 0..sbh.targets.len() {
@@ -1197,6 +1251,79 @@ fn set_heal(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	};
 }
 
+//Set SFX for holy spells.
+fn set_holy_marker(){}
+fn set_holy(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbh:&mut SpellBoxS,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbh.caster_indx];
+	let mut holy_matrix = widget::Matrix::new(5,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.holy_matrix, ui);
+	
+	if (sbh.turns_to_go>0) & (sbh.turns_to_go%7 != 0) {
+		for i in 0..sbh.targets.len() {
+			//extend lightning path for each target.
+			if let Some(mut thing) = holy_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbh.targets[i]][0];
+				thing.rel_y = sprite_pos[sbh.targets[i]][1];
+				let size = (sbh.turns_to_go as f64)*3.0;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				let points = poly_star(size,&sprite_pos[sbh.targets[i]]);
+				
+				let mut star = widget::Polygon::abs_outline(points)
+									 .color(HOLY_COLOUR);
+					
+				thing.set(star,ui);
+			};
+		};
+	};
+}
+
+//Set SFX for radiant spells.
+fn set_radiant_marker(){}
+fn set_radiant(ids:&mut Ids, ref mut ui:&mut conrod::UiCell,
+				 sbr:&mut SpellBoxR,
+				 sprite_pos:&mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbr.caster_indx];
+	let mut radiant_matrix = widget::Matrix::new(25,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([0.0,0.0])
+							  .xy([0.0;2])
+							  .set(ids.radiant_matrix, ui);
+	
+	if sbr.turns_to_go>0 {
+		
+		let colour:color::Colour = if !sbr.light {
+			color::PURPLE.with_luminance(0.05*(sbr.turns_to_go%6) as f32).with_alpha(0.6)
+		}else{
+			HOLY_COLOUR
+		};
+		
+		for i in 0..sbr.destinations.len() {
+			//extend radiance (basically lightning)
+			sprite_lightning_extender(&sbr.destinations[i],
+									  &mut sbr.paths[i],
+									  sbr.turns_to_go,
+									  sbr.turns_init);
+			if let Some(mut thing) = radiant_matrix.next(ui) {
+				//println!("In here, dest:{:?},path:{:?}",sbr.destinations[i],sbr.paths[i]);
+				let mut path = widget::PointPath::abs(sbr.paths[i].clone())
+					.thickness((sbr.turns_to_go%3) as f64)
+					.color(colour);
+					
+				thing.set(path,ui);
+			};
+		};
+	};
+}
+
 // Takes reference to GraphicsBox. Depending on what it contains,
 // sets the appropriate spell effect.
 // NB this function will be expanded as things get finished.
@@ -1211,6 +1338,8 @@ fn spell_setter(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		&mut CastD(ref mut death) => {set_death(ids,ui,death,sprite_pos);},
 		&mut CastH(ref mut health)=> {set_heal(ids,ui,health,sprite_pos);},
 		&mut CastI(ref mut ice)   => {set_ice(ids,ui,ice,sprite_pos);},
+		&mut CastS(ref mut holy)  => {set_holy(ids,ui,holy,sprite_pos);},
+		&mut CastR(ref mut rad)   => {set_radiant(ids,ui,rad,sprite_pos);},
 		_			  	  		  => {return},
 	};			 
 }
@@ -1400,6 +1529,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  p_names:&mut Vec<String>,
 				  mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				  sprite_boxer:&mut GraphicsBox,
+				  wo:&mut FlowCWin,
 				  p_loc:&mut Place,
 				  mut comm_text: &mut String,
 				  timer:usize,
@@ -1631,7 +1761,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	spell_setter(ids,ui,sprite_boxer,sprite_pos);
 	
 	//decrement sprite box.
-	sprite_box_decrement(sprite_boxer,timer,shaking_timer,shaking_dam);
+	sprite_box_decrement(sprite_boxer,wo,timer,shaking_timer,shaking_dam);
 	//println!("Exiting set_battle_map C"); 
 	//println!("{:?}",sprite_boxer);
 }
@@ -2279,6 +2409,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						p_names,
 						encounter,
 						sprite_boxer,
+						wo,
 						if (*dungeon_pointer<2) | idungeon.is_none() {
 							p_loc
 						}else{
@@ -3041,9 +3172,12 @@ widget_ids! {
 		eclair_matrix, //Set lightning.
 		eclair_matrix_two, //Set the lightning ends.
 		fire_matrix, //Set fire.
+		//NB inferno uses fire_matrix for balls, and eclair_matrix for lines (for now)
 		ice_matrix, //set ice.
 		healing_matrix,
 		death_matrix,
+		holy_matrix,
+		radiant_matrix,
 				
 	}
 }
@@ -4702,7 +4836,7 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 
 					//Fills the graphics box with the appropriate information,
 					//to launch the sprites into tomorrow.
-					sprite_box_filler(y[to_cast_ind].Type,sprite_boxer,
+					sprite_box_filler(&y[to_cast_ind],sprite_boxer,
 						 &encounter[*battle_ifast],
 						 *battle_ifast,
 						 &to_hit,
@@ -4798,7 +4932,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 						ns:&Vec<String>,
 						p_loc: &Place,
 						y: &Vec<Spell>,
-						lore: &Vec<Vec<[u8;28]>>,
+						mut lore: Vec<Vec<[u8;28]>>,
 						cms: usize,
 						mut battle_fast:&mut f32,
 						mut battle_ifast:&mut usize,
@@ -4815,12 +4949,11 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 						mut shaking_dam: &mut [bool;25],
 						mut ai_turn_started: &mut bool,
 						mut ai_started_thinking: &mut bool,
-						mut thought_sender: &mut SyncSender<(usize,usize)>,
-						mut thought_receiver: &mut Receiver<(usize,usize)>,
+						mut thought_sender: &mut SyncSender<(usize,usize,Vec<Vec<[u8;28]>>)>,
+						mut thought_receiver: &mut Receiver<(usize,usize,Vec<Vec<[u8;28]>>)>,
 						mut sprite_boxer: &mut GraphicsBox,
 						sprite_pos: &mut [[f64;2];25],
-						targets:&mut Vec<usize>
-						) {
+						targets:&mut Vec<usize>) -> Vec<Vec<[u8;28]>> {
 	//println!("Monster number {} to go.",battle_ifast);
 	
 	let mut recl:[u8;28] = [0;28];
@@ -4872,7 +5005,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			battle_timer[*battle_ifast]+=1.0/time;
 			let fast = vnmin(battle_timer.clone());
 			*battle_ifast = vwhich(&battle_timer,fast).unwrap_or(*battle_ifast);
-			return
+			return lore
 		}else{
 			//start ai turn if ai is not dead.
 			*ai_turn_started = true;
@@ -4898,7 +5031,6 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 		let enc = encounter.clone();
 		let bif = *battle_ifast;
 		let trng = turning.clone();
-		let lre = lore.clone();
 		let rcl = recl.clone();
 		let lsm = lsum.clone();
 		let borders = battle_orders.clone();
@@ -4910,7 +5042,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 					imoose::ai_part_a(&enc,
 										bif,
 										trng,
-										&lre,
+										lore,
 										&rcl,
 										lsm,
 										borders)
@@ -4919,23 +5051,31 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			});
 		};
 		*ai_started_thinking = true;
+		return vec!(vec![[0;28]])
 	};
 	if *ai_turn_started & *ai_started_thinking {
 		
-		if timer%5 != 0 {return;}; //give the computer more time to think.
+		if timer%5 != 0 {return lore;}; //give the computer more time to think.
 		
 		//try to receive the answer, if failed go to next frame and try again, else continue turn.
-		let choice:(usize,usize,bool) = if (encounter[*battle_ifast].0.Type != MINDLESS)
-										 & (encounter[*battle_ifast].0.SubType != MINDLESS) {
+		let mut choice:(usize,usize,bool);
+		//let mut lore;
+		
+		if (encounter[*battle_ifast].0.Type != MINDLESS)
+		 & (encounter[*battle_ifast].0.SubType != MINDLESS) {
 			match thought_receiver.try_recv() {
-				Ok(answer) => {(answer.clone().0,answer.clone().1,true)},
-				Err(_) => {(0,0,false)},
-			}
+				Ok(answer) => {
+					let (choice_a,choice_b,lore_c) = answer;
+					lore = lore_c;
+					choice = (choice_a,choice_b,true);
+				},
+				Err(_) => { choice = (0,0,false)},
+			};
 		}else{
-			(255,255,true)
+			choice = (255,255,true);
 		};
 								
-		if !choice.2 {return;};
+		if !choice.2 {return vec!(vec![[0;28]]);};
 		println!("Answer: {:?}",choice);						
 		let mut idm=choice.1;
 		let mut exI=choice.0;
@@ -5088,7 +5228,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 				
 				//Fills the graphics box with the appropriate information,
 				//to launch the sprites into tomorrow.
-				sprite_box_filler(y[exj].Type,sprite_boxer,
+				sprite_box_filler(&y[exj],sprite_boxer,
 					 &encounter[*battle_ifast],
 					 *battle_ifast,
 					 &to_hit,
@@ -5136,6 +5276,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 		*thought_sender = a;
 		*thought_receiver = b;
 	};
+	lore
 }
 
 
@@ -7611,6 +7752,20 @@ fn poly_round(r:f64,n:usize,c:&[f64;2])->Vec<[f64;2]> {
 		total_angle+= step_angle;
 		output.push([x+c[0],y+c[1]]);
 	}
+	let f = output[0].clone();
+	output.push(f);
 	//println!("exiting polygonal: outuput={:?}",output);
 	output
+}
+
+//function to generate points of a 4 point star
+fn poly_star_marker(){}
+fn poly_star(r:f64,c:&[f64;2])->Vec<[f64;2]> {
+	let mut out = Vec::with_capacity(9);
+	out.push([c[0],c[1]+r]);out.push([c[0]+r/5.0,c[1]+r/5.0]);
+	out.push([c[0]+r,c[1]]);out.push([c[0]+r/5.0,c[1]-r/5.0]);
+	out.push([c[0],c[1]-r]);out.push([c[0]-r/5.0,c[1]-r/5.0]);
+	out.push([c[0]-r,c[1]]);out.push([c[0]-r/5.0,c[1]+r/5.0]);
+	out.push([c[0],c[1]+r]);
+	out
 }
