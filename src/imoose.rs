@@ -36,15 +36,52 @@ use std::mem::transmute;
 use std::thread;
 use std::sync::mpsc::Receiver;
 use time::PreciseTime;
-   
 
-pub fn ai_part_a(x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-			 ii:usize,                             	//ifast from main battle.
-			 turn:usize,
-			 lore:Vec<Vec<[u8;28]>>,  //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
-			 now:&[u8;28],              //recl essentially.
-			 lsum:i32,
-			 order:Vec<(u8,u8)>)->(usize,usize,Vec<Vec<[u8;28]>>){
+// Generates the difference tables used in part_b2
+// To be done in the initial part of the battle.
+// cause_effect is a complex tuple. The second half is a collection of 
+// all possible outcomes of an action.
+fn ai_part_b1_marker(){}
+pub fn ai_part_b1(lore: &Vec<Vec<[u8;28]>>,
+				  differences: &mut Vec<Vec<[i8;23]>>,
+				  cause_effect: &mut Vec<([u8;3],Vec<&[[i8;23]]>)>) {
+	
+	//Defensive: Reset differences.
+	*differences = Vec::with_capacity(lore.len());
+	
+	//Fill differences using lore.
+	for x in lore.iter() {
+		let mut diff_n:Vec<[i8;23]> = Vec::with_capacity(x.len());
+		
+		for j in 0..(x.len()-1) {
+			let mut slice = [0;23];
+			for i in 5..28 {
+				slice[i-5] = (x[j][i] as i16 - x[j+1][i] as i16) as i8
+			};
+			diff_n.push(slice);
+		};
+		diff_n.push([0;23]);
+		differences.push(diff_n);
+	}
+	
+	
+	
+	
+}
+
+// The main function for the AI decision maker.
+// part_b2 will go inside here.
+fn ai_part_a_marker(){}
+pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+						 ii:usize,                             	//ifast from main battle.
+						 turn:usize,
+						 lore:&Vec<Vec<[u8;28]>>, 							 //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
+						 differences: &Vec<Vec<[i8;23]>>,					 //lore effect substracted.
+						 cause_effect: &Vec<([u8;3],Vec<&'a[[i8;23]]>)>,   //vector of causes and effects.
+						 now:&[u8;28],              //recl essentially.
+						 lsum:i32,
+						 order:Vec<(u8,u8)>
+					   ) -> (usize,usize) {
 	let mut action=1;
 	let mut idm=255;
 	let t0=PreciseTime::now();
@@ -290,114 +327,49 @@ pub fn ai_part_a(x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 			let not_now = false;
 			if not_now {
 			//This needs to be shifted out of this function and into the main function.
-			for x in lore.iter(){
-				let mut temp_d_battle:Vec<[i16;28]>=Vec::new();
-				if x.len()>2{
-					for i in 4..x.len(){
-						temp_d_battle.push([x[i-1][0] as i16,
-										x[i-1][1] as i16,
-										x[i-1][2] as i16,
-										x[i-1][3] as i16,
-										x[i-1][4] as i16,
-										(x[i-1][5] as i16)-x[i][5] as i16,
-										(x[i-1][6] as i16)-x[i][6] as i16,
-										(x[i-1][7] as i16)-x[i][7] as i16,
-										(x[i-1][8] as i16)-x[i][8] as i16,
-										(x[i-1][9] as i16)-x[i][9] as i16,
-										(x[i-1][10] as i16)-x[i][10] as i16,
-										(x[i-1][11] as i16)-x[i][11] as i16,
-										(x[i-1][12] as i16)-x[i][12] as i16,
-										(x[i-1][13] as i16)-x[i][13] as i16,
-										(x[i-1][14] as i16)-x[i][14] as i16,
-										(x[i-1][15] as i16)-x[i][15] as i16,
-										(x[i-1][16] as i16)-x[i][16] as i16,
-										(x[i-1][17] as i16)-x[i][17] as i16,
-										(x[i-1][18] as i16)-x[i][18] as i16,
-										(x[i-1][19] as i16)-x[i][19] as i16,
-										(x[i-1][20] as i16)-x[i][20] as i16,
-										(x[i-1][21] as i16)-x[i][21] as i16,
-										(x[i-1][22] as i16)-x[i][22] as i16,
-										(x[i-1][23] as i16)-x[i][23] as i16,
-										(x[i-1][24] as i16)-x[i][24] as i16,
-										(x[i-1][25] as i16)-x[i][25] as i16,
-										(x[i-1][26] as i16)-x[i][26] as i16,
-										(x[i-1][27] as i16)-x[i][27] as i16]);
-						if x[i][4]==ii8{
-							act_consequences.push([ x[i-1][2] as i16,
-												x[i-1][3] as i16,
-												x[i-1][4] as i16,
-												(x[i-1][5] as i16)-x[i][5] as i16,
-												(x[i-1][6] as i16)-x[i][6] as i16,
-												(x[i-1][7] as i16)-x[i][7] as i16,
-												(x[i-1][8] as i16)-x[i][8] as i16,
-												(x[i-1][9] as i16)-x[i][9] as i16,
-												(x[i-1][10] as i16)-x[i][10] as i16,
-												(x[i-1][11] as i16)-x[i][11] as i16,
-												(x[i-1][12] as i16)-x[i][12] as i16,
-												(x[i-1][13] as i16)-x[i][13] as i16,
-												(x[i-1][14] as i16)-x[i][14] as i16,
-												(x[i-1][15] as i16)-x[i][15] as i16,
-												(x[i-1][16] as i16)-x[i][16] as i16,
-												(x[i-1][17] as i16)-x[i][17] as i16,
-												(x[i-1][18] as i16)-x[i][18] as i16,
-												(x[i-1][19] as i16)-x[i][19] as i16,
-												(x[i-1][20] as i16)-x[i][20] as i16,
-												(x[i-1][21] as i16)-x[i][21] as i16,
-												(x[i-1][22] as i16)-x[i][22] as i16,
-												(x[i-1][23] as i16)-x[i][23] as i16,
-												(x[i-1][24] as i16)-x[i][24] as i16,
-												(x[i-1][25] as i16)-x[i][25] as i16,
-												(x[i-1][26] as i16)-x[i][26] as i16,
-												(x[i-1][27] as i16)-x[i][27] as i16])
-						}else{}	
-					}
-				}else{};
-				d_battles.push(temp_d_battle)
-			};
-			println!("Delta(battles): {}\nact_consequences: {}",d_battles.len(),act_consequences.len());
-			let mut cause_effect:(Vec<[i16;3]>,Vec<Vec<[i16;23]>>)=(Vec::new(),Vec::new());
-			let mut temp_b=[0;23];	
-			let temp_a=[act_consequences[0][0],act_consequences[0][1],act_consequences[0][2]];
-			for i in 3..26{temp_b[i-3]=act_consequences[0][i]};	
-			cause_effect.0.push(temp_a);
-			cause_effect.1.push(vec!(temp_b));
+			
+			//println!("Delta(battles): {}\nact_consequences: {}",d_battles.len(),act_consequences.len());
+			//let mut temp_b=[0;23];	
+			//let temp_a=[act_consequences[0][0],act_consequences[0][1],act_consequences[0][2]];
+			//for i in 3..26{temp_b[i-3]=act_consequences[0][i]};	
+			//cause_effect.0.push(temp_a);
+			//cause_effect.1.push(vec!(temp_b));
 				
-			for x in act_consequences.iter(){		
-				let mut temp_b=[0;23];	
-				let temp_a=[x[0],x[1],x[2]];
-				for i in 3..26{temp_b[i-3]=x[i]};
-				if lhas(&cause_effect.0,&temp_a) {			
-					cause_effect.1[vvwhich(&cause_effect.0,temp_a)[0]].push(temp_b)
-				}else{
-					cause_effect.0.push(temp_a);
-					cause_effect.1.push(vec!(temp_b))
-				}
-			};
-			std::mem::drop(act_consequences);
+			//for x in act_consequences.iter(){		
+				//let mut temp_b=[0;23];	
+				//let temp_a=[x[0],x[1],x[2]];
+				//for i in 3..26{temp_b[i-3]=x[i]};
+				//if lhas(&cause_effect.0,&temp_a) {			
+					//cause_effect.1[vvwhich(&cause_effect.0,temp_a)[0]].push(temp_b)
+				//}else{
+					//cause_effect.0.push(temp_a);
+					//cause_effect.1.push(vec!(temp_b))
+				//}
+			//};
 			
-			let mut cause_meffect:(Vec<[i16;3]>,Vec<[i16;23]>)=(Vec::new(),Vec::new());
-			for i in 0..cause_effect.0.len(){
-				cause_meffect.0.push(cause_effect.0[i]);
-				cause_meffect.1.push(vmode(&cause_effect.1[i]))		
-			};
-			println!("Causes length:{}\nEffects length:{}",cause_effect.0.len(),cause_effect.1.len());
-			println!("Cause[1]: {:?}\nMode Effect[1]:{:?}",cause_meffect.0[0],cause_meffect.1[0]);
-			std::mem::drop(cause_effect);
-			println!("lv_effects.len()=={}",lv_effects.len());
+			//let mut cause_meffect:(Vec<[i16;3]>,Vec<[i16;23]>)=(Vec::new(),Vec::new());
+			//for i in 0..cause_effect.0.len(){
+				//cause_meffect.0.push(cause_effect.0[i]);
+				//cause_meffect.1.push(vmode(&cause_effect.1[i]))		
+			//};
+			//println!("Causes length:{}\nEffects length:{}",cause_effect.0.len(),cause_effect.1.len());
+			//println!("Cause[1]: {:?}\nMode Effect[1]:{:?}",cause_meffect.0[0],cause_meffect.1[0]);
 			
-			//give up if you're going to crash.
-			if lv_effects.len()==0 {
-				println!("lv_effects.len()==0, so we're giving up and doing things the dumb way. Herp derp.");
-				std::mem::drop(chosen_battles);
-				 best_act_pm = 255;
-				 best_tar_pm = 255;
-			}else{
-				let (good,bad):([i16;23],[f64;23])=essential_n(lv_effects);
-				println!("Good: {:?}\n Bad: {:?}",good,bad);
-				let to_good=rms23(good,now);
-				let to_bad=rms23_special(bad,now);
-				println!("Good: {:?}\n Bad: {:?}",to_good,to_bad);
-			};
+			//println!("lv_effects.len()=={}",lv_effects.len());
+			
+			////give up if you're going to crash.
+			//if lv_effects.len()==0 {
+				//println!("lv_effects.len()==0, so we're giving up and doing things the dumb way. Herp derp.");
+				//std::mem::drop(chosen_battles);
+				 //best_act_pm = 255;
+				 //best_tar_pm = 255;
+			//}else{
+				//let (good,bad):([i16;23],[f64;23])=essential_n(lv_effects);
+				//println!("Good: {:?}\n Bad: {:?}",good,bad);
+				//let to_good=rms23(good,now);
+				//let to_bad=rms23_special(bad,now);
+				//println!("Good: {:?}\n Bad: {:?}",to_good,to_bad);
+			//};
 			
 			
 			
@@ -444,7 +416,7 @@ pub fn ai_part_a(x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 	let t1=PreciseTime::now();	
 	println!("Thinking time: {}",t0.to(t1));		                         
 	//panic!("I want to pause here. FOREVER.");			
-	(best_act_pm,best_tar_pm,lore)                             //returns best action and best target.
+	(best_act_pm,best_tar_pm)                             //returns best action and best target.
 }
 
 //The winning team from the winning team's perspective;
@@ -883,9 +855,9 @@ fn rms23<T:Num+Copy>(a:[T;23],now:&[u8;28])->f64
 where f64: std::convert::From<T>{
 	let mut rms:f64=0.0;
 	for i in 0..23{
-		rms+=((now[i+5] as f64)-(f64::from(a[i]))).powf(2.0).sqrt()
+		rms+=((now[i+5] as f64)-(f64::from(a[i]))).powf(2.0)
 	};
-	rms
+	rms.sqrt()
 }
 
 fn rms23_special<T:Num+Copy>(a:[T;23],now:&[u8;28])->f64
