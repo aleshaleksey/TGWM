@@ -2132,7 +2132,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					enemies:&mut Vec<(Lifeform,usize)>,
 					field:&mut Place,
-					lore:&mut Vec<Vec<[u8;28]>>,
+					lore_empty:&mut bool,
 					aftermath:&mut (Lifeform,Lifeform,Vec<[u8;28]>),
 					rrrltxt:&mut Vec<String>,
 					rltxt:&mut String,
@@ -2389,7 +2389,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			};
 							
-		}else if lore.len()>0 {
+		}else if !*lore_empty {
 			if (*battle_ttakes==0) & (*dungeon_pointer>1) & idungeon.is_some() {
 				comm_text = "May the Great White Moose protect you!\n***Press Enter to Continue***".to_owned();
 			}else if *battle_ttakes==0 {
@@ -4567,8 +4567,8 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
      println!("EngenB initiated");
      //generate the thread_gen max value and the type it corresponds to.
     for l in 0..B.popu.len() {
-		let subpop=vec!(B.popu[l].0;(B.popu[l].2 as usize));
-		let subtyp=vec!(B.popu[l].1;(B.popu[l].2 as usize));
+		let subpop=vec!(B.popu[l].0; B.popu[l].2 as usize);
+		let subtyp=vec!(B.popu[l].1; B.popu[l].2 as usize);
         totapop +=B.popu[l].2;
         tomo.extend(subpop);
         tomoty.extend(subtyp);
@@ -4602,11 +4602,12 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
 fn marker_of_player_battle_turn(){}
 
 //gmoose function for the player's turn in battle.
+//NB do not switch n_s_l_q_f[4] off here. This is now fully regulated
+//by the game_over() function.
 pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 						ns:&Vec<String>,
 						p_loc: &Place,
 						y: &Vec<Spell>,
-						mut lore: &mut Vec<Vec<[u8;28]>>,
 						cms: usize,
 						mut battle_fast:&mut f32,
 						mut battle_ifast:&mut usize,
@@ -4625,6 +4626,7 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 						mut to_cast: &mut String,
 						mut to_hit: &mut Vec<(bool,bool)>,
 						mut pause: &mut bool,
+						mut escape: &mut bool,
 						mut shaking_timer: &mut usize,
 						mut shaking_dam: &mut [bool;25],
 						mut sprite_boxer: &mut GraphicsBox,
@@ -4872,15 +4874,10 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 			let centrifuge = vnmin(toy_timer.clone());
 			let escapee:usize = vwhich(&toy_timer,centrifuge).unwrap_or(0);
 			if encounter[escapee].1==encounter[*battle_ifast].1 {
-				n_s_l_q_f[4] = false;
+				*escape = true;
 				println!("You have managed to flee from battle");
 				*comm_text = "You have managed to flee from battle".to_owned();
 				turn_over = false;
-				*encounter = Vec::with_capacity(25);
-				*to_hit = Vec::with_capacity(25);
-				*sel_targets = Vec::with_capacity(25);
-				*lore = Vec::with_capacity(500000);
-				*battle_timer = Vec::with_capacity(25);
 				*freeze_timer = timer-10;
 				battle_ttakes[*battle_ifast]+=1;
 			}else{
@@ -4928,11 +4925,10 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 
 fn marker_of_ai_battle_turn(){}
 //gmoose function for the AI turn in battle.
-pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 						ns:&Vec<String>,
 						p_loc: &Place,
 						y: &Vec<Spell>,
-						mut lore: Vec<Vec<[u8;28]>>,
 						cms: usize,
 						mut battle_fast:&mut f32,
 						mut battle_ifast:&mut usize,
@@ -4949,11 +4945,12 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 						mut shaking_dam: &mut [bool;25],
 						mut ai_turn_started: &mut bool,
 						mut ai_started_thinking: &mut bool,
-						mut thought_sender: &mut SyncSender<(usize,usize,Vec<Vec<[u8;28]>>)>,
-						mut thought_receiver: &mut Receiver<(usize,usize,Vec<Vec<[u8;28]>>)>,
+						mut thought_sender_to_brain: &mut SyncSender<(usize,usize,[u8;28],i32,Vec<(u8,u8)>,bool)>,
+						mut thought_receiver_to_body: &mut Receiver<(usize,usize)>,
 						mut sprite_boxer: &mut GraphicsBox,
 						sprite_pos: &mut [[f64;2];25],
-						targets:&mut Vec<usize>) -> Vec<Vec<[u8;28]>> {
+						targets:&mut Vec<usize>
+					  ){
 	//println!("Monster number {} to go.",battle_ifast);
 	
 	let mut recl:[u8;28] = [0;28];
@@ -5005,7 +5002,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			battle_timer[*battle_ifast]+=1.0/time;
 			let fast = vnmin(battle_timer.clone());
 			*battle_ifast = vwhich(&battle_timer,fast).unwrap_or(*battle_ifast);
-			return lore
+			return
 		}else{
 			//start ai turn if ai is not dead.
 			*ai_turn_started = true;
@@ -5026,47 +5023,41 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 		}else{
 			battle_orders=vec![(0,0)]
 		};
-		
-		let t_h = thought_sender.clone();
-		let enc = encounter.clone();
-		let bif = *battle_ifast;
-		let trng = turning.clone();
-		let rcl = recl.clone();
-		let lsm = lsum.clone();
-		let borders = battle_orders.clone();
+
+		let bif:usize = *battle_ifast;
+		let trng:usize = turning.clone();
+		let rcl:[u8;28] = recl.clone();
+		let lsm:i32 = lsum.clone();
+		let borders:Vec<(u8,u8)> = battle_orders.clone();
 		if (encounter[*battle_ifast].0.Type != MINDLESS)
-		 & (encounter[*battle_ifast].0.SubType != MINDLESS) {
-			thread::spawn(move||{
-				println!("Spawned the battle AI");
-				t_h.send(
-					imoose::ai_part_a(&enc,
-										bif,
-										trng,
-										lore,
-										&rcl,
-										lsm,
-										borders)
-				);
-				println!("AI's thoughts sent");
-			});
+		& (encounter[*battle_ifast].0.SubType != MINDLESS) {
+			thought_sender_to_brain.clone().send((
+								bif,
+								trng,
+								rcl,
+								lsm,
+								borders,
+								true
+			));
+			println!("AI's thoughts sent");
+
 		};
 		*ai_started_thinking = true;
-		return vec!(vec![[0;28]])
+		return
 	};
 	if *ai_turn_started & *ai_started_thinking {
 		
-		if timer%5 != 0 {return lore;}; //give the computer more time to think.
+		if timer%5 != 0 {return}; //give the computer more time to think.
 		
 		//try to receive the answer, if failed go to next frame and try again, else continue turn.
+		//(best_act_pm,best_tar_pm)
 		let mut choice:(usize,usize,bool);
-		//let mut lore;
 		
 		if (encounter[*battle_ifast].0.Type != MINDLESS)
 		 & (encounter[*battle_ifast].0.SubType != MINDLESS) {
-			match thought_receiver.try_recv() {
+			match thought_receiver_to_body.try_recv() {
 				Ok(answer) => {
-					let (choice_a,choice_b,lore_c) = answer;
-					lore = lore_c;
+					let (choice_a,choice_b) = answer;
 					choice = (choice_a,choice_b,true);
 				},
 				Err(_) => { choice = (0,0,false)},
@@ -5075,7 +5066,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 			choice = (255,255,true);
 		};
 								
-		if !choice.2 {return vec!(vec![[0;28]]);};
+		if !choice.2 {return};
 		println!("Answer: {:?}",choice);						
 		let mut idm=choice.1;
 		let mut exI=choice.0;
@@ -5272,11 +5263,7 @@ pub fn ai_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2
 		*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
 		*ai_turn_started = false;
 		*ai_started_thinking = false;
-		let (a,b) = std::sync::mpsc::sync_channel(1);
-		*thought_sender = a;
-		*thought_receiver = b;
 	};
-	lore
 }
 
 
@@ -5295,7 +5282,8 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 				mut freeze_timer:&mut usize,
 				battle_tturns:&mut u16,
 				idungeon: &mut Option<usize>,
-				dungeon_pointer: &mut usize) {
+				dungeon_pointer: &mut usize,
+				escape: bool) {
 					
 	//println!("entering game over");
 	let max_group = if encounter.len()==0 {0}else{encounter[encounter.len()-1].1};
@@ -5312,13 +5300,25 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 		};
 	};
 	
-	let victory:(bool,Option<usize>)= if !omnicide | (*battle_tturns>600) {who_won(&alive)}else{(false,None)};
+	let mut victory:(bool,Option<usize>)= if !omnicide | (*battle_tturns>600) |escape {who_won(&alive)}else{(false,None)};
 	//println!("b2");
-	if !alive[0] {
+	if escape {
+		n_s_l_q_f[4] = false;
+		*freeze_timer = timer;
+		dungeon_navigator_a(false,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
+	}else if !alive[0] {
 		n_s_l_q_f[4] = false;
 		*freeze_timer = timer;
 		*comm_text = "Your party has fallen in battle. Moose over.".to_owned();
 		dungeon_navigator_a(false,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
+		for mut x in party.iter_mut() {
+			x.0.Gold = 0;
+			x.0.Exp = if x.0.Exp > x.0.ExpUsed + 10.0 {
+				x.0.Exp-9.0
+			 }else{
+				x.0.ExpUsed
+			}; 	
+		};
 	}else if omnicide {
 		n_s_l_q_f[4] = false;
 		*freeze_timer = timer;
