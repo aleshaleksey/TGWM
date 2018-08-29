@@ -118,11 +118,13 @@ mod cmoose;
 #[allow(unused_imports)] use image::GenericImage;
 #[allow(unused_imports)] use rand::Rng;
 #[allow(unused_imports)] use time::PreciseTime;
+
 #[allow(unused_imports)] use std::sync::mpsc::{sync_channel,SyncSender,Receiver,TryRecvError};
 #[allow(unused_imports)] use std::sync::{Arc,Mutex,Weak};
 #[allow(unused_imports)] use std::{mem,thread,fs};
 #[allow(unused_imports)] use std::path::PathBuf;
 #[allow(unused_imports)] use std::ffi::OsString;
+#[allow(unused_imports)] use std::collections::HashMap;
 
 //main_loop
 //main_loop
@@ -192,7 +194,21 @@ pub fn main() {
 	let mut chosen_hero:usize = 0;
 	
 	//special battle variable for free flowing thoughts.
-	let (mut thought_sender, mut thought_receiver) = std::sync::mpsc::sync_channel(1);
+	//Type annotation ad nauseum.
+	//Sends turn information to brain.
+	let (mut thought_sender_to_brain, mut thought_receiver_to_brain):
+	(SyncSender<(usize,usize,[u8;28],i32,Vec<(u8,u8)>,bool)>,
+	Receiver<(usize,usize,[u8;28],i32,Vec<(u8,u8)>,bool)>)
+	= std::sync::mpsc::sync_channel(1);
+	
+	//Sends preliminary battle information to brain
+	let (mut thought_sender_to_brain2, mut thought_receiver_to_brain2):
+	(SyncSender<(Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)>,
+	Receiver<(Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)>)
+	= std::sync::mpsc::sync_channel(1);
+	
+	//sends the brain's conclusion back to the main thread.
+	let (mut thought_sender_to_body, mut thought_receiver_to_body) = std::sync::mpsc::sync_channel(1);
 	
 	//signaller for telling player function to do its job.
 	let (mut b_muse_sender, mut b_muse_receiver) = std::sync::mpsc::sync_channel(1);
@@ -312,10 +328,11 @@ pub fn main() {
 	
 	//Initiate Q-ft-M battle variables:
 	let mut dream_time:bool = false;
+	let mut escaped:bool = false;
 	let mut encounter: Vec<(Lifeform,usize,[Option<[usize;2]>;2])> = Vec::with_capacity(25);
 	let mut enemies: Vec<(Lifeform,usize)> = Vec::with_capacity(20);
 	let mut field: Place = p_loc.clone();
-	let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
+	let mut lore_empty = true;
 	let mut aftermath:(Lifeform,Lifeform,Vec<[u8;28]>) = (ghost(),ghost(),Vec::with_capacity(1001));
 	let mut sel_targets:Vec<usize> = Vec::with_capacity(25);
 	let mut targets:Vec<usize> = Vec::with_capacity(25);
@@ -347,7 +364,7 @@ pub fn main() {
 	
 	//spawn thread.
 	let assets2 = assets.clone();
-	thread::spawn(move||{
+	let music_thread = thread::spawn(move||{
 		//initalise flow variable to avoid error upon unwrapping of b_muse_reciever.
 		let mut go = (false,to_play);
 		let mut silence = false;
@@ -389,6 +406,71 @@ pub fn main() {
 	let mut recl:[u8;28] = [255;28];
 	let mut to_hit:Vec<(bool,bool)> = Vec::with_capacity(25);
 	let mut p_scape:u8 = FOREST;
+	
+	//spawn thinker thread
+	//strictly easier to spawn this once than several times.
+	let brain_thread = thread::spawn(move||{
+		
+		//loop globally looking for battles (ie lore has been sent)
+		'battle:loop {
+			match thought_receiver_to_brain2.try_recv() {
+				Ok(scenario) => {
+					let (lore,mut enc) = scenario;
+					println!("enc.len() = {}, in brain",enc.len());				   
+					//Initiate variables that live in this thread. and Borrow bits of lore.
+					let mut differences: Vec<Vec<[i8;23]>> = Vec::with_capacity(lore.len());
+					let mut last_lines:Vec<&[u8;28]> = Vec::with_capacity(lore.len());
+					let mut cause_effect: HashMap<[u8;4],Vec<&[i8;23]>> = HashMap::with_capacity(300000);
+					let mut lore_hash_by_end: HashMap<&[u8;28],Vec<&Vec<[u8;28]>>> = HashMap::with_capacity(20000);
+					
+					//Recode AI variables for speed and sanity.
+					imoose::ai_part_b1(&lore, &mut differences);
+					
+					let cause_effect_means = imoose::ai_accelerator_hash(&lore,
+																		&differences,
+																		&mut last_lines,
+																		&mut lore_hash_by_end,
+																		&mut cause_effect);
+					
+					//loop within a battle, looking for specific instances to match
+					//by definition, this might as well block.
+					'turns:loop {
+						match thought_receiver_to_brain.try_recv() {
+							Ok(inst) => {
+								let (a,b,c,d,e,f) = inst;
+								if !f {
+									//if battle over break inner loop and
+									//keep looking for battles.
+									break 'turns
+								}else{
+									//Else do thinking and send answer.
+									thought_sender_to_body.send(
+										imoose::ai_part_a(
+											&enc,
+											a,b,
+											&lore,
+											&last_lines,
+											&differences,
+											&cause_effect,
+											&cause_effect_means,
+											&c,d,e
+										)
+									);
+								};
+							},
+							_		 => {
+								thread::sleep(std::time::Duration::from_millis(10));
+							},
+							
+						};
+					};
+				},
+				_ 				   => {
+					thread::sleep(std::time::Duration::from_millis(10));
+				},
+			};
+		};
+	});
 	
 	
 	//create gdugeons.
@@ -615,7 +697,7 @@ pub fn main() {
 					&mut encounter,
 					&mut enemies,
 					&mut field,
-					&mut lore,
+					&mut lore_empty,
 					&mut aftermath,
 					&mut rrrltxt,
 					&mut rltxt,
@@ -708,6 +790,8 @@ pub fn main() {
 			let sow:usize = cpu_n;
 			//println!("start of AI dreaming on {} threads.",sow);
 			let s = PreciseTime::now();
+			
+			let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
 			let mut battle_threads = Vec::new();
 			for _ in 0..sow{
 				let lim = wo.ai_mem;
@@ -772,12 +856,16 @@ pub fn main() {
 				});
 				battle_threads.push(battle_thr);
 			};
-
-			lore = Vec::new();
+			
 			for _ in 0..battle_threads.len(){
 				let x = battle_threads.pop().expect("Oh pop").join().expect("Oh join!");
 				lore.extend(x);
 			};
+			
+			//Send the base encounter information to the brain.
+			// And allow initiation of battle map.
+			thought_sender_to_brain2.send((lore,encounter.clone()));
+			lore_empty = false;
 
 			let e=PreciseTime::now();
 			println!("Total time: {}",s.to(e));
@@ -811,6 +899,7 @@ pub fn main() {
 			battle_fast = gmoose::vnmin(battle_timer.clone());
 			battle_ifast = gmoose::vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
 			println!("{} from group {} is the first to take action!",gmoose::beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
+			println!("battle_ifast = {}, encounter.len() = {}",battle_ifast,encounter.len());
 			
 			enc_names = Vec::with_capacity(25);
 			
@@ -839,6 +928,7 @@ pub fn main() {
 			//Take turn if game is not paused.
 			if !pause & sprite_boxer.is_none() {	
 				//if in battle, and time has elapsed, check for end game.	
+				//println!("Got to game over");
 				gmoose::game_over  (&mut encounter,
 									&mut enemies,
 									&mut party,
@@ -852,19 +942,22 @@ pub fn main() {
 									&mut freeze_timer,
 									&mut battle_tturns,
 									&mut idungeon,
-									&mut dungeon_pointer);
+									&mut dungeon_pointer,
+									escaped);
+				//println!("got past game over");
 
 				if !n_s_l_q_f[4] {
 					
 					//music player controlled to off.
 					b_muse_sender.try_send((false,to_play));
+					//Tell the brain that the battle is over.
+					thought_sender_to_brain.send((0,0,[0;28],0,Vec::new(),false));
 					//if game_over functions determines end of battle, reset battle variables, level party and end battle.
 					encounter = Vec::with_capacity(25);
 					enemies = Vec::with_capacity(20);
 					to_hit = Vec::with_capacity(25);
 					sel_targets = Vec::with_capacity(25);
 					targets = Vec::with_capacity(25);
-					lore = Vec::with_capacity(500000);
 					battle_timer = Vec::with_capacity(25);
 					gmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
 					yt_adcwpe_bw = [false;9];
@@ -874,6 +967,7 @@ pub fn main() {
 					ai_started_thinking = false;
 					sprite_boxer = GraphicsBox::None;
 					sprite_pos = [[0.0;2];25];
+					escaped = false;
 					
 					//set p_scape as needed.
 					if idungeon.is_none() {
@@ -889,15 +983,14 @@ pub fn main() {
 					continue 'main;
 				}else{
 					if (encounter[battle_ifast].1!=0) & !pause {	
-						//Computer turn.	
-						lore = gmoose::ai_battle_turn(&mut encounter,&mut enc_names,
+						//Computer turn.
+						gmoose::ai_battle_turn(&mut encounter,&mut enc_names,
 										if (dungeon_pointer<2) | idungeon.is_none() {
 											&mut p_loc
 										}else{
 											&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
 										},
-										&sp_list,
-										lore,cms,
+										&sp_list,cms,
 										&mut battle_fast,
 										&mut battle_ifast,
 										&mut battle_ttakes,
@@ -913,8 +1006,8 @@ pub fn main() {
 										&mut shaking_dam,
 										&mut ai_turn_started,
 										&mut ai_started_thinking,
-										&mut thought_sender,
-										&mut thought_receiver,
+										&mut thought_sender_to_brain,
+										&mut thought_receiver_to_body,
 										&mut sprite_boxer,
 										&mut sprite_pos,
 										&mut targets);
@@ -928,7 +1021,6 @@ pub fn main() {
 											&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
 										},
 										&sp_list,
-										&mut lore,
 										cms,
 										&mut battle_fast,
 										&mut battle_ifast,
@@ -947,6 +1039,7 @@ pub fn main() {
 										&mut to_cast,
 										&mut to_hit,
 										&mut pause,
+										&mut escaped,
 										&mut shaking_timer,
 										&mut shaking_dam,
 										&mut sprite_boxer,
