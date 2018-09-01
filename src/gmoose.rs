@@ -5153,6 +5153,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 			};
 			if y[exj].MP > encounter[*battle_ifast].0.MP_shade {
 				println!("\nenemy ran out of mana\n");
+				in_battle_record[libr][2]=1;
 				let spare_text:String = format!("{}\n...But doesn't have enough mana!", comm_text);		
 				let attack_result:(f32,usize) =  attack(encounter,
 													*battle_ifast,
@@ -5517,6 +5518,7 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					//println!("magic idm:{} dI:{}",&idm,&dumbI);
 					let dumbj=dumbI-2;
 					if y[dumbj].MP>x[ifast].0.MP_shade {
+						dumbI = 1;
 						let attack_result:(f32,usize) =  attack_r(&mut x,
 															  ifast,
 															  idm);
@@ -5566,7 +5568,7 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					};
 				
 				}else{};
-				recl[2]=dumbI as u8;
+				recl[2] = dumbI as u8;
 				record.push(recl);
 			};
 		};
@@ -6189,20 +6191,7 @@ fn magic(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,ns:
 	
 	//initiate output and other vectors.
 	let tll=tl.len();
-	let shay=Shade{
-		SL_shade: Vec::new(),
-		MP_shade: 0.0,
-		HP_shade: 0.0,
-		S_shade: 0.0,
-		A_shade: 0.0,
-		D_shade: 0.0,
-		WM_shade: 0.0,
-		BM_shade: 0.0,
-		Inv_shade: Vec::new(),
-		Death: false,
-		Teleport: false,
-		Timestop: 0.0,
-	};
+	let shay=Shade::new();
 	let mut shades:Vec<Shade>=vec!(shay.clone();tll);
 	let mut escaped_reaper:usize=0;
 	let mut trapped_reaper:usize=0;
@@ -6412,20 +6401,8 @@ fn marker_of_magic_rand(){}
 fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,ns:&Vec<String>,spell:&Spell, ifast:usize)
 ->(Vec<Shade>,i32){	
 	let tll=tl.len();
-	let mut shay=Shade{
-		SL_shade: Vec::new(),
-		MP_shade: 0.0,
-		HP_shade: 0.0,
-		S_shade: 0.0,
-		A_shade: 0.0,
-		D_shade: 0.0,
-		WM_shade: 0.0,
-		BM_shade: 0.0,
-		Inv_shade: Vec::new(),
-		Death: false,
-		Teleport: false,
-		Timestop: 0.0,
-	};
+	let mut shay= Shade::new();
+	
 	let mut shades:Vec<Shade>=vec!(shay.clone();tll);
 	let mut escaped_reaper:usize=0;
 	let mut trapped_reaper:usize=0;
@@ -6453,8 +6430,13 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 	for i in 0..tll{
 		let WMi=xx[i].0.WM as i64;
 		let WMi=if WMi<1 {1} else {WMi};
-		let extra_dam:f32=CM-xx[i].0.WM*0.8;
-		let extra_dam:f32=if extra_dam<0.0{0.0}else{extra_dam};
+		let mut extra_dam:f32=0.0;
+		if spell.Health>0.0{
+			extra_dam=CM-xx[i].0.WM*0.8;
+			extra_dam=if extra_dam<0.0{0.0}else{extra_dam};
+		}else{};
+		
+		//Harming script.
 		if (tl[i].1==true) & ((spell.Light==false)||
 		((xx[i].0.Unclean==true)||(xx[i].0.Alive==false))){
 			let PW=spow(spell.Power,CM,&xx[i].0,&spell);
@@ -6479,9 +6461,9 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 			let b=rand::thread_rng().gen_range(-1,WMi)+rand::thread_rng().gen_range(-1,WMi);
 				if (a>=b) & (xx[i].0.Type!=UNDEAD) {
 					trapped_reaper+=1;
-					shades[i].Death=true
+					shades[i].Death=true;
 				}else{
-					escaped_reaper+=1
+					escaped_reaper+=1;
 				};
 			}else{};
 			shades[i].Teleport=
@@ -6498,7 +6480,8 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 			shades[ifast].Timestop-=shades[i].Timestop;
 			shades[i].Timestop=0.0}else{};
 		};
-			
+		
+		//Healing script.
 		if (tl[i].0==true) & (((spell.Light==true) &
 		(xx[i].0.Alive==true) )|| ((spell.name=="Lifestealer")
 		|| (trapped_reaper>0))){
@@ -6509,7 +6492,8 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 			//healing script.
 			shades[i].MP_shade= 0.0;
 			shades[i].HP_shade+= if ((xx[i].0.HP_shade>0.0)
-			                      & (xx[i].0.Alive==true))
+			                      & (xx[i].0.Alive==true)
+			                      & (xx[i].0.HP>xx[i].0.HP_shade))
 			                     || (spell.name=="Lifestealer"){
 				spell.Health*CM*(10.0+spell.Power)*0.01
 			}else if (xx[i].0.HP_shade>0.0)
@@ -6532,13 +6516,13 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 				trapped_reaper-=1}else{};
 			shades[i].Teleport=
 				if (spell.Teleport==true) &
-				   (((i==ifast)||(i==xx[i].1))||PW>0.0){true
-					}else{false};
-			}else{};
-			//Print Messages... Not!	
+				   (((i==ifast)||(i==xx[i].1))||PW>0.0){true}else{false};
+		}else{};
+			
+		//Print Messages	
 		shades[i].WM_shade+=(spell.Illumination as f32)*0.01*CM;
-		shades[i].BM_shade-=(spell.Illumination as f32)*0.01*CM;			
-
+		shades[i].BM_shade-=(spell.Illumination as f32)*0.01*CM;	
+		
 //		println!("{}: {},{},{},{},{},{},{},{},{}.",
 //				 xx[i].0.name,
 //				 shades[i].HP_shade,

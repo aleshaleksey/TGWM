@@ -118,6 +118,7 @@ mod cmoose;
 #[allow(unused_imports)] use image::GenericImage;
 #[allow(unused_imports)] use rand::Rng;
 #[allow(unused_imports)] use time::PreciseTime;
+#[allow(unused_imports)] use time::PreciseTime as PT; //laziness at its best.
 
 #[allow(unused_imports)] use std::sync::mpsc::{sync_channel,SyncSender,Receiver,TryRecvError};
 #[allow(unused_imports)] use std::sync::{Arc,Mutex,Weak};
@@ -139,6 +140,7 @@ pub fn main() {
 	const MIN_W: u32 = 640;
 	const MIN_H: u32 = 400;
 	const SHAKE_DURATION:usize = 20;
+	const TURNS_PER_MON:usize = 8;
 	
 	//Initiation of most flow control variables.
 
@@ -420,8 +422,9 @@ pub fn main() {
 					//Initiate variables that live in this thread. and Borrow bits of lore.
 					let mut differences: Vec<Vec<[i8;23]>> = Vec::with_capacity(lore.len());
 					let mut last_lines:Vec<&[u8;28]> = Vec::with_capacity(lore.len());
-					let mut cause_effect: HashMap<[u8;4],Vec<&[i8;23]>> = HashMap::with_capacity(300000);
+					let mut cause_effect: HashMap<&[u8],Vec<&[i8;23]>> = HashMap::with_capacity(100000);
 					let mut lore_hash_by_end: HashMap<&[u8;28],Vec<&Vec<[u8;28]>>> = HashMap::with_capacity(20000);
+					let mut all_causes:Vec<&[u8]> = Vec::with_capacity(10000);
 					
 					//Recode AI variables for speed and sanity.
 					imoose::ai_part_b1(&lore, &mut differences);
@@ -430,7 +433,8 @@ pub fn main() {
 																		&differences,
 																		&mut last_lines,
 																		&mut lore_hash_by_end,
-																		&mut cause_effect);
+																		&mut cause_effect,
+																		&mut all_causes);
 					
 					//loop within a battle, looking for specific instances to match
 					//by definition, this might as well block.
@@ -453,6 +457,7 @@ pub fn main() {
 											&differences,
 											&cause_effect,
 											&cause_effect_means,
+											&all_causes,
 											&c,d,e
 										)
 									);
@@ -808,6 +813,7 @@ pub fn main() {
 				let encna_c = names_of(&encounter);
 				let mut n_o_d1:usize = 0;
 				let mut discards:usize = 0;
+				let mut tpm:usize = TURNS_PER_MON;
 				let mut bytes_in_record:usize = 0;
 
 				let battle_thr=thread::spawn(move||{
@@ -827,23 +833,26 @@ pub fn main() {
 										&field,
 										&encna_cc,
 										n_o_d1);
-										
-						if d_cycle1%1000==0{
+						
+						if d_cycle1%1000==0	{
+							if discards<2*n_o_d1 {tpm-=1}else{tpm+=1};
+						};
+						if d_cycle1%20000==0{
 							println!("D-cycle={}",d_cycle1);
 							if bytes_in_record*cpu_n>lim {
-								println!("Sizeof battle_rec fragment: {}",bytes_in_record);
+								println!("Sizeof battle_rec fragment: {}\nNOD = {}",bytes_in_record,n_o_d1);
 								break 'dream_looper;
 							};
-						}else{};
-						if n_o_d1%1000==0{println!("NOD={}",n_o_d1)}else{};
+						};
 						
-						if bl.len()<(cms*12+20){
-							bytes_in_record+= bl.len()*28;
+						if bl.len()<(cms*TURNS_PER_MON){
+							bytes_in_record+= bl.len()*28*3;
 							battle_rec.push(bl);
 							n_o_d1+=1;
-						}else{};
+						}else{
+							discards+= 1;
+						};
 						let t1=PreciseTime::now();
-						discards = n_o_d1;
 						if t0.to(t1)>time::Duration::seconds(10){
 							println!("Size of battle_rec fragment: {}",bytes_in_record);
 							break 'dream_looper;
@@ -851,7 +860,7 @@ pub fn main() {
 					};
 					println!("\nNo. of dreams: {}\n",d_cycle1);
 					println!("Number of records: {}", battle_rec.len());
-					println!("Number of discarded dreams: {}",d_cycle1-discards);
+					println!("Number of discarded dreams: {}",discards);
 					battle_rec
 				});
 				battle_threads.push(battle_thr);
@@ -1177,6 +1186,7 @@ fn load_image<P>(display: &glium::Display, path: P,adjust:(bool,f32)) -> glium::
 fn generate_world_map(world:&Vec<[Place;19]>,
 					  size:&[usize;2],		//[h,w] ->h%19==0, w%19==0 if not the world ends.
 					  display:&glium::Display)->  glium::texture::SrgbTexture2d{
+
 	let a = PreciseTime::now();					  
 	//Create vector of pixels and correct image size.
 	let mut size:[usize;2] = [size[0],size[1]]; //[h,w]
@@ -1207,12 +1217,17 @@ fn generate_world_map(world:&Vec<[Place;19]>,
 	//function to refine (blur the boundaries)
 	gmoose::refine_map(&mut pixels,size[1],size[0]);
 	
-	// in theory it would be more efficient to start with Vec<u8>
-	// instead of Vec<[u8;4]>, but... you know... darned safety.
-	let mut pix_rgba:Vec<u8> = Vec::with_capacity(pixels.len()*4);
-	for x in pixels.iter() {
-		pix_rgba.extend_from_slice(x);
-	}
+	// Transmute the map from [u8;4] to u8,u8,u8,u8...
+	let mut pix_rgba:Vec<u8> = unsafe
+	{
+		let pixel_count = pixels.len();
+		let p = std::mem::transmute::<*mut [u8;4],*mut u8>(pixels.as_mut_ptr());
+		std::mem::forget(pixels);
+		Vec::from_raw_parts(p,pixel_count*4,pixel_count*4)
+	};
+	//for x in pixels.into_iter() {
+		//pix_rgba.extend_from_slice(&x);
+	//}
 	
 	println!("Map size: {:?}",size);
 	

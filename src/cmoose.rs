@@ -215,8 +215,8 @@ impl SpellBoxH {
 		SpellBoxH {
 			caster_indx: a_i,
 			targets: fin_targets,
-			turns_to_go: (gmoose::FPS as f64*2.0*100.0/caster.0.WM_shade as f64) as usize,
-			turns_init: gmoose::FPS as f64*2.0*100.0/caster.0.WM_shade as f64,
+			turns_to_go: (gmoose::FPS as f64*2.0*(caster.0.WM_shade/200.0) as f64) as usize,
+			turns_init: gmoose::FPS as f64*2.0*(caster.0.WM_shade/200.0) as f64,
 			damage: damage.clone(),
 		}
 	}

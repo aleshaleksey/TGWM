@@ -39,26 +39,28 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 use time::PreciseTime;
 
+const SWITCH_1:bool = true;
+
 
 //Since the "brain" now lives in a seperate thread,
 //it is worth taking the time at the start of each battle to make
 //these hashes to speed up all subsequent battles.
+//Thus this function doesn't speed things up now.
+//But it allows for the fast use of the simple cause-effect protocol.
+//PS lore_hash_by_end is probably completely useless. Will think on it.
 fn ai_accelerator_hash_marker(){}
 pub fn ai_accelerator_hash<'a,'b> (lore: &'a Vec<Vec<[u8;28]>>,
 							differences: &'b Vec<Vec<[i8;23]>>,
 							last_lines: &mut Vec<&'a [u8;28]>,
 					    	lore_hash_by_end: &mut HashMap<&'a[u8;28],Vec<&'a Vec<[u8;28]>>>,
-						    cause_effect: &mut HashMap<[u8;4],Vec<&'b [i8;23]>>
-						) -> HashMap<[u8;4],[f32;23]> {
-	//Initiate the vectors which will then be dismantled.
-	//NB, this structure is a complex structure. Use your head when working with this me.
-	//It is a vector of vectors of battles connected by end.		
-	//For lore_hash_by_end.				
-	let mut battles_by_end:Vec<Vec<&Vec<[u8;28]>>> = Vec::with_capacity(lore.len()/10000);	
-	let mut ends:Vec<&[u8;28]> = Vec::with_capacity(lore.len()/10000);
+						    cause_effect: &mut HashMap<&'a[u8],Vec<&'b [i8;23]>>,
+						    all_causes: &mut Vec<&'a[u8]>,
+						) -> HashMap<&'a[u8],[f32;23]> {
+							
+	println!("lore.len() = {}\ndifferences.len() = {}",lore.len(),differences.len());
+	//Initiate the vectors which will then be dismantled.	
 	
 	//For cause_effect. NB, this is also a complex structure. Use my head.
-	let mut ce_vector:Vec<([u8;4],Vec<&[i8;23]>)> = Vec::with_capacity(lore.len()/10000);
 	
 	//Build up battles_by_end and ends. Differences should be same length as battles.
 	//a difference table, however, should be shorter.
@@ -66,55 +68,47 @@ pub fn ai_accelerator_hash<'a,'b> (lore: &'a Vec<Vec<[u8;28]>>,
 		
 		let lstx = x.len()-1;
 		let lsty = y.len()-1;
-		let lnend = ends.len();
-		let mut no_new_end = true;
 		
-		//work to make lore_hash_by_end
-		for i in 0..lnend {
-			last_lines.push(&x[lstx]);
-			if *ends[i]==x[lstx] {
-				battles_by_end[i].push(&x);
-				no_new_end = false;
-				break;
-			};
+		//insert next reference into lore_hash_by_end.
+		let mut insert_into_lhbe = false;
+		match lore_hash_by_end.get_mut(&x[lstx]) {
+			Some(battle) => {
+				battle.push(&x);
+			},
+			_			 => {
+				insert_into_lhbe = true;
+			},
 		};
-		if !no_new_end {
-			battles_by_end.push(vec![&x]);
-			ends.push(&x[lstx]);
-		};
+		if insert_into_lhbe {lore_hash_by_end.insert(&x[lstx],vec![&x]);};
 		
 		//work to make cause_effect.
+		//cycle through one battle difference tables.
 		for j in 0..lsty {
-			//cycle through ce_vector.0	
-			let cend = ce_vector.len();
-			let mut no_new_cause = true;
-			for i in 0..cend {
-				if ce_vector[i].0==x[j][2..6] {
-					ce_vector[i].1.push(&y[j]);
-					no_new_end = false;
-					break;
-				};
-			};
-			if !no_new_end {
-				ce_vector.push(([x[j][2],x[j][3],x[j][4],x[j][5]],vec![&y[j]]));
+			//insert into cause_effects.
+			let mut insertion = false;
+			match cause_effect.get_mut(&x[j][2..5]) {
+				Some(effects) => {
+					effects.push(&y[j]);
+				},
+				_			  => {
+					insertion = true;
+					all_causes.push(&x[j][2..5]);
+				},
 			};
 			
-		};
-					
-	};
-	
-	//Insert into lore Hashmap.
-	for (battles,lastl) in battles_by_end.into_iter().zip(ends.into_iter()) {
-		lore_hash_by_end.insert(lastl,battles);	
+			if insertion {cause_effect.insert(&x[j][2..5],vec![&y[j]]);};		
+		};				
 	};
 	
 	//create averages hash
-	let mut averages_hash = HashMap::with_capacity(200000);
+	let mut averages_hash:HashMap<&[u8],[f32;23]> = HashMap::with_capacity(200000);
 	//Insert into cause effect hashmap.
-	for (cause,effect) in ce_vector.into_iter() {
-		averages_hash.insert(cause.clone(),mean23(&effect));
-		cause_effect.insert(cause,effect);	
-	};				
+	for cause in all_causes.iter() {
+		averages_hash.insert(
+			cause,mean23(cause_effect.get(cause).unwrap())
+		);
+	};
+	println!("Accelerator finished.");			
 	averages_hash		
 }
 
@@ -137,7 +131,7 @@ pub fn ai_part_b1<'a,'b>(lore: &'a Vec<Vec<[u8;28]>>,
 		for j in 0..(x.len()-1) {
 			let mut slice = [0;23];
 			for i in 5..28 {
-				slice[i-5] = (x[j][i] as i16 - x[j+1][i] as i16) as i8
+				slice[i-5] = (x[j][i] as i16 - x[j+1][i] as i16) as i8;
 			};
 			diff_n.push(slice);
 		};
@@ -146,242 +140,10 @@ pub fn ai_part_b1<'a,'b>(lore: &'a Vec<Vec<[u8;28]>>,
 	}
 }
 
-// The main function for the AI decision maker.
-// part_b2 will go inside here.
-fn ai_part_a_marker(){}
-pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-						 ii:usize,                             	//ifast from main battle.
-						 turn:usize,
-						 lore:&Vec<Vec<[u8;28]>>, 							 //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
-						 last_lines: &Vec<&[u8;28]>,
-						 differences: &Vec<Vec<[i8;23]>>,					 //lore effect substracted.
-						 cause_effect: &HashMap<[u8;4],Vec<&[i8;23]>>,   //vector of causes and effects
-						 cause_effect_means: &HashMap<[u8;4],[f32;23]>,
-						 now:&[u8;28],              //recl essentially.
-						 lsum:i32,
-						 order:Vec<(u8,u8)>
-					   ) -> (usize,usize) {
-						   
-	println!("Into ai_part_a");
-	let mut action=1;
-	let mut idm=255;
-	let t0=PreciseTime::now();
-	let lore_len = lore.len();
-	
-	let mut best_act_pm:usize=1;	//Primary choice action
-	let mut best_tar_pm:usize=255;	//Primary choice target
-	
-	let mut best_act_v2:usize=1;
-	let mut best_tar_v2:usize=255;
-	{	
-		println!("x.len={}, ii={}",x.len(),ii);	 
-		let selfl= x[ii].clone();                              	//Lifeform acting.
-		println!("Got past first indexer");
-		let ii8= ii as u8;									//self index as u8.
-		let t_u8= byteru16(turn as u16);					//turn as u8.
-		let mut chosen_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria.
-		let mut vict_c_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria which were "won".
-		let mut all_groups= Vec::with_capacity(25);											//vector of groups following normal indexing.
-		let mut uniq_group= Vec::with_capacity(25);											//vector of unique group listing.
-		let mut chosen_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for chosen battle lines.
-		let mut vict_c_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for victorious battle lines.
-		let mut last_c_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
-		let mut last_v_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
-		let mut ids=Vec::new();
-		let mut ids8=Vec::new();
-		let cms=x.len();
-			
-		for y in x.iter(){			 //make by group vector.
-			all_groups.push(y.1);
-			ids.push(y.0.id);
-			ids8.push(y.0.id as u8)
-		};           
-		uniq_group= uniq(&all_groups);      //make unique group vector,
-		println!("All groups by [i]: {:?}\n All ids by [i]: {:?}\n Unique groups: {:?}",all_groups,ids,uniq_group);     
-		println!("Owng: {}",x[ii].1);																					
-		
-		let mut v_count:Vec<usize> = Vec::new();  //victory count at each trigger.
-		let mut l_count:Vec<usize> = Vec::new();   //defeat count at each trigger.
-		let mut trigs:Vec<[u8;3]> = Vec::new();       				//unique triggers
-		trigs.push([255,255,255]);
-		l_count.push(100000);
-		v_count.push(0);
-		
-		//println!("got A");
-		for y in lore.iter(){ 		//create unique paths for everything. Curently pathed out.
-			
-			let mut lxsum:i32=0;
-			for i in 3..y.len(){
-				
-				lxsum+=(y[i][5] as i32)-128;
-				let mut light=true;
-				if (y[i][4]==ii8) & (now[6..28]==y[i][6..28]) & (y[i][2]!=0) & (i>=turn) & light {					//Condition.
-					let temp_trig:[u8;3]=[y[i][2],y[i][3],y[i][4]];
-					let j=i+1;
-					if lhas(&trigs,&temp_trig)==false {			//branch
-						trigs.push(temp_trig);
-						let lng = trigs.len()-1;
-						
-						if goal(&x,ii,&y[y.len()-1],&all_groups) {
-							v_count.push(0);
-							v_count[lng]+= 1;
-							l_count.push(1)
-						}else{
-							v_count.push(0);
-							l_count.push(1);
-							l_count[lng]+= 1;						
-						}
-					}else{
-						if goal(&x,ii,&y[y.len()-1],&all_groups) {
-							v_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
-						}else{
-							l_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
-						}
-					}
-				}else{};
-				light=light_m(lsum,lxsum.clone());
-			}
-		};
-		
-		//generate vectors of unique paths in order to count and assess. Currently commented out as unique paths are not used.
-		let trigs_l=trigs.len();
-
-
-		let mut l_v:Vec<f64>=Vec::new();
-		let mut l_v_by_count:Vec<f64> = Vec::new();
-		for i in 0..trigs_l{
-			l_v_by_count.push((l_count[i] as f64)/((v_count[i]+l_count[i]) as f64));
-		};
-		
-		
-		//let all_paths_to_rome = v_paths.iter().fold(0,|acc,ref x| acc + x.len()); Path out.
-		let total_victories = v_count.iter().fold(0,|acc,x| acc + x);
-		let mut i_best_path:usize=0;    //Primary choice
-		let mut i_best_count:usize=0;   //Alternative choice
-		
-		let mut best_act_sec:usize=1;	//Secondary choices.
-		let mut best_tar_sec:usize=255;	//Secondary choice
-		println!("total victories = {}",
-									  //all_paths_to_rome,
-									  total_victories);
-		
-		if total_victories<1 { //If there are no victories in normal parameters, make a set of less stringent tables.
-			println!("Survival strategy failed. Herp (all_paths = {})",total_victories);
-			println!("Got A");
-			for number in 0..lore.len(){        //Make chosen_battles battles list.  ((lsum-7)<=xlsum) & (xlsum<=(lsum+7)) &
-				let mut xlsum:i32=0;
-				for i in 3..lore[number].len(){ // Reminder:(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],etc)
-					//Insert xlsum and orders script here.
-					//NB this is a modified permissive script.
-					if (lore[number][i][4]==ii8) & (lore[number][i][6+ii]==now[6+ii]){// if turn is yours and your state matches your state...				
-						chosen_battles.push(&lore[number]);
-						chosen_stats.push((lore[number][i][2],lore[number][i][3],all_groups[ii]));
-						if goal(&x,ii,&lore[number][lore[number].len()-1],&all_groups) {vict_c_battles.push(&lore[number])}else{};
-					}else{}
-				};
-			};
-			println!("Got B");
-
-			for y in chosen_battles.iter(){
-				let y_l=y.len()-1;
-				if y[y_l][4]==ii8{
-					last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
-				}else{};
-			};
-			println!("Got C");
-
-			let mut lv_effects:Vec<[i16;23]>=Vec::new();
-			if vict_c_battles.len()>0{
-				for y in vict_c_battles.iter(){
-					let y_l=y.len()-1;
-					let mut temp_sub:[i16;23]=[0;23];
-					for i in 0..23{temp_sub[i]=(now[5+i] as i16)-(y[y_l][5+i] as i16)};
-					lv_effects.push(temp_sub);
-					if y[y_l][4]==ii8{
-						last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
-					}else{};
-				};
-				lv_effects.remove(0);
-				//println!("Got D");
-				let mut uniq_cl_stat=uniq(&last_c_stat);
-				let mut last_index=vec!([1,255,5,5]);
-				//println!("Got Da");
-				for y in uniq_cl_stat.into_iter(){
-					if (y[2]==0)||(y[3]==0){}else{last_index.push(y)}
-				};
-				//println!("Got Db");
-				let l_c_count:Vec<f64>=vcount(&last_index,&last_c_stat);
-				let l_v_count:Vec<f64>=vcount(&last_index,&last_v_stat);
-				//println!("Got Dc");
-				let last_ratios:Vec<f64>=vf64ratio(&l_v_count,&l_c_count);
-				//println!("Got DcII");
-				let salvation=last_index[vnmaxi(&last_ratios)];
-				//println!("Got Dd");
-				best_act_pm=salvation[0] as usize;
-				best_tar_pm=salvation[1] as usize;
-		
-				println!("Last ratios len: {}", last_ratios.len());
-				println!("Last valid actions len: {}",last_index.len())
-			}else{
-				println!("No victories detected.");
-				best_act_pm=1;
-				best_tar_pm=255;
-			};
-			   //SCOPING OUT
-			  //SCOPING OUT
-			 //SCOPING OUT
-			//SCOPING OUT 
-			//Experimental Engine for telling causes and consequences.
-			//will actually be used to replace the above permissing thing.
-			if false {
-				
-				
-			
-			}; //SCOPING OUT OVER
-			  //SCOPING OUT OVER
-			 //SCOPING OUT OVER
-			//SCOPING OUT OVER
-			
-					
-		}else{
-			//i_best_path = vnmini(&l_v);
-			i_best_count = vnmini(&l_v_by_count);
-			best_act_pm = trigs[i_best_count][0] as usize;
-			best_tar_pm = trigs[i_best_count][1] as usize;
-		};
-		//println!("Herp Derp's i_best_path = {}",i_best_path);
-		//println!("Min L/V (path) = {} (number {})",l_v[vnmini(&l_v)],vnmini(&l_v));
-		
-		if best_tar_pm != 255 {
-			println!("Min L/V (count)= {} (number {})",l_v_by_count[vnmini(&l_v_by_count)],vnmini(&l_v_by_count));
-			if l_v_by_count[vnmaxi(&l_v_by_count)]==0.0 {
-				println!("By count method has failed us. Going by unique paths.");
-				best_act_pm = trigs[i_best_path][0] as usize;
-				best_tar_pm = trigs[i_best_path][1] as usize;
-			};
-			//println!("got D");
-			
-			for i in 0..trigs.len(){println!("{}.) Trigs: {:?}, Ratio(paths,counts): ({})",
-																							 i,
-																							 &trigs[i],
-																							 &l_v_by_count[i])};    
-			if best_tar_pm<x.len(){
-				println!("Best target: {} aka {} from group {}",best_tar_pm,x[best_tar_pm].0.name,x[best_tar_pm].1) 
-			}else{
-				println!("Survival strategy failure. Herp derp.")
-			};
-		};
-	};	
-	println!("Best action: {}",best_act_pm);                                 
-	let t1=PreciseTime::now();	
-	println!("Thinking time: {}",t0.to(t1));		                         
-	//panic!("I want to pause here. FOREVER.");			
-	(best_act_pm,best_tar_pm)                             //returns best action and best target.
-}
-
 //The winning team from the winning team's perspective;
 //different lifeforms have different victory conditions.
 //Simple version.
+fn goal_marker(){}
 fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating battles
 		ii:usize,						 //self index.
 		l_line:&[u8;28],
@@ -495,6 +257,116 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		if foes_live || !allies_live {victory=false}else{}
 	};					
 	victory
+}
+
+//The winning team from the winning team's perspective;
+//different lifeforms have different victory conditions.
+//Simple version.
+fn perfect_goal_marker(){}
+fn perfect_goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating battles
+		ii:usize,						 //self index.
+		all_groups:&Vec<usize>)->[Option<u8>;22] {
+			
+	let ii8= ii as u8;
+	let owng= xx[ii].1;
+	let mut victory=true;
+	let mut output = [None;22];
+	if xx.len()>22 {return output;}; //CRASH PROTECTION is too many.
+	
+	if !xx[ii].0.Alive {         //undead victory condition. (kill all things living).
+		let mut alive=false;
+		for i in 0..xx.len(){
+			if (all_groups[i]!=owng)
+			 & xx[i].0.Alive {
+				output[i] = Some(0);
+			}else{};
+		};
+		
+	}else if xx[ii].0.Type==ANGEL{  //victory conditions for angels. (KIll giants, undeaad and humans first).
+		let mut foes_live=false;
+		let mut allies_live=false;
+		let mut hate=false;
+		for y in xx.iter(){
+			if (y.1!=xx[ii].1)
+			 & ((y.0.Type==GIANT)||(y.0.Type==UNDEAD)||(y.0.Type==HUMAN))
+			 & (y.0.HP_shade>0.0){hate=true}else{};
+		};
+		if hate {
+			for i in 0..xx.len(){
+				if (all_groups[i]!=owng)
+				& ((xx[i].0.Type==GIANT)
+				||(xx[i].0.Type==UNDEAD)
+				||(xx[i].0.Type==HUMAN)) {output[i] = Some(0);};
+			};
+			
+		}else{
+			for i in 0..xx.len(){
+				if all_groups[i]!=owng {
+					output[i] = Some(0);
+				}else{
+					output[i] = Some(5);
+				};
+			};
+		};
+			
+	}else if xx[ii].0.Type==BEAST{ //Victory conditions for beasts: Kill all unclean and undead, then everything else.
+		let mut foes_live=false;
+		let mut allies_live=false;
+		let mut hate=false;
+		for y in xx.iter(){
+			if (y.1!=xx[ii].1)
+			 & (!y.0.Alive || y.0.Unclean)
+			 & (y.0.HP_shade>0.0){hate=true}else{}
+		};
+		if hate {
+			for i in 0..xx.len(){
+				if (all_groups[i]!=owng)
+				 & (!xx[i].0.Alive ||!xx[i].0.Unclean) {output[i] = Some(0);};
+			};
+		}else{
+			for i in 0..xx.len(){
+				if all_groups[i]!=owng {
+					output[i] = Some(0)
+				}else{
+					output[i] = Some(5)
+				};
+			};
+		}
+	}else if xx[ii].0.Type==GOBLIN { //Victory conditions for goblin: Kill all non-goblins, then everything else.
+		let mut foes_live=false;
+		let mut allies_live=false;
+		let mut hate=false;
+		for y in xx.iter(){
+			if (y.1!=xx[ii].1)
+			 & (y.0.Type != GOBLIN)
+			 & (y.0.HP_shade>0.0){hate=true}else{}
+		};
+		if hate {
+			for i in 0..xx.len(){
+				if (all_groups[i]!=owng)
+				 & (xx[i].0.Type != GOBLIN) {output[i] = Some(0);};
+			};
+		}else{
+			for i in 0..xx.len(){
+				if all_groups[i]!=owng {
+					output[i] = Some(0)
+				}else{
+					output[i] = Some(5)
+				};		 
+			};
+		}
+	}else{                           //victory condition for normal creatures.
+		let mut foes_live=false;
+		let mut allies_live=false;
+		for i in 0..xx.len(){
+			if all_groups[i]!=owng {
+				output[i] = Some(0)
+			}else{
+				output[i] = Some(5)
+			};		 
+		};
+	};					
+	output
 }
 
 
@@ -671,9 +543,9 @@ fn uniq_m<T:PartialOrd>(mvec:Vec<T>)->Vec<T>{
 }
 
 //Counts cases of "indv[i]" for each entry of "indv" in "mesv".
-fn vcount<T:PartialOrd + Copy>(indv:&Vec<T>, mesv:&Vec<T>)->Vec<f64>{
+fn vcount<T:PartialOrd + Copy>(indv:&Vec<T>, mesv:&Vec<T>)->Vec<f32>{
 	let il=indv.len();
-	let mut counts:Vec<f64>=vec![0.0;il];
+	let mut counts:Vec<f32>=vec![0.0;il];
 	if il>0{
 		for i in 0..indv.len(){
 			for x in mesv.into_iter(){
@@ -685,9 +557,9 @@ fn vcount<T:PartialOrd + Copy>(indv:&Vec<T>, mesv:&Vec<T>)->Vec<f64>{
 }
 
 //VECTORS MUST HAVE SAME LENGTH!!
-fn vf64ratio(num:&Vec<f64>, denom:&Vec<f64>)->Vec<f64>{
+fn vf32ratio(num:&Vec<f32>, denom:&Vec<f32>)->Vec<f32>{
 	let dnl=denom.len();
-	let mut rvec:Vec<f64>= vec!(0.0;dnl);
+	let mut rvec:Vec<f32>= vec!(0.0;dnl);
 	for i in 0..dnl{
 		if denom[i]>0.0{
 			rvec[i]=num[i]/denom[i]
@@ -779,10 +651,10 @@ fn state_matcher(&now:&[u8;28],record:&[u8;28],cms:usize,tolerance:usize)->bool{
 
 
 fn light_m(now_l:i32,observed_l:i32)->bool{
-	let nl=now_l as f64;
-	let ol=observed_l as f64;
-	let upper_lim:f64=nl*1.1+5.0;
-	let lower_lim:f64=nl*0.9-5.0;
+	let nl=now_l as f32;
+	let ol=observed_l as f32;
+	let upper_lim:f32=nl*1.1+5.0;
+	let lower_lim:f32=nl*0.9-5.0;
 	if (ol<=upper_lim) & (ol>=lower_lim){true}else{false}
 }
 
@@ -793,16 +665,16 @@ fn vmode<T:PartialOrd+Copy> (data:&Vec<T>)->T{
 	uniq_t[index]
 }
 
-
-fn essential_n (homo:Vec<[i16;23]>)->([i16;23],[f64;23]){
+//Not used anymore.
+fn essential_n (homo:Vec<[i16;23]>)->([i16;23],[f32;23]){
 	let mut ess_a=homo[0];
-	let mut means:[f64;23]=[0.0;23];
-	let l_h=homo.len() as f64;
+	let mut means:[f32;23]=[0.0;23];
+	let l_h=homo.len() as f32;
 	if l_h<1.0{println!("l_h.len()==0! We're gonna crash!");};
 	for x in homo.into_iter(){
 		for i in 0..23{
 			if ess_a[i]!=x[i]{ess_a[i]=0}else{};
-			means[i]+=x[i] as f64		
+			means[i]+=x[i] as f32		
 		}
 	};
 	for i in 0..23{
@@ -811,41 +683,42 @@ fn essential_n (homo:Vec<[i16;23]>)->([i16;23],[f64;23]){
 	(ess_a,means)
 }
 
-fn rms23<T:Num+Copy>(a:[T;23],now:&[u8;28])->f64
-where f64: std::convert::From<T>{
-	let mut rms:f64=0.0;
+fn rms23<T:Num+Copy>(a:[T;23],now:&[u8;28])->f32
+where f32: std::convert::From<T>{
+	let mut rms:f32=0.0;
 	for i in 0..23{
-		rms+=((now[i+5] as f64)-(f64::from(a[i]))).powf(2.0)
+		rms+=((now[i+5] as f32)-(f32::from(a[i]))).powf(2.0)
 	};
 	rms.sqrt()
 }
 
-fn rms23_special<T:Num+Copy>(a:[T;23],now:&[u8;28])->f64
-where f64: std::convert::From<T>{
-	let mut rms:f64=0.0;
+fn rms23_special<T:Num+Copy>(a:[T;23],now:&[u8;28])->f32
+where f32: std::convert::From<T>{
+	let mut rms:f32=0.0;
 	for i in 0..23{
-		let b=f64::from(a[i]);
-		rms+=((now[i+5] as f64)-(b)).powf(2.0)
+		let b=f32::from(a[i]);
+		rms+=((now[i+5] as f32)-(b)).powf(2.0)
 	};
 	rms.sqrt()
 }
 
-fn rms23_special_b<T:Num+Copy>(a:[T;23],now:&[u8;28])->f64
-where f64: std::convert::From<T>{
-	let mut rms:f64=0.0;
+fn rms23_special_b<T:Num+Copy>(a:[T;23],now:&[u8;28])->f32
+where f32: std::convert::From<T>{
+	let mut rms:f32=0.0;
 	for i in 0..23{
-		let b=f64::from(a[i]);
-		if b>0.0{rms+=((now[i+5] as f64)-(b)).powf(2.0)}else{}
+		let b=f32::from(a[i]);
+		if b>0.0{rms+=((now[i+5] as f32)-(b)).powf(2.0)}else{}
 	};
 	rms.sqrt()
 }
 
 //special mean function
-//uses f32 for speed, should go wrong for very long battles.
+//uses f32 for speed, but may reduce accuracy sometimes.
 fn mean23<T:Num+Copy>(battle_block:&Vec<&[T;23]>)->[f32;23]
 where f32: std::convert::From<T> {
 	let mut output = [0.0;23];
-	let n = battle_block.len() as f32;
+	let mut n = battle_block.len() as f32;
+	if n<1.0 {n = 1.0;}; //A little bit of cheating.
 	
 	for x in battle_block.iter() {
 		for i in 0..23 {output[i]+= f32::from(x[i]);};
@@ -853,4 +726,328 @@ where f32: std::convert::From<T> {
 	
 	for i in 0..23 {output[i] = output[i]/n;};
 	output
+}
+
+//Convert type.
+fn f32_fy(input:&[Option<u8>;22])->[Option<f32>;22] {
+	let mut output:[Option<f32>;22] = [None;22];
+	for (x,y) in input.iter().zip(output.iter_mut()) {
+		if x.is_some() {*y = Some(x.unwrap() as f32);};
+	}
+	output
+} 
+
+//A function to use the cause_effect hashmap and my_causes to build
+//rms between desired_goal and each effect.
+//rms_builder_cause_effect(&mut my_causes_val,&cause_effect_means,&ideal_effect);
+fn rms_builder_cause_effect_marker(){}
+fn rms_builder_cause_effect(my_ce:&mut Vec<(&[u8],f32)>,
+							ce_mean_hash:&HashMap<&[u8],[f32;23]>,
+							ideal_effect:&[Option<f32>;22]) {
+	
+	for (x,y) in my_ce.iter_mut() {
+		match ce_mean_hash.get(x) {
+			Some(effects) => {
+				*y = rms23_f32_option(ideal_effect,effects);
+			},
+			_			  => {continue;},
+		};
+	}
+}
+
+//A function to give you an RMS from two wather unusual types.
+fn rms23_f32_option(des:&[Option<f32>;22],comp:&[f32;23])->f32 {
+	let mut rms:f32=0.0;
+	for i in 0..22{
+		if des[i].is_some() {
+			rms+=(comp[i+1]-des[i].unwrap()).powf(2.0);
+		};
+	};
+	rms.sqrt()
+}
+
+//A function to get the desired effect from desired_goal and now, and
+//that is the ideal effect.
+fn idealise_marker(){}
+fn idealise(now:&[u8;28],desired_goal:&[Option<f32>;22])->[Option<f32>;22] {
+	let mut ideal_effect = [None;22];
+	
+	for (i,(e,g)) in ideal_effect.iter_mut().zip(desired_goal.iter()).enumerate() {
+		if g.is_some() & (now[i+6] != 0) {
+			*e = Some(now[i+6] as f32-g.unwrap());
+		};
+	}
+	ideal_effect
+}
+
+//takes Vec<([u8],f32)> and returns the [u8] from the minimum f32.
+fn minimal_cause(source:Vec<(&[u8],f32)>) -> (usize,usize) {
+	//Anti crash clause.
+	if source.len()>0 {
+		let mut out:(usize,usize) = (source[0].0[0] as usize,source[0].0[1] as usize);
+		let mut min_val:f32 = source[0].1;
+		for (slice,val) in source.iter() {
+			if *val<min_val {
+				min_val = *val;
+				out = (slice[0] as usize,slice[1] as usize);
+			};
+		};
+		out
+	}else{
+		(255,255)
+	}
+}
+
+
+// The main function for the AI decision maker.
+// part_b2 will go inside here.
+fn ai_part_a_marker(){}
+pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+						 ii:usize,                             	//ifast from main battle.
+						 turn:usize,
+						 lore:&Vec<Vec<[u8;28]>>, 							 //(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],etc)
+						 last_lines: &Vec<&[u8;28]>,
+						 differences: &Vec<Vec<[i8;23]>>,					 //lore effect substracted.
+						 cause_effect: &HashMap<&[u8],Vec<&[i8;23]>>,   //vector of causes and effects
+						 cause_effect_means: &HashMap<&[u8],[f32;23]>,
+						 all_causes: &Vec<&[u8]>,
+						 now:&[u8;28],              //recl essentially.
+						 lsum:i32,
+						 order:Vec<(u8,u8)>
+					   ) -> (usize,usize) {
+						   
+	println!("Into ai_part_a");
+	let mut action=1;
+	let mut idm=255;
+	let t0=PreciseTime::now();
+	let lore_len = lore.len();
+	
+	let mut best_act_pm:usize=1;	//Primary choice action
+	let mut best_tar_pm:usize=255;	//Primary choice target
+	
+	let mut best_act_v2:usize=1;
+	let mut best_tar_v2:usize=255;
+	{	
+		println!("x.len={}, ii={}",x.len(),ii);	 
+		let selfl= x[ii].clone();                              	//Lifeform acting.
+		println!("Got past first indexer");
+		let ii8= ii as u8;									//self index as u8.
+		let t_u8= byteru16(turn as u16);					//turn as u8.
+		let mut chosen_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria.
+		let mut vict_c_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria which were "won".
+		let mut all_groups= Vec::with_capacity(25);											//vector of groups following normal indexing.
+		let mut uniq_group= Vec::with_capacity(25);											//vector of unique group listing.
+		let mut chosen_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for chosen battle lines.
+		let mut vict_c_stats:Vec<(u8,u8,usize)>= Vec::with_capacity(lore_len);		//vector of action, target and group for victorious battle lines.
+		let mut last_c_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
+		let mut last_v_stat:Vec<[u8;4]>= Vec::with_capacity(lore_len);	
+		let mut ids=Vec::new();
+		let mut ids8=Vec::new();
+		let cms=x.len();
+			
+		for y in x.iter(){			 //make by group vector.
+			all_groups.push(y.1);
+			ids.push(y.0.id);
+			ids8.push(y.0.id as u8)
+		};           
+		uniq_group= uniq(&all_groups);      //make unique group vector,
+		println!("All groups by [i]: {:?}\n All ids by [i]: {:?}\n Unique groups: {:?}",all_groups,ids,uniq_group);     
+		println!("Owng: {}",x[ii].1);																					
+		
+		let mut v_count:Vec<usize> = Vec::new();  //victory count at each trigger.
+		let mut l_count:Vec<usize> = Vec::new();   //defeat count at each trigger.
+		let mut trigs:Vec<[u8;3]> = Vec::new();       				//unique triggers
+		trigs.push([255,255,255]);
+		l_count.push(100000);
+		v_count.push(0);
+		
+		//println!("got A");
+		for y in lore.iter(){ 		//create unique paths for everything. Curently pathed out.
+			
+			let mut lxsum:i32=0;
+			for i in 3..y.len(){
+				
+				lxsum+=(y[i][5] as i32)-128;
+				let mut light=true;
+				if (y[i][4]==ii8) & (now[6..28]==y[i][6..28]) & (y[i][2]!=0) & (i>=turn) & light {					//Condition.
+					let temp_trig:[u8;3]=[y[i][2],y[i][3],y[i][4]];
+					let j=i+1;
+					if lhas(&trigs,&temp_trig)==false {			//branch
+						trigs.push(temp_trig);
+						let lng = trigs.len()-1;
+						
+						if goal(&x,ii,&y[y.len()-1],&all_groups) {
+							v_count.push(0);
+							v_count[lng]+= 1;
+							l_count.push(1)
+						}else{
+							v_count.push(0);
+							l_count.push(1);
+							l_count[lng]+= 1;						
+						}
+					}else{
+						if goal(&x,ii,&y[y.len()-1],&all_groups) {
+							v_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
+						}else{
+							l_count[vvwhich(&trigs,temp_trig)[0]]+= 1;
+						}
+					}
+				}else{};
+				light=light_m(lsum,lxsum.clone());
+			}
+		};
+		
+		//generate vectors of unique paths in order to count and assess. Currently commented out as unique paths are not used.
+		let trigs_l=trigs.len();
+
+
+		let mut l_v:Vec<f32>=Vec::new();
+		let mut l_v_by_count:Vec<f32> = Vec::new();
+		for i in 0..trigs_l{
+			l_v_by_count.push((l_count[i] as f32)/((v_count[i]+l_count[i]) as f32));
+		};
+		
+		
+		//let all_paths_to_rome = v_paths.iter().fold(0,|acc,ref x| acc + x.len()); Path out.
+		let total_victories = v_count.iter().fold(0,|acc,x| acc + x);
+		let mut i_best_path:usize=0;    //Primary choice
+		let mut i_best_count:usize=0;   //Alternative choice
+		
+		let mut best_act_sec:usize=1;	//Secondary choices.
+		let mut best_tar_sec:usize=255;	//Secondary choice
+		println!("total victories = {}",
+									  //all_paths_to_rome,
+									  total_victories);
+		
+		if total_victories<50000 { //If there are no victories in normal parameters, make a set of less stringent tables.
+			
+			if !SWITCH_1 {
+				println!("Survival strategy failed. Herp (all_paths = {})",total_victories);
+				println!("Got A");
+				for number in 0..lore.len(){        //Make chosen_battles battles list.  ((lsum-7)<=xlsum) & (xlsum<=(lsum+7)) &
+					let mut xlsum:i32=0;
+					for i in 3..lore[number].len(){ // Reminder:(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],etc)
+						//Insert xlsum and orders script here.
+						//NB this is a modified permissive script.
+						if (lore[number][i][4]==ii8) & (lore[number][i][6+ii]==now[6+ii]){// if turn is yours and your state matches your state...				
+							chosen_battles.push(&lore[number]);
+							chosen_stats.push((lore[number][i][2],lore[number][i][3],all_groups[ii]));
+							if goal(&x,ii,&lore[number][lore[number].len()-1],&all_groups) {vict_c_battles.push(&lore[number])}else{};
+						}else{}
+					};
+				};
+				println!("Got B");
+
+				for y in chosen_battles.iter(){
+					let y_l=y.len()-1;
+					if y[y_l][4]==ii8{
+						last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
+					}else{};
+				};
+				println!("Got C");
+
+				let mut lv_effects:Vec<[i16;23]>=Vec::new();
+				if vict_c_battles.len()>0{
+					for y in vict_c_battles.iter(){
+						let y_l=y.len()-1;
+						let mut temp_sub:[i16;23]=[0;23];
+						for i in 0..23{temp_sub[i]=(now[5+i] as i16)-(y[y_l][5+i] as i16)};
+						lv_effects.push(temp_sub);
+						if y[y_l][4]==ii8{
+							last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
+						}else{};
+					};
+					lv_effects.remove(0);
+					//println!("Got D");
+					let mut uniq_cl_stat=uniq(&last_c_stat);
+					let mut last_index=vec!([1,255,5,5]);
+					//println!("Got Da");
+					for y in uniq_cl_stat.into_iter(){
+						if (y[2]==0)||(y[3]==0){}else{last_index.push(y)}
+					};
+					//println!("Got Db");
+					let l_c_count:Vec<f32>=vcount(&last_index,&last_c_stat);
+					let l_v_count:Vec<f32>=vcount(&last_index,&last_v_stat);
+					//println!("Got Dc");
+					let last_ratios:Vec<f32>=vf32ratio(&l_v_count,&l_c_count);
+					//println!("Got DcII");
+					let salvation=last_index[vnmaxi(&last_ratios)];
+					//println!("Got Dd");
+					best_act_pm=salvation[0] as usize;
+					best_tar_pm=salvation[1] as usize;
+			
+					println!("Last ratios len: {}", last_ratios.len());
+					println!("Last valid actions len: {}",last_index.len())
+				}else{
+					println!("No victories detected.");
+					best_act_pm=1;
+					best_tar_pm=255;
+				};
+			  
+			//Experimental Engine for telling causes and consequences.
+			//will actually be used to replace the above permissing thing.
+			}else{
+				
+				println!("Building library of relevant causes");
+				println!("length of all_causes = {}",all_causes.len());
+				let mut my_causes_val:Vec<(&[u8],f32)> = Vec::with_capacity(1000);
+				for cause in all_causes.iter() {
+					if cause[2]==ii8 {my_causes_val.push((cause,0.0));};
+				};
+				
+				let desired_goal:[Option<u8>;22] = perfect_goal(&x,ii,&all_groups);
+				
+				//Need the difference between now and ideal goal.
+				//Then we need the effect which gets closest to this.
+				let d_goal32:[Option<f32>;22] = f32_fy(&desired_goal);
+				let ideal_effect:[Option<f32>;22] = idealise(&now,&d_goal32);
+				
+				rms_builder_cause_effect(&mut my_causes_val,&cause_effect_means,&ideal_effect);
+				println!("Perfect goal: {:?}",desired_goal);
+				println!("Status stat!: {:?}",&now[6..28]);
+				for (i,(x,e)) in my_causes_val.iter().enumerate() {
+					println!("{}). Cause: {:?}. RMSs: {}",i,x,e);
+				}
+				let (action,idm) = minimal_cause(my_causes_val);
+				println!("Ideal effect: {:?}",ideal_effect);
+				println!("Chosen effect: {:?}",cause_effect_means.get(&[action as u8,idm as u8,ii8][..]));
+				best_act_pm = action;
+				best_tar_pm = idm;
+			}; 
+			
+					
+		}else{
+			//i_best_path = vnmini(&l_v);
+			i_best_count = vnmini(&l_v_by_count);
+			best_act_pm = trigs[i_best_count][0] as usize;
+			best_tar_pm = trigs[i_best_count][1] as usize;
+		};
+		//println!("Herp Derp's i_best_path = {}",i_best_path);
+		//println!("Min L/V (path) = {} (number {})",l_v[vnmini(&l_v)],vnmini(&l_v));
+		
+		if best_tar_pm != 255 {
+			println!("Min L/V (count)= {} (number {})",l_v_by_count[vnmini(&l_v_by_count)],vnmini(&l_v_by_count));
+			if l_v_by_count[vnmaxi(&l_v_by_count)]==0.0 {
+				println!("By count method has failed us. Going by unique paths.");
+				best_act_pm = trigs[i_best_path][0] as usize;
+				best_tar_pm = trigs[i_best_path][1] as usize;
+			};
+			//println!("got D");
+			
+			for i in 0..trigs.len(){println!("{}.) Trigs: {:?}, Ratio(paths,counts): ({})",
+																							 i,
+																							 &trigs[i],
+																							 &l_v_by_count[i])};    
+			if best_tar_pm<x.len(){
+				println!("Best target: {} aka {} from group {}",best_tar_pm,x[best_tar_pm].0.name,x[best_tar_pm].1) 
+			}else{
+				println!("Survival strategy failure. Herp derp.")
+			};
+		};
+	};	
+	println!("Best action: {}",best_act_pm);                                 
+	let t1=PreciseTime::now();	
+	println!("Thinking time: {}",t0.to(t1));		                         
+	//panic!("I want to pause here. FOREVER.");			
+	(best_act_pm,best_tar_pm)                             //returns best action and best target.
 }

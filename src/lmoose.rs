@@ -569,7 +569,25 @@ impl Lifeform {
 	}		
 }
 
-
+impl Shade {
+	
+	pub fn new()->Shade {
+		Shade{
+			SL_shade: Vec::new(),
+			MP_shade: 0.0,
+			HP_shade: 0.0,
+			S_shade: 0.0,
+			A_shade: 0.0,
+			D_shade: 0.0,
+			WM_shade: 0.0,
+			BM_shade: 0.0,
+			Inv_shade: Vec::new(),
+			Death: false,
+			Teleport: false,
+			Timestop: 0.0,
+		}		
+	}
+}
 
 #[allow(non_snake_case)]
 pub fn cureL()->Spell{
@@ -581,7 +599,7 @@ let cureL=Spell{
  Power: 10.0,
  target_boon: SINGLE,
  target_woe: SAME,
- Health: 10.0,
+ Health: 5.0,
  Mana: 0.0,
  Speed: 0.0,
  Attack: 0.0,
@@ -607,7 +625,7 @@ let cure=Spell{
  Power: 20.0,
  target_boon: SINGLE,
  target_woe: SAME,
- Health: 10.0,
+ Health: 5.0,
  Mana: 0.0,
  Speed: 0.0,
  Attack: 0.0,
@@ -633,7 +651,7 @@ let cureG=Spell{
  Power: 30.0,
  target_boon: GROUP,
  target_woe: SAME,
- Health: 10.0,
+ Health: 5.0,
  Mana: 0.0,
  Speed: 2.0,
  Attack: 2.0,
