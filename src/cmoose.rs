@@ -70,7 +70,8 @@ pub struct SpellBoxInferno {
 	pub targets: Vec<usize>,
 	pub turns_to_go: usize,		//lightning will be faster for higher BM.
 	pub turns_after:usize,     //useful.
-	pub stage_three:usize,
+	pub turns_after2:usize, 
+	pub stage_four:usize,
 	pub turns_init: f64,
 	pub tracks: Vec<[f64;2]>,  //records each point on the lightning path.
 	pub paths: Vec<Vec<[f64;2]>>,
@@ -93,6 +94,17 @@ pub struct SpellBoxS {
 	pub caster_indx: usize,
 	pub targets: Vec<usize>,
 	pub turns_to_go: usize,		//lightning will be faster for higher BM.
+	pub turns_init: f64,
+	pub damage: [bool;25],
+}
+
+//Structure for drawing time spells.
+#[derive(Debug)]
+pub struct SpellBoxT {
+	pub caster_indx: usize,
+	pub targets: Vec<usize>,
+	pub turns_to_go: usize,
+	pub light: bool,
 	pub turns_init: f64,
 	pub damage: [bool;25],
 }
@@ -264,6 +276,28 @@ impl SpellBoxS {
 	}	
 }
 
+impl SpellBoxT {
+	pub fn new (caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
+			   a_i: usize,
+			   targets: &Vec<usize>,
+			   positions: &[[f64;2];25],
+			   damage: [bool;25],
+			   spell_light:bool)->SpellBoxT {
+		
+		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
+		for x in targets.iter() {fin_targets.push(*x);}
+		SpellBoxT {
+			caster_indx: a_i,
+			targets: fin_targets,
+			turns_to_go: (gmoose::FPS*3.0) as usize,
+			turns_init: (gmoose::FPS*3.0) as f64,
+			light: spell_light,
+			damage: damage.clone(),
+		}	
+		
+	}
+}
+
 impl SpellBoxR {
 	//need to change a few things here.
 	pub fn new(caster: &(Lifeform,usize,[Option<[usize;2]>;2]),
@@ -319,21 +353,22 @@ impl SpellBoxInferno {
 		let mut paths:Vec<Vec<[f64;2]>> = Vec::with_capacity(25);
 		for x in targets.iter() {
 			fin_targets.push(*x);
-			tracks.push(positions[a_i]);
-			paths.push(vec![positions[*x]]);
+			tracks.push(positions[*x]);
+			paths.push(vec![positions[a_i]]);
 		}
 		
-		let timing:f64 = gmoose::FPS as f64*1.0*100.0/caster.0.BM_shade as f64;
+		let timing:usize = (gmoose::FPS as f32*1.0*100.0/caster.0.BM_shade) as usize;
 			
 		SpellBoxInferno {
 			caster_indx: a_i,
 			targets: fin_targets,
-			turns_to_go: timing as usize,
-			turns_after: timing as usize,
-			stage_three: 0,
+			turns_to_go: timing,
+			turns_after: timing,
+			turns_after2: timing,
+			stage_four: 0,
 			turns_init: (gmoose::FPS as f64*1.0*100.0/caster.0.BM_shade as f64),
-			tracks: tracks,
-			paths:paths,
+			tracks: tracks, //for balls
+			paths:paths,	//for lines
 			damage: damage.clone(),
 		}	
 	}
@@ -388,6 +423,7 @@ pub enum GraphicsBox {
 	CastD(SpellBoxD),
 	CastS(SpellBoxS),
 	CastR(SpellBoxR),
+	CastT(SpellBoxT),
 	CastInferno(SpellBoxInferno),
 	None,
 }

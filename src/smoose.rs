@@ -199,12 +199,12 @@ The ashes of that which no longer belongs are mixed into the sands...
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Fire teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -320,12 +320,12 @@ Jovian Lightning is the greatest lightning magic. It is the spear of burning gol
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Lighning teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -433,12 +433,12 @@ There is a spell that brings peace and stillness: True Crystalise is that gift.\
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Ice teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -549,12 +549,12 @@ When projected as a spell, white magic preserves and restores things to the way 
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Light teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -666,12 +666,12 @@ You can see all that is wrong with yourself if you look for long enough into thi
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Darkness teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -779,12 +779,12 @@ It is the last place where those who have overstayed their welcome upon this wor
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Life teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -894,12 +894,12 @@ Now that the world itelf is tired, it has become crowded in my beloved city."
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Death teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -1014,12 +1014,12 @@ It can change the course of history...
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Albion teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{
@@ -1133,12 +1133,12 @@ But our hopes had become this world's hopes, and with our hopes fulfilled...
 				};
 				ans_2-=1;
 				if (ans_2+1)<on_offer.len(){
-					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==false){	
-						party[0].0.Spellist.push(pricelist[ans_2].0.name);
+					if (pricelist[ans_2].1<=party[0].0.Gold) & (lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==false){	
+						party[0].0.Spellist.push(pricelist[ans_2].0.id);
 						println!("Sage of Malachia teaches you {}.",&pricelist[ans_2].0.name);
 						any_key();
 						sage_loop3=true
-					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.name)==true{
+					}else if lhas(&party[0].0.Spellist,&pricelist[ans_2].0.id)==true{
 						println!("You already know {}.",&pricelist[ans_2].0.name);
 						any_key()
 					}else{

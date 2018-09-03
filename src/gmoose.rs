@@ -72,9 +72,9 @@ use std;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use conrod::widget::BorderedRectangle;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,
+#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxT,
 									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno};
-#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI,CastS,CastR,CastInferno};
+#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI,CastS,CastR,CastT,CastInferno};
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -91,10 +91,17 @@ use std;
 		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MALACHIA,
 			 MINDLESS,MOORLAND,MOOSE,RADIANT,RUIN,STEPPE,SPIRIT,
 			 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE,
-			 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY};			 
+			 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY,
 			 
-#[allow(unused_imports)] use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,door_to_darkness,
-			 white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,tower_of_soul};
+			 S_LESSER_CURE,S_CURE,S_GREATER_CURE,S_SACRED_CURE,S_INFERNO,S_FIREBALL,S_FIRE,S_EMBER,
+			 S_LESSER_CRYSTALLISE,S_CRYSTALLISE,S_TRUE_CRYSTALLISE,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM,
+			 S_SUMMON_REAPER,S_TELEPORT,S_GREATER_TELEPORT,S_LIGHT,S_SACRED_LIGHT,S_DARKNESS,S_ABYSSAL_DARKNESS,
+			 S_SLOW,S_HASTE,S_APOCALYPSE,S_GENESIS,S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING,S_TIMESTOP,
+			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};			 
+			 
+#[allow(unused_imports)] use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
+									  door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
+									  tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace};
 			 
 //General constacts.			 
 const VOID_TEXT:&str = "You cannot travel through the void.";
@@ -536,6 +543,23 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 					};
 				};
 		},
+		CastInferno(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_after != 0 {
+					x.turns_after-= 1;
+				}else if x.turns_after2 != 0 {
+					x.turns_after2-= 1;
+				}else if (x.turns_to_go==0) & (x.turns_after2==0) {
+					x.stage_four+= 1;
+				};
+				if x.stage_four>FPSU {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
 		CastD(ref mut x) => {
 				if x.turns_to_go != 0 {
 					x.turns_to_go-= 1;
@@ -577,6 +601,16 @@ fn sprite_box_decrement (sprite_boxer:&mut GraphicsBox,
 					};
 				};
 		},
+		CastT(ref mut x) => {
+				if x.turns_to_go != 0 {
+					x.turns_to_go-= 1;
+				}else if x.turns_to_go==0 {
+					nullify = true;
+					for t in x.targets.iter() {
+						shake_damage[*t] = x.damage[*t];
+					};
+				};
+		},
 		_ => {},
 	};			
 	
@@ -599,7 +633,7 @@ fn sprite_box_filler(magic:&Spell,
 					 shaking_dam: &[bool;25]) {
 						 
 	spell_targets_to_indices(to_hit,targets);
-	
+
 	match magic.Type {
 		LIGHTNING => {
 			*gx_box = GraphicsBox::CastL
@@ -628,17 +662,36 @@ fn sprite_box_filler(magic:&Spell,
 			);
 		},
 		FIRE => {
-			*gx_box = GraphicsBox::CastF
-			(
-				SpellBoxF::new
-				(
-					 caster,
-					 bifast,
-					 targets,
-					 sprite_pos,
-					 (*shaking_dam).clone()
-				)
-			);
+			match magic.id {
+				S_INFERNO => {
+					//println!("Going for inferno!");
+					*gx_box = GraphicsBox::CastInferno
+					(
+						SpellBoxInferno::new
+						(
+							caster,
+							bifast,
+							targets,
+							sprite_pos,
+							(*shaking_dam).clone()
+						)
+					);
+						
+				},
+				_		=> {
+					*gx_box = GraphicsBox::CastF
+					(
+						SpellBoxF::new
+						(
+							 caster,
+							 bifast,
+							 targets,
+							 sprite_pos,
+							 (*shaking_dam).clone()
+						)
+					);
+				},
+			};
 		},
 		DEATH => {
 			*gx_box = GraphicsBox::CastD
@@ -694,6 +747,20 @@ fn sprite_box_filler(magic:&Spell,
 				)
 			);
 		},
+		TIME => {
+			*gx_box = GraphicsBox::CastT
+			(
+				SpellBoxT::new
+				(
+					 caster,
+					 bifast,
+					 targets,
+					 sprite_pos,
+					 (*shaking_dam).clone(),
+					 magic.Light
+				)
+			);
+		},
 		_	=> {},
 	};
 } 
@@ -723,15 +790,16 @@ fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: 
 	//activate spell buttons.
 	while let Some(spell) = spell_menu.next(ui) {
 		let r  = spell.row;
-		let colour = colour_of_magic(arcana_type_from_spell_name(spl,party[battle_ifast].0.Spellist[r]).unwrap());
-		let magic_butt = widget::Button::new().label(party[battle_ifast].0.Spellist[r])
+		let spell_name:String = arcana_name_from_spell_id(spl,party[battle_ifast].0.Spellist[r]);
+		let colour = colour_of_magic(arcana_type_from_spell_id(spl,party[battle_ifast].0.Spellist[r]).unwrap());
+		let magic_butt = widget::Button::new().label(&spell_name)
 											  .label_color(colour.plain_contrast())
 											  .label_font_size(font_size_chooser_button_b(w_mc))
 											  .wh(butt_wh)
 											  .color(colour);
 		for _click in spell.set(magic_butt,ui) {
-			*to_cast = party[battle_ifast].0.Spellist[r].to_owned();
-			*comm_text = format!("{}\nYou prepare to cast {}...",comm_text,party[battle_ifast].0.Spellist[r]);
+			*comm_text = format!("{}\nYou prepare to cast {}...",comm_text,&spell_name);
+			*to_cast = spell_name.clone();
 		};
 	};
 }
@@ -1088,7 +1156,103 @@ fn set_fire(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	};
 }
 
+fn set_inferno_marker(){}
+fn set_inferno(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbi:&mut SpellBoxInferno,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbi.caster_indx];
+	
+	let mut fire_matrix = widget::Matrix::new(5,5)
+							  .wh([5.0*100.0,5.0*100.0])
+							  .xy([0.0;2])
+							  .set(ids.fire_matrix, ui);
+							  
+	let mut eclair_matrix = widget::Matrix::new(25,1)
+							  .wh([0.0;2])
+							  .xy([0.0;2])
+							  .set(ids.eclair_matrix, ui);
+	
+	if (sbi.turns_to_go>0) & (sbi.turns_to_go%4 != 0) {
+		for i in 0..sbi.targets.len() {
+			//extend lightning path for each target.
+			sprite_lightning_extender(&sprite_pos[sbi.targets[i]],
+									  &mut sbi.paths[i],
+									  sbi.turns_to_go,
+									  sbi.turns_init);
+			if let Some(mut thing) = eclair_matrix.next(ui) {
+				
+				let mut path = widget::PointPath::abs(sbi.paths[i].clone())
+					.thickness((sbi.turns_to_go%3) as f64)
+					.color(color::RED.with_luminance(0.1*(sbi.turns_to_go%5) as f32));
+					
+				thing.set(path,ui);
+			};
+		};
+	}else if (sbi.turns_after>0) & (sbi.turns_after%4 != 0) {
+		for i in 0..sbi.targets.len() {
+			//extend lightning path for each target.
+			sprite_fire_extender(caster_pos,
+							     &mut sbi.tracks[i],
+							     sbi.turns_after,
+							     sbi.turns_init);
+			if let Some(mut thing) = fire_matrix.next(ui) {
+				
+				thing.rel_x = sbi.tracks[i][0];
+				thing.rel_y = sbi.tracks[i][1];
+				let size = 10.0+(sbi.turns_after%5) as f64;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::RED.with_luminance(0.7).with_alpha(0.07)
+				);
+				thing.set(circle,ui);
+			};
+		};
+	}else if (sbi.turns_after2>0) & (sbi.turns_after2%4 != 0) {
+		for i in 0..sbi.targets.len() {
+			//extend lightning path for each target.
+			sprite_fire_extender(&sprite_pos[sbi.targets[i]],
+							     &mut sbi.tracks[i],
+							     sbi.turns_after2,
+							     sbi.turns_init);
+			if let Some(mut thing) = fire_matrix.next(ui) {
+				
+				thing.rel_x = sbi.tracks[i][0];
+				thing.rel_y = sbi.tracks[i][1];
+				let size = 10.0+(sbi.turns_after%5) as f64;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::RED.with_luminance(0.7).with_alpha(0.07)
+				);
+				thing.set(circle,ui);
+			};
+		};
+	}else if (sbi.stage_four<FPSU) & (sbi.stage_four%4 != 0) {
+		
+		for i in 0..sbi.targets.len() {
+			if let Some(mut thing) = fire_matrix.next(ui) {
+				
+				thing.rel_x = sprite_pos[sbi.targets[i]][0];
+				thing.rel_y = sprite_pos[sbi.targets[i]][1];
+				let size = 40.0+5.0*((sbi.stage_four%FPSU) as f64);
+				thing.w = size;
+				thing.h = size;
+				
+				let mut circle = widget::Circle::fill_with(size,
+					color::RED.with_luminance(0.7).with_alpha(0.07)
+				);
+				thing.set(circle,ui);
+			};
+		};
+	};
+}
+
 //throw the "fireball" at targets.
+//NB, to return it, use caster_position for target_pos.
 fn sprite_fire_extender_marker(){}
 fn sprite_fire_extender(target_pos:&[f64;2],
 							 path:&mut [f64;2],
@@ -1251,6 +1415,46 @@ fn set_heal(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	};
 }
 
+fn set_time_marker(){}
+fn set_time(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+				 sbt:&mut SpellBoxT,
+				 sprite_pos: &mut [[f64;2];25]) {
+	
+	let caster_pos:&[f64;2] = &sprite_pos[sbt.caster_indx];
+	let mut time_matrix = widget::Matrix::new(5,5)
+							  //.wh_of(ids.middle_column)
+							  .wh([5.0*10.0,5.0*10.0])
+							  .xy([0.0;2])
+							  .set(ids.time_matrix, ui);
+	
+	if (sbt.turns_to_go>0) & (sbt.turns_to_go%7 != 0) {
+		for i in 0..sbt.targets.len() {
+			//extend lightning path for each target.
+			if let Some(mut thing) = time_matrix.next(ui) {
+				
+				let ratio = sbt.turns_to_go as f64/sbt.turns_init;
+				let radius = if sbt.light {100.0*ratio}else{100.0*(1.0-ratio)};
+				let colour = if sbt.light {
+					color::GREEN.with_alpha(0.15)
+				}else{
+					color::BLACK.with_alpha(0.1)
+				};
+				
+				thing.rel_x = sprite_pos[sbt.targets[i]][0]+radius*sinp(sbt.turns_to_go,FPSU);
+				thing.rel_y = sprite_pos[sbt.targets[i]][1]+radius*cosp(sbt.turns_to_go,FPSU);
+				let size = 10.0*ratio;
+				thing.w = size*2.0;
+				thing.h = size*2.0;
+				
+				let mut circle = widget::Circle::fill(size)
+					.color(color::GREEN.with_alpha(0.2));
+					
+				thing.set(circle,ui);
+			};
+		};
+	};
+}
+
 //Set SFX for holy spells.
 fn set_holy_marker(){}
 fn set_holy(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
@@ -1340,6 +1544,8 @@ fn spell_setter(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		&mut CastI(ref mut ice)   => {set_ice(ids,ui,ice,sprite_pos);},
 		&mut CastS(ref mut holy)  => {set_holy(ids,ui,holy,sprite_pos);},
 		&mut CastR(ref mut rad)   => {set_radiant(ids,ui,rad,sprite_pos);},
+		&mut CastT(ref mut time)  => {set_time(ids,ui,time,sprite_pos);},
+		&mut CastInferno(ref mut inf)  => {set_inferno(ids,ui,inf,sprite_pos);},
 		_			  	  		  => {return},
 	};			 
 }
@@ -2493,7 +2699,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					n_s_l_q_f[6] = false;
 					wo.song_to_swap = None;
 					if new_game_init {
-							save(&party,&p_names,&p_loc,&mut comm_text,ui,ids);
+							save(&party,&p_names,spl,&p_loc,&mut comm_text,ui,ids);
 							n_s_l_q_f[1] = false;
 					}else{
 						comm_text = "There is nothing to save- start or load a moose first.".to_owned();
@@ -2542,6 +2748,11 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			};
 			
 			if n_s_l_q_f[6] {
+				//important hack to stop crashing on reload backgrounds.
+				if new_game_init {
+					tt_e_c_i_ll[2] = false;
+					tt_e_c_i_ll[0] = true;
+				};
 				set_options_canvas(ui,ids,ipath,gui_song_list,
 												silent_sender,
 												wo,
@@ -2578,8 +2789,8 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				set_comm_text(&mut "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned(),ui,ids);
 			};
 			for _click in explore_button{
-				*tt_e_c_i_ll = if new_game_init & !tt_e_c_i_ll[2] {
-					*idungeon = dungeon_finder(p_loc,dungeons);
+				*tt_e_c_i_ll = if new_game_init & !tt_e_c_i_ll[2] & !n_s_l_q_f[6] {
+					*idungeon = dungeon_finder(p_loc,dungeons,party);
 					*freeze_timer = timer;
 					if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
 					[false,false,true,false,false,false,tt_e_c_i_ll[6],false]
@@ -2809,14 +3020,14 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 															 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 															 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-															 tower_of_soul(&party).clone()];
+															 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
 					},
 				_ => {},
 			};
 		}else if n_s_l_q_f==[false,false,true,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
 			if new_game_init & (pressed.0==1){
 				new_game_init = false;
-				save(&party,&p_names,&p_loc,&mut comm_text,ui,ids);
+				save(&party,&p_names,spl,&p_loc,&mut comm_text,ui,ids);
 				comm_text = "Backup complete... Choose a moose to load:".to_owned();
 				set_comm_text(&mut comm_text,ui,ids);
 			}else if !new_game_init & (pressed.0!=5){
@@ -2838,7 +3049,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 												*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 															 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 															 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-															 tower_of_soul(&party).clone()];
+															 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
 												println!("Party on! {:?}",&party);
 											}else if pressed.0==0 {
 												comm_text = "Could not load this moose. Try another maybe?".to_owned();
@@ -3178,6 +3389,7 @@ widget_ids! {
 		death_matrix,
 		holy_matrix,
 		radiant_matrix,
+		time_matrix,
 				
 	}
 }
@@ -3327,7 +3539,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						    .set(ids.opt_reload_backgrounds_default,ui) {
 		print!("Reload backgrounds to default pressed");
 		wo.bgc = 0.0;
-		wo.update_bgc = true;						      
+		wo.update_bgc = true;				      
 	}
 	// Reload Backgrounds (with new settings).
 	
@@ -3592,16 +3804,16 @@ fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
 	println!("Self Attack:{}",character.Attack);
 	if dlb<0.0{
 		character.Spellist = match character.name {
-			"Witch"=>vec!["Cure","Ember","Darkness","Spark"],
-			"Warrior"=>vec!["Darkness"],
-			"Wonderer"=>vec!["Ember","Darkness","Slow"],
+			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
+			"Warrior"=>vec![S_DARKNESS],
+			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
 			_=>vec![],
 		};	
 	}else{
 		character.Spellist = match character.name {
-			"Witch"=>vec!["Cure","Light","Ember","Exorcism"],
-			"Warrior"=>vec!["Light"],
-			"Wonderer"=>vec!["Cure","Haste","Light"],
+			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
+			"Warrior"=>vec![S_LIGHT],
+			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
 			_=>vec![],
 		};
 	};
@@ -3620,16 +3832,16 @@ fn sidekick_maker(mut party: &mut Vec<(Lifeform,usize)>, mut p_names: &mut Vec<S
 	println!("Self Attack:{}",party[1].0.Attack);
 	if dlb<0.0{
 		party[1].0.Spellist = match party[1].0.name{
-			"Witch"=>vec!["Cure","Ember","Darkness","Spark"],
-			"Warrior"=>vec!["Darkness"],
-			"Wonderer"=>vec!["Ember","Darkness","Slow"],
+			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
+			"Warrior"=>vec![S_DARKNESS],
+			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
 			_=>vec![],
 		};
 	}else{
 		party[1].0.Spellist = match party[1].0.name{
-			"Witch"=>vec!["Cure","Light","Ember","Exorcism"],
-			"Warrior"=>vec!["Light"],
-			"Wonderer"=>vec!["Cure","Haste","Light"],
+			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
+			"Warrior"=>vec![S_LIGHT],
+			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
 			_=>vec![],
 		};
 	};
@@ -3923,12 +4135,13 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	if party[i].0.Spellist.len()>0 {
 		while let Some(spell) = spell_list.next(ui) {
 			let snow = spell.row;
+			let spell_name:String = arcana_name_from_spell_id(spl,party[i].0.Spellist[snow-1]);
 			if snow==0{
 				let title:String = format!("{} the {}'s Spellbook",p_names[i],party[i].0.name);
 				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
 			}else{
-				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_name(spl,party[i].0.Spellist[snow-1]).unwrap()];
-				let x = widget::Button::new().label(&party[i].0.Spellist[snow-1])
+				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,party[i].0.Spellist[snow-1]).unwrap()];
+				let x = widget::Button::new().label(&spell_name)
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
 				for _click in spell.set(x,ui){
@@ -3965,7 +4178,7 @@ fn set_learnable_spell_list (ref mut ui: &mut conrod::UiCell,
 	
 	for x in spl.iter(){
 		if (x.MP <= party[i].0.Exp - party[i].0.ExpUsed)
-		 & !lmoose::lhas(&party[i].0.Spellist,&x.name) {learnable_spells.push(x.name);};
+		 & !lmoose::lhas(&party[i].0.Spellist,&x.id) {learnable_spells.push(x.name);};
 	 };
 	
 	let mut matrix_rows:usize = 1;
@@ -4032,7 +4245,7 @@ fn set_learnable_spell_list (ref mut ui: &mut conrod::UiCell,
 				for _click in spell.set(x,ui) {
 					*comm_text = format!("{} reached out for {} and made it a part of their soul...",p_names[i],spell_out_spell);
 					set_comm_text(&mut comm_text,ui,ids);
-					party[i].0.Spellist.push(&*spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()].name);
+					party[i].0.Spellist.push(spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()].id);
 					party[i].0.ExpUsed+= spell_out_spell.MP;
 					println!("{:?}",party[i].0.Spellist);
 					tt_e_c_i_ll[7] = false;
@@ -4806,8 +5019,8 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 							*shaking_timer = timer;
 						};	
 						encounter[z].0.Speed_shade+= shades.0[z].S_shade;
-						if encounter[z].0.Speed_shade<1.0{
-							encounter[z].0.Speed_shade=1.0
+						if encounter[z].0.Speed_shade<5.0{
+							encounter[z].0.Speed_shade=5.0
 						}else{};
 						encounter[z].0.Attack_shade+=shades.0[z].A_shade;
 						encounter[z].0.Defence_shade+=shades.0[z].D_shade;
@@ -4838,14 +5051,16 @@ pub fn player_battle_turn  (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usi
 
 					//Fills the graphics box with the appropriate information,
 					//to launch the sprites into tomorrow.
-					sprite_box_filler(&y[to_cast_ind],sprite_boxer,
-						 &encounter[*battle_ifast],
-						 *battle_ifast,
-						 &to_hit,
-						 targets,
-						 &sprite_pos,
-						 shaking_dam
-					);
+					if y[to_cast_ind].MP<=encounter[*battle_ifast].0.MP_shade {
+						sprite_box_filler(&y[to_cast_ind],sprite_boxer,
+							 &encounter[*battle_ifast],
+							 *battle_ifast,
+							 &to_hit,
+							 targets,
+							 &sprite_pos,
+							 shaking_dam
+						);
+					};
 										
 					//*sel_targets = Vec::with_capacity(25);
 					*to_hit = vec![(false,false);cms];	
@@ -5190,8 +5405,8 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 						*shaking_timer = timer;
 					};			
 					encounter[z].0.Speed_shade+= shades.0[z].S_shade;
-					if encounter[z].0.Speed_shade<1.0{
-						encounter[z].0.Speed_shade=1.0
+					if encounter[z].0.Speed_shade<5.0{
+							encounter[z].0.Speed_shade=5.0
 					}else{};
 					encounter[z].0.Attack_shade+=shades.0[z].A_shade;
 					encounter[z].0.Defence_shade+=shades.0[z].D_shade;
@@ -5301,7 +5516,7 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 		};
 	};
 	
-	let mut victory:(bool,Option<usize>)= if !omnicide | (*battle_tturns>600) |escape {who_won(&alive)}else{(false,None)};
+	let mut victory:(bool,Option<usize>)= if !omnicide | (*battle_tturns>600) | escape {who_won(&alive)}else{(false,None)};
 	//println!("b2");
 	if escape {
 		n_s_l_q_f[4] = false;
@@ -5538,8 +5753,8 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 							x[z].0.MP_shade+=shades.0[z].MP_shade;
 							x[z].0.HP_shade+=shades.0[z].HP_shade;
 							x[z].0.Speed_shade+= shades.0[z].S_shade;
-							if x[z].0.Speed_shade<1.0{
-								x[z].0.Speed_shade=1.0
+							if x[z].0.Speed_shade<5.0{
+								x[z].0.Speed_shade=5.0
 							}else{};
 							x[z].0.Attack_shade+=shades.0[z].A_shade;
 							x[z].0.Defence_shade+=shades.0[z].D_shade;
@@ -5598,17 +5813,31 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 //
 //function for converting spell name to global spell spell index:
 
+fn arcana_index_from_spell_id(spell_list: &Vec<Spell>, id: i8) ->Option<usize> {	
+	for i in 0..spell_list.len(){
+		if spell_list[i].id==id {return Some(i)}
+	}
+	None
+}
 fn arcana_index_from_spell_name(spell_list: &Vec<Spell>, name: &str) ->Option<usize> {	
 	for i in 0..spell_list.len(){
 		if spell_list[i].name==name {return Some(i)}
 	}
 	None
 }
-fn arcana_type_from_spell_name<'a> (spell_list: &'a Vec<Spell>, name: &str) ->Option<u8> {	
+fn arcana_type_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) ->Option<u8> {	
 	for x in spell_list{
-		if x.name==name {return Some(x.Type)}
+		if x.id==id {return Some(x.Type)}
 	}
 	None
+}
+
+//A little unsafe
+fn arcana_name_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) -> String {	
+	for x in spell_list{
+		if x.id==id {return x.name.to_owned()}
+	}
+	String::new()
 }
 
 //
@@ -6197,7 +6426,7 @@ fn magic(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,ns:
 	let mut trapped_reaper:usize=0;
 	
 	//determine strength of caster effects.
-	if (spell.MP>xx[ifast].0.MP_shade) & (ifast==0){
+	if (spell.MP>xx[ifast].0.MP_shade) & (xx[ifast].1==0){
 		*comm_text = format!("{}\n...You don't have enough mana!",comm_text);
 		return (shades,0)
 	}else{};
@@ -6552,12 +6781,12 @@ fn dumb_choice (idm:usize,
 				spells:&Vec<Spell>)-> usize {
 					
 	let mut attackq = true;
-	let mut spn:Vec<&str> = Vec::new();
+	let mut spn:Vec<i8> = Vec::new();
 	let mut permitted:Vec<usize> = Vec::new();
 	let mut permitted_arcana:Vec<&Spell> = Vec::new();
 	let mut choice:usize=1;
 	for i in 0..spells.len(){
-		spn.push(spells[i].name)
+		spn.push(spells[i].id)
 	};
 	//println!("Point A");
 	//println!("{}",spn.len());
@@ -6630,11 +6859,11 @@ fn rand_choice(idm:usize ,caster:&Lifeform,c_name:&String, pots: &Vec<(Lifeform,
 	}else{
 		choice=rand::thread_rng().gen_range(0,lenny);
 	};
-	let spelln=if choice>1{caster.Spellist[choice-2]}else{""};
+	let spelln=if choice>1{caster.Spellist[choice-2]}else{-1};
 	if choice>1{
 		let mut spellcheck:bool = false;
 		for i in 0..spells.len(){
-			if spelln==spells[i].name{
+			if spelln==spells[i].id{
 				choice=i+2;
 				spellcheck = true;
 			}else{};
@@ -6910,6 +7139,7 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
 //SAVE FUNCTION.
 fn save(xx:&Vec<(Lifeform,usize)>,
 		nx:&Vec<String>,
+		spl:&Vec<Spell>,
 		p:&Place,
 		mut comm_text:&mut String,
 		ui: &mut conrod::UiCell,
@@ -6976,7 +7206,7 @@ fn save(xx:&Vec<(Lifeform,usize)>,
 		stxt.write("\n".as_bytes()).expect("error writing stxt");
 		if l1>0{
 			for j in 0..l1{
-				stxt.write(xx[i].0.Spellist[j].as_bytes()).expect("error writing stxt");
+				stxt.write(arcana_name_from_spell_id(spl,xx[i].0.Spellist[j]).as_bytes()).expect("error writing stxt");
 				stxt.write("\n".as_bytes()).expect("error writing stxt");
 			};
 		}else{};
@@ -7181,7 +7411,7 @@ fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, mons:
 		let mut ltype="";
 		let mut lsubtype="";
 		let mut laffinity="";
-		let mut lspellist=Vec::new();
+		let mut lspellist:Vec<i8>=Vec::new();
 		let mut linventory= Vec::new();
 		for x in mons.iter(){
 			if ltxt[indtrack].as_str()==x.name{
@@ -7202,7 +7432,7 @@ fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, mons:
 			for y in spl.iter(){
 				//println!("{:?}",ltxt[i+indtrack].as_str());
 				if ltxt[i+indtrack].as_str()==y.name{
-					lspellist.push(y.name)
+					lspellist.push(y.id)
 				}else{};
 			};
 		};
@@ -7410,9 +7640,13 @@ fn xchrpl2(text:&str, lim:usize)-> String {
 	out_string
 }
 			
-fn dungeon_finder(p_loc: &mut Place, dungeons: &mut Vec<Dungeon>) -> Option<usize> {
+fn dungeon_finder(p_loc: &mut Place, dungeons: &mut Vec<Dungeon>,party:&Vec<(Lifeform,usize)>) -> Option<usize> {
 	for i in 0..dungeons.len() {
-		if dungeons[i].xy==p_loc.xy {return Some(i)}
+		if dungeons[i].xy==p_loc.xy {
+			if dungeons[i].diff<party[0].0.ExpUsed {
+				return Some(i)
+			};
+		};
 	}
 	None	
 }

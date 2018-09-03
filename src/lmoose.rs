@@ -49,7 +49,7 @@ pub struct Spell{
  pub Death: bool,
  pub Teleport: bool,
  pub Timestop: bool,
- pub id: usize,
+ pub id: i8,
 }
 
 #[derive(Clone)]
@@ -78,7 +78,7 @@ pub struct Item{
  pub BM: f32,
  pub Alive: bool,
  pub Unclean: bool,
- pub Spellist: Vec<&'static str>,
+ pub Spellist: Vec<i8>,
  pub id: usize,
 }
 
@@ -92,7 +92,7 @@ pub struct Lifeform{
  pub Affinity: u8,	//&'static str
  pub Exp: f32,
  pub ExpUsed: f32,
- pub Spellist: Vec<&'static str>,
+ pub Spellist: Vec<i8>,
  pub MP: f32,
  pub HP: f32,
  pub Speed: f32,
@@ -109,7 +109,7 @@ pub struct Lifeform{
  pub BM_shade: f32,
  pub Alive: bool,
  pub Unclean: bool,
- pub Inventory: Vec<&'static str>,
+ pub Inventory: Vec<usize>,
  pub Gold: usize,
  pub id: usize,
 }
@@ -459,7 +459,7 @@ impl Lifeform {
 		self
 	}
 	
-	pub fn spellist(mut self,new_spellist:Vec<&'static str>)->Self {
+	pub fn spellist(mut self,new_spellist:Vec<i8>)->Self {
 		self.Spellist = new_spellist;
 		self
 	}
@@ -497,6 +497,15 @@ impl Lifeform {
 	pub fn wm_change(mut self,factor:f32)->Self {
 		self.WM = self.WM*factor;
 		self.WM_shade = self.WM_shade*factor;
+		self
+	}
+	
+	//For monsters that have zero magic.
+	pub fn magic_up(mut self,factor:f32)->Self {
+		self.WM += factor;
+		self.WM_shade += factor;;
+		self.BM += factor;;
+		self.BM_shade += factor;;
 		self
 	}
 	
@@ -545,7 +554,7 @@ impl Lifeform {
 		self
 	} 
 	
-	//difficulty of 0 is the standard setting.
+	//difficulty of 0 is the standard setting. 10 = x2, 20 = x3.
 	pub fn diff_lvl(mut self,diff:isize)->Self {
 		let factor = diff as f32 / 10.0 + 1.0;
 		
@@ -589,6 +598,7 @@ impl Shade {
 	}
 }
 
+pub const S_LESSER_CURE:i8 = 0;
 #[allow(non_snake_case)]
 pub fn cureL()->Spell{
 let cureL=Spell{
@@ -614,7 +624,7 @@ let cureL=Spell{
  cureL
 }
 
-
+pub const S_CURE:i8 = 1;
 #[allow(non_snake_case)]
 pub fn cure()->Spell{
 let cure=Spell{
@@ -640,7 +650,7 @@ let cure=Spell{
  cure
 }
 
-
+pub const S_GREATER_CURE:i8 = 2;
 #[allow(non_snake_case)]
 pub fn cureG()->Spell{
 let cureG=Spell{
@@ -666,7 +676,7 @@ let cureG=Spell{
  cureG
 }
 
-
+pub const S_SACRED_CURE:i8 = 3;
 #[allow(non_snake_case)]
 pub fn cureH()->Spell{
 let cureH=Spell{
@@ -692,6 +702,7 @@ let cureH=Spell{
  cureH
 }
 
+pub const S_INFERNO:i8 = 4;
 #[allow(non_snake_case)]
 pub fn inferno()->Spell{
 let inferno=Spell{
@@ -717,6 +728,7 @@ let inferno=Spell{
  inferno
 }
  
+pub const S_FIREBALL:i8 = 5;
 #[allow(non_snake_case)]
 pub fn fireball()->Spell{
 let fireball=Spell{
@@ -742,6 +754,7 @@ let fireball=Spell{
  fireball
 }
 
+pub const S_FIRE:i8 = 6;
 #[allow(non_snake_case)]
 pub fn fire()->Spell{
 let fire=Spell{
@@ -767,6 +780,7 @@ let fire=Spell{
  fire
 }
 
+pub const S_EMBER:i8 = 7;
 #[allow(non_snake_case)]
 pub fn ember()->Spell{
 let ember=Spell{
@@ -792,6 +806,7 @@ let ember=Spell{
  ember
 }
 
+pub const S_LESSER_CRYSTALLISE:i8 = 8;
 #[allow(non_snake_case)]
 pub fn crystalliseL()->Spell{
 let crystalliseL=Spell{
@@ -817,6 +832,7 @@ let crystalliseL=Spell{
  crystalliseL
 }
 
+pub const S_CRYSTALLISE:i8 = 9;
 #[allow(non_snake_case)]
 pub fn crystallise()->Spell{
 let crystallise=Spell{
@@ -842,6 +858,7 @@ let crystallise=Spell{
  crystallise
 }
 
+pub const S_TRUE_CRYSTALLISE:i8 = 10;
 #[allow(non_snake_case)]
 pub fn crystalliseH()->Spell{
 let crystalliseH=Spell{
@@ -867,6 +884,7 @@ let crystalliseH=Spell{
  crystalliseH
 }
 
+pub const S_EXORCISM:i8 = 11;
 #[allow(non_snake_case)]
 pub fn exorcism()->Spell{
 let exorcism=Spell{
@@ -892,6 +910,7 @@ let exorcism=Spell{
  exorcism
 }
 
+pub const S_GREATER_EXORCISM:i8 = 12;
 #[allow(non_snake_case)]
 pub fn exorcismG()->Spell{
 let exorcismG=Spell{
@@ -917,6 +936,7 @@ let exorcismG=Spell{
  exorcismG
 }
 
+pub const S_SACRED_EXORCISM:i8 = 13;
 #[allow(non_snake_case)]
 pub fn exorcismH()->Spell{
 let exorcismH=Spell{
@@ -942,6 +962,7 @@ let exorcismH=Spell{
  exorcismH
 }
 
+pub const S_SUMMON_REAPER:i8 = 14;
 #[allow(non_snake_case)]
 pub fn sum_reaper()->Spell{
 let sum_reaper=Spell{
@@ -967,6 +988,7 @@ let sum_reaper=Spell{
  sum_reaper
 }
 
+pub const S_TELEPORT:i8 = 15;
 #[allow(non_snake_case)]
 pub fn teleport()->Spell{
 let teleport=Spell{
@@ -992,6 +1014,7 @@ let teleport=Spell{
  teleport
 }
 
+pub const S_GREATER_TELEPORT:i8 = 16;
 #[allow(non_snake_case)]
 pub fn teleportG()->Spell{
 let teleportG=Spell{
@@ -1017,6 +1040,7 @@ let teleportG=Spell{
  teleportG
 }
 
+pub const S_LIGHT:i8 = 17;
 #[allow(non_snake_case)]
 pub fn light()->Spell{
 let light=Spell{
@@ -1042,6 +1066,7 @@ let light=Spell{
  light
 }
 
+pub const S_SACRED_LIGHT:i8 = 18;
 #[allow(non_snake_case)]
 pub fn lightH()->Spell{
 let lightH=Spell{
@@ -1067,6 +1092,7 @@ let lightH=Spell{
  lightH
 }
 
+pub const S_DARKNESS:i8 = 19;
 #[allow(non_snake_case)]
 pub fn darkness()->Spell{
 let darkness=Spell{
@@ -1092,6 +1118,7 @@ let darkness=Spell{
  darkness
 }
 
+pub const S_ABYSSAL_DARKNESS:i8 = 20;
 #[allow(non_snake_case)]
 pub fn darknessH()->Spell{
 let darknessH=Spell{
@@ -1117,6 +1144,7 @@ let darknessH=Spell{
  darknessH
 }
 
+pub const S_SLOW:i8 = 21;
 #[allow(non_snake_case)]
 pub fn slow()->Spell{
 let slow=Spell{
@@ -1142,6 +1170,7 @@ let slow=Spell{
  slow
 }
 
+pub const S_HASTE:i8 = 22;
 #[allow(non_snake_case)]
 pub fn haste()->Spell{
 let haste=Spell{
@@ -1167,6 +1196,7 @@ let haste=Spell{
  haste
 }
 
+pub const S_APOCALYPSE:i8 = 23;
 #[allow(non_snake_case)]
 pub fn apocalypse()->Spell{
 let apocalypse=Spell{
@@ -1192,6 +1222,7 @@ let apocalypse=Spell{
  apocalypse
 }
 
+pub const S_GENESIS:i8 = 24;
 #[allow(non_snake_case)]
 pub fn genesis()->Spell{
 let genesis=Spell{
@@ -1217,6 +1248,7 @@ let genesis=Spell{
  genesis
 }
 
+pub const S_SPARK:i8 = 25;
 #[allow(non_snake_case)]
 pub fn spark()->Spell{
 let spark=Spell{
@@ -1242,6 +1274,7 @@ let spark=Spell{
  spark
 }
 
+pub const S_LIGHTNING:i8 = 26;
 #[allow(non_snake_case)]
 pub fn lightning()->Spell{
 let lightning=Spell{
@@ -1267,6 +1300,7 @@ let lightning=Spell{
  lightning
 }
 
+pub const S_JOVIAN_LIGHTNING:i8 = 27;
 #[allow(non_snake_case)]
 pub fn lightningH()->Spell{
 let lightningH=Spell{
@@ -1292,6 +1326,7 @@ let lightningH=Spell{
  lightningH
 }
 
+pub const S_TIMESTOP:i8 = 28;
 #[allow(non_snake_case)]
 pub fn timestop()->Spell{
 let timestop=Spell{
@@ -1317,6 +1352,7 @@ let timestop=Spell{
  timestop
 }
 
+pub const S_CURSE:i8 = 29;
 #[allow(non_snake_case)]
 pub fn curse()->Spell{
 let curse=Spell{
@@ -1342,6 +1378,7 @@ let curse=Spell{
  curse
 }
 
+pub const S_LIFESTEALER:i8 = 30;
 #[allow(non_snake_case)]
 pub fn lifestealer()->Spell{
 let lifestealer=Spell{
@@ -1367,6 +1404,7 @@ let lifestealer=Spell{
  lifestealer
 }
 
+pub const S_DAGGER_OF_FAWN:i8 = 31;
 #[allow(non_snake_case)]
 pub fn dagger_of_fawn()->Spell{
 let dagger=Spell{
@@ -1392,6 +1430,7 @@ let dagger=Spell{
  dagger
 }
 
+pub const S_BOW_OF_TRAVELLER:i8 = 32;
 #[allow(non_snake_case)]
 pub fn bow_of_traveller()->Spell{
 let dagger=Spell{
@@ -1417,6 +1456,7 @@ let dagger=Spell{
  dagger
 }
 
+pub const S_SWORD_OF_PERSEUS:i8 = 33;
 #[allow(non_snake_case)]
 pub fn sword_of_perseus()->Spell{
 let dagger=Spell{
@@ -1483,7 +1523,7 @@ let beast_green=Lifeform{
  Affinity: FOREST,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["Cure","Exorcism","Haste","Spark","Dagger of Fawn"],
+ Spellist: vec![S_CURE,S_EXORCISM,S_HASTE,S_SPARK,S_DAGGER_OF_FAWN],
  MP: 100.0,
  HP: 500.0,
  Speed: 100.0,
@@ -1515,7 +1555,7 @@ let beast_red=Lifeform{
  Affinity: FIRE,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["Fire","Ember","Exorcism"],
+ Spellist: vec![S_FIRE,S_EMBER,S_EXORCISM],
  MP: 200.0,
  HP: 400.0,
  Speed: 80.0,
@@ -1546,7 +1586,7 @@ let beast_great=Lifeform{
  Affinity: RADIANT,
  Exp: 200.0,
  ExpUsed: 200.0,
- Spellist: vec!["Fire","Greater Cure","Sacred Exorcism","Lightning"],
+ Spellist: vec![S_FIRE,S_GREATER_CURE,S_SACRED_EXORCISM,S_LIGHTNING],
  MP: 300.0,
  HP: 1000.0,
  Speed: 110.0,
@@ -1577,7 +1617,7 @@ let beast_serpent=Lifeform{
  Affinity: DEATH,
  Exp: 200.0,
  ExpUsed: 200.0,
- Spellist: vec!["Life Stealer","Bow of the Traveller"],
+ Spellist: vec![S_LIFESTEALER,S_BOW_OF_TRAVELLER],
  MP: 300.0,
  HP: 1500.0,
  Speed: 70.0,
@@ -1639,7 +1679,7 @@ let goblin_sco=Lifeform{
  Affinity: GRASSLAND,
  Exp: 1.0,
  ExpUsed: 1.0,
- Spellist: vec!["Haste","Darkness"],
+ Spellist: vec![S_HASTE,S_DARKNESS],
  MP: 60.0,
  HP: 200.0,
  Speed: 50.0,
@@ -1670,7 +1710,7 @@ let goblin_witch=Lifeform{
  Affinity: WATER,
  Exp: 20.0,
  ExpUsed: 20.0,
- Spellist: vec!["Darkness","Cure","Spark","Slow","Dagger of Fawn"],
+ Spellist: vec![S_DARKNESS,S_CURE,S_SPARK,S_SLOW,S_DAGGER_OF_FAWN],
  MP: 350.0,
  HP: 250.0,
  Speed: 40.0,
@@ -1701,7 +1741,7 @@ let white_witch=Lifeform{
  Affinity: ICE,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["True Crystallise","Cure","Spark","Lightning","Slow","Crystallise"],
+ Spellist: vec![S_TRUE_CRYSTALLISE,S_CURE,S_SPARK,S_LIGHTNING,S_SLOW,S_CRYSTALLISE],
  MP: 800.0,
  HP: 300.0,
  Speed: 40.0,
@@ -1732,7 +1772,7 @@ let dark_apprentice=Lifeform{
  Affinity: DEATH,
  Exp: 0.0,
  ExpUsed: 0.0,
- Spellist: vec!["Ember","Darkness"],
+ Spellist: vec![S_EMBER,S_DARKNESS],
  MP: 200.0,
  HP: 75.0,
  Speed: 50.0,
@@ -1763,7 +1803,7 @@ let necromancer=Lifeform{
  Affinity: DEATH,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["Ember","Fire","Curse","Slow","Darkness"],
+ Spellist: vec![S_EMBER,S_FIRE,S_CURSE,S_SLOW,S_DARKNESS],
  MP: 500.0,
  HP: 175.0,
  Speed: 50.0,
@@ -1794,7 +1834,7 @@ let necromancer_lord=Lifeform{
  Affinity: DEATH,
  Exp: 300.0,
  ExpUsed: 300.0,
- Spellist: vec!["Fireball","Fire","Abyssal Darkness","Curse","Slow","Summon Reaper"],
+ Spellist: vec![S_FIREBALL,S_FIRE,S_ABYSSAL_DARKNESS,S_CURSE,S_SLOW,S_SUMMON_REAPER],
  MP: 1000.0,
  HP: 250.0,
  Speed: 50.0,
@@ -1825,7 +1865,7 @@ let bandit=Lifeform{
  Affinity: MALACHIA,
  Exp: 0.0,
  ExpUsed: 0.0,
- Spellist: vec!["Darkness"],
+ Spellist: vec![S_DARKNESS],
  MP: 50.0,
  HP: 200.0,
  Speed: 40.0,
@@ -1856,7 +1896,7 @@ let bandit_lord=Lifeform{
  Affinity: MALACHIA,
  Exp: 5.0,
  ExpUsed: 5.0,
- Spellist: vec!["Darkness","Ember","Slow"],
+ Spellist: vec![S_DARKNESS,S_EMBER,S_SLOW],
  MP: 200.0,
  HP: 500.0,
  Speed: 40.0,
@@ -1918,7 +1958,7 @@ let skeleton_kn=Lifeform{
  Affinity: DEATH,
  Exp: 20.0,
  ExpUsed: 20.0,
- Spellist: vec!["Darkness"],
+ Spellist: vec![S_DARKNESS],
  MP: 40.0,
  HP: 400.0,
  Speed: 60.0,
@@ -1949,7 +1989,7 @@ let ghost=Lifeform{
  Affinity: WATER,
  Exp: 20.0,
  ExpUsed: 20.0,
- Spellist: vec!["Darkness","Curse"],
+ Spellist: vec![S_DARKNESS,S_CURSE],
  MP: 1000.0,
  HP: 150.0,
  Speed: 50.0,
@@ -1980,7 +2020,7 @@ let ghost_an=Lifeform{
  Affinity: WATER,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["Abyssal Darkness","Lifestealer","Curse","Summon Reaper"],
+ Spellist: vec![S_ABYSSAL_DARKNESS,S_LIFESTEALER,S_CURSE,S_SUMMON_REAPER],
  MP: 1500.0,
  HP: 300.0,
  Speed: 50.0,
@@ -2011,7 +2051,7 @@ let fallen=Lifeform{
  Affinity: VOID,
  Exp: 500.0,
  ExpUsed: 500.0,
- Spellist: vec!["Abyssal Darkness","Lightning","Lifestealer","Curse","Summon Reaper"],
+ Spellist: vec![S_ABYSSAL_DARKNESS,S_LIGHTNING,S_LIFESTEALER,S_CURSE,S_SUMMON_REAPER],
  MP: 800.0,
  HP: 800.0,
  Speed: 70.0,
@@ -2042,7 +2082,7 @@ let bremnor=Lifeform{
  Affinity: NONE,
  Exp: 1000.0,
  ExpUsed: 1000.0,
- Spellist: vec!["Fireball","Timestop","Curse","Abyssal Darkness","Lifestealer","Inferno","Apocalypse"],
+ Spellist: vec![S_FIREBALL,S_TIMESTOP,S_CURSE,S_ABYSSAL_DARKNESS,S_LIFESTEALER,S_INFERNO,S_APOCALYPSE],
  MP: 3000.0,
  HP: 2000.0,
  Speed: 75.0,
@@ -2073,7 +2113,7 @@ let titan=Lifeform{
  Affinity: BRIDGE,
  Exp: 200.0,
  ExpUsed: 200.0,
- Spellist: vec!["Cure","Fire","Sword of Perseus"],
+ Spellist: vec![S_CURE,S_FIRE,S_SWORD_OF_PERSEUS],
  MP: 100.0,
  HP: 1000.0,
  Speed: 47.0,
@@ -2104,7 +2144,7 @@ let warrior=Lifeform{
  Affinity: ALBION,
  Exp: 0.0,
  ExpUsed: 0.0,
- Spellist: vec!["Cure"],
+ Spellist: vec![S_CURE],
  MP: 125.0,
  HP: 500.0,
  Speed: 40.0,
@@ -2135,10 +2175,10 @@ let witch=Lifeform{
  Affinity: MOORLAND,
  Exp: 0.0,
  ExpUsed: 0.0,
- Spellist: vec!["Cure",
-	"Light",
-	"Ember",
-	"Exorcism"],
+ Spellist: vec![S_CURE,
+	S_LIGHT,
+	S_EMBER,
+	S_EXORCISM],
  MP: 500.0,
  HP: 125.0,
  Speed: 50.0,
@@ -2169,7 +2209,7 @@ let wonderer=Lifeform{
  Affinity: ALBION,
  Exp: 0.0,
  ExpUsed: 0.0,
- Spellist: vec!["Cure","Haste"],
+ Spellist: vec![S_CURE,S_HASTE],
  MP: 250.0,
  HP: 250.0,
  Speed: 60.0,
@@ -2262,7 +2302,7 @@ let white_queen=Lifeform{
  Affinity: ICE,
  Exp: 100.0,
  ExpUsed: 100.0,
- Spellist: vec!["True Crystallise","Holy Cure","Spark","Jovian Lighning"],
+ Spellist: vec![S_TRUE_CRYSTALLISE,S_SACRED_CURE,S_SPARK,S_JOVIAN_LIGHTNING],
  MP: 1500.0,
  HP: 500.0,
  Speed: 40.0,
@@ -2293,7 +2333,7 @@ let a=Lifeform{
  Affinity: ALBION,
  Exp: 1000.0,
  ExpUsed: 1000.0,
- Spellist: vec!["Greater Teleport","Timestop","Holy Cure","Jovian Lighning","Ember"],
+ Spellist: vec![S_GREATER_TELEPORT,S_TIMESTOP,S_SACRED_CURE,S_JOVIAN_LIGHTNING,S_EMBER],
  MP: 2000.0,
  HP: 400.0,
  Speed: 50.0,

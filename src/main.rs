@@ -110,7 +110,9 @@ mod cmoose;
 									 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE,
 									 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY};	
 #[allow(unused_imports)] use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,door_to_darkness,
-									  white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,tower_of_soul};
+									  white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,tower_of_soul,hall_of_stone,
+									  the_path
+									  };
 
 #[allow(unused_imports)] use conrod::color::Colour;
 #[allow(unused_imports)] use conrod::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget};
@@ -445,6 +447,7 @@ pub fn main() {
 								if !f {
 									//if battle over break inner loop and
 									//keep looking for battles.
+									println!("Breaking turns loop in battle");
 									break 'turns
 								}else{
 									//Else do thinking and send answer.
@@ -957,6 +960,7 @@ pub fn main() {
 
 				if !n_s_l_q_f[4] {
 					
+					println!("Ending battle");
 					//music player controlled to off.
 					b_muse_sender.try_send((false,to_play));
 					//Tell the brain that the battle is over.
