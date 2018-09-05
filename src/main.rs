@@ -36,6 +36,7 @@
 ///engine will also be used for sages.
 ///
 ///TODO 4: Implement [additional] "visual effects" for in-battle events.
+///(TODO 4 is done).
 ///
 ///TODO 5: Return to the AI engine and continue with the etude.
 ///
@@ -50,6 +51,8 @@
 ///-smoose is the unimplemented sage sequence library (also story)
 ///-gmoose handles the gui, graphics and game logic (merged to prevent
 ///dependency hell).
+///-xmoose handles effects (such as attacks or spell effects.) Ass well
+///as certain background functions.
 ///-omoose handles the audio.
 ///-The main function handles global flow variables, event loop, combat
 ///loops, and redraw loops.
@@ -83,9 +86,12 @@ mod gmoose;
 mod omoose;
 mod dmoose;
 mod cmoose;
+mod xmoose;
+mod bmoose;
 
 //Imports
-#[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img,parse_music_config};
+#[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img};
+#[allow(unused_imports)] use omoose::{parse_music_config,isekai_deguchi,isekai_urusai,isekai_index};
 #[allow(unused_imports)] use conrod::UiCell;
 #[allow(unused_imports)] use conrod::widget::button::Interaction;
 #[allow(unused_imports)] use imoose::permit_a;
@@ -375,8 +381,8 @@ pub fn main() {
 		//loop (check if music is needed and play if true.
 		loop {
 			//check if music is needed (b_muse_sender status)
-			go = gmoose::isekai_deguchi(go.clone(),&mut b_muse_receiver);
-			silence = gmoose::isekai_urusai(silence, &mut muse_silence_receiver);
+			go = isekai_deguchi(go.clone(),&mut b_muse_receiver);
+			silence = isekai_urusai(silence, &mut muse_silence_receiver);
 			//if needed loop (playback and check if play again.
 			while go.0 & !silence {
 				//println!("La-la-la-al.");
@@ -788,7 +794,7 @@ pub fn main() {
 			dream_time = false;
 			
 			//define song which is to be played.
-			to_play = gmoose::isekai_index(&party,&encounter,&dungeons,&p_loc,dungeon_pointer,&idungeon);
+			to_play = isekai_index(&party,&encounter,&dungeons,&p_loc,dungeon_pointer,&idungeon);
 			
 			//send signal to player to start playing.
 			b_muse_sender.try_send((true,to_play));
@@ -831,7 +837,7 @@ pub fn main() {
 						let enc_cc = enc_c.clone();
 						let cms = enc_cc.len();
 						let mut encna_cc = encna_c.clone();
-						let bl = gmoose::battle_rand(enc_cc,
+						let bl = bmoose::battle_rand(enc_cc,
 										&s_c1,
 										&field,
 										&encna_cc,
@@ -884,7 +890,7 @@ pub fn main() {
 			
 			//Set/Reset battle variables.
 			for i in 0..party.len() {
-				exp_players[i] = gmoose::exp_calc(&encounter,i);
+				exp_players[i] = bmoose::exp_calc(&encounter,i);
 			};
 			println!("Exp on victory: {:?}",exp_players);
 			battle_gold_pot = 0;
@@ -908,9 +914,9 @@ pub fn main() {
 				let time = x.0.Speed_shade.clone()+tvar;
 				battle_timer[nth] = 1.0/time
 			};
-			battle_fast = gmoose::vnmin(battle_timer.clone());
-			battle_ifast = gmoose::vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
-			println!("{} from group {} is the first to take action!",gmoose::beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
+			battle_fast = bmoose::vnmin(battle_timer.clone());
+			battle_ifast = bmoose::vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
+			println!("{} from group {} is the first to take action!",bmoose::beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
 			println!("battle_ifast = {}, encounter.len() = {}",battle_ifast,encounter.len());
 			
 			enc_names = Vec::with_capacity(25);
@@ -941,7 +947,7 @@ pub fn main() {
 			if !pause & sprite_boxer.is_none() {	
 				//if in battle, and time has elapsed, check for end game.	
 				//println!("Got to game over");
-				gmoose::game_over  (&mut encounter,
+				bmoose::game_over  (&mut encounter,
 									&mut enemies,
 									&mut party,
 									&mut dungeons,
@@ -972,7 +978,7 @@ pub fn main() {
 					sel_targets = Vec::with_capacity(25);
 					targets = Vec::with_capacity(25);
 					battle_timer = Vec::with_capacity(25);
-					gmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
+					bmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
 					yt_adcwpe_bw = [false;9];
 					shaking_timer = 0;
 					shaking_dam = [false;25];
@@ -997,7 +1003,7 @@ pub fn main() {
 				}else{
 					if (encounter[battle_ifast].1!=0) & !pause {	
 						//Computer turn.
-						gmoose::ai_battle_turn(&mut encounter,&mut enc_names,
+						bmoose::ai_battle_turn(&mut encounter,&mut enc_names,
 										if (dungeon_pointer<2) | idungeon.is_none() {
 											&mut p_loc
 										}else{
@@ -1027,7 +1033,7 @@ pub fn main() {
 						//println!("D");
 					}else if !pause & (encounter[battle_ifast].1==0) {
 						//Player tuen
-						gmoose::player_battle_turn(&mut encounter,&enc_names,
+						bmoose::player_battle_turn(&mut encounter,&enc_names,
 										if (dungeon_pointer<2) | idungeon.is_none() {
 											&mut p_loc
 										}else{

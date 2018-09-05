@@ -610,7 +610,7 @@ fn vnmini<T:PartialOrd+Copy>(a:&Vec<T>)->usize{
 	mini
 }	
 
-fn byteru16(x:u16)->[u8;2]{
+pub fn byteru16(x:u16)->[u8;2]{
     let y= unsafe {transmute(x.to_be())};
     y
 }
