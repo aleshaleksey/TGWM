@@ -34,6 +34,7 @@ extern crate std;
 
 use bmoose;
 use lmoose;
+use shared_moose::*;
 use std::fs::File;
 use std::path::Path;
 use std::io::{BufReader,Read};
@@ -144,7 +145,7 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 			UNDEAD | EVIL => {2}, // 2
 			WITCH | SPIRIT => {8}, // 3
 			MALACHIA | ALBION => {18},// 4
-			_ => {if bmoose::exp_calc(encounter,0)>10.0 {
+			_ => {if exp_calc(encounter,0)>10.0 {
 						0 //actually 6: boss music
 					}else{
 						match loc.scape {
@@ -166,7 +167,7 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 			}, //5
 		}
 	}else{
-		if bmoose::exp_calc(encounter,0)>10.0 {
+		if exp_calc(encounter,0)>10.0 {
 			0 //actually 6: boss music
 		}else{
 			match loc.scape {

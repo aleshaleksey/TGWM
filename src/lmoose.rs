@@ -24,6 +24,7 @@
 extern crate conrod;
 extern crate std;
 
+use shared_moose::*;
 use std::fmt::{self, Display, Formatter};
 #[allow(unused_imports)] use std::ops::Deref;
 
@@ -5501,41 +5502,6 @@ pub fn tree_of_life()->Vec<Lifeform>{
 		sage_forsaken().clone(),
 		white_queen().clone()
 	]
-}
-
-#[allow(dead_code)]
-fn vvwhich<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
-	let mut ivec:Vec<usize>=Vec::new();
-	for i in 0..a.len(){
-		if a[i]==b{ivec.push(i)}
-		else{continue}
-	}
-	ivec
-}
-
-//Makes a new vector emptied of repeats of instanced values.
-fn uniq_m<T:PartialOrd>(mvec:Vec<T>)->Vec<T>{
-	let mut uniq:Vec<T>=Vec::new();
-	for x in mvec.into_iter(){
-		if uniq.len()==0{
-			uniq.push(x)
-		}else if lhas(&uniq,&x)==false{
-			uniq.push(x)
-		}else{};
-	};
-	uniq
-}
-
-//does vector contain b?
-pub fn lhas<T:PartialOrd>(a:&Vec<T>, b:&T)->bool{
-	let mut ihaz=false;
-	for x in a.iter(){
-		if x==b{
-			ihaz=true;
-			return ihaz}
-		else{continue}
-	}
-	ihaz
 }
 
 //Terrain cosntants

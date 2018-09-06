@@ -36,8 +36,8 @@ extern crate time;
 //mod imoose;
 //mod lmoose;
 //mod smoose;
+use shared_moose::*;
 use omoose::{parse_music_config,ISEKAIN};
-use lmoose;
 use smoose;
 #[allow(unused_imports)] use inflector::Inflector;
 #[allow(unused_imports)] use num::Num;
@@ -79,8 +79,6 @@ use std;
 			  poly_star,poly_round,sprite_box_filler,sprite_box_decrement,sprite_approach,spell_setter,
 			  set_fire,set_lightning,set_holy,set_radiant,set_heal,set_ice,set_time,set_inferno,set_death,
 			  sync_s,sync_t,shake_pos_a,shake_pos_b,cosp,cospt,sinp,sinpt};
-
-#[allow(unused_imports)] use bmoose::sm_rets;
 			  
 #[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxT,
 									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno};
@@ -1838,7 +1836,9 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					n_s_l_q_f[6] = false;
 					wo.song_to_swap = None;
 					if new_game_init {
-							save(&party,&p_names,spl,&p_loc,&mut comm_text,ui,ids);
+							save(&party,&p_names,spl,&p_loc,&mut comm_text,ui,ids);							
+							comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
+							set_comm_text(&mut comm_text,ui,ids);
 							n_s_l_q_f[1] = false;
 					}else{
 						comm_text = "There is nothing to save- start or load a moose first.".to_owned();
@@ -2581,12 +2581,14 @@ fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
 												p_names,
 												p_loc,
 												pl,
-												coords,
-												comm_text,ui,ids);
+												coords);
+											loaded_confirmed(party,p_names,comm_text,ui,ids);
+											
 											*n_s_l_q_f = [false,false,false,false,false,false,false];
 											*to_load = (None,1);
 											*new_game_init = true;
 											tt_e_c_i_ll[0] = true;
+											
 											*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 														 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 														 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
@@ -2997,7 +2999,6 @@ fn set_afterstory(ref mut ui: &mut conrod::UiCell,
 		.line_spacing(10.0)
 		.set(ids.dungeon_afterstory, ui);
 }
-
 
 //standard encounter generator.
 fn encounter_starter(party: &mut Vec<(Lifeform,usize)>,
@@ -3414,7 +3415,7 @@ fn set_learnable_spell_list (ref mut ui: &mut conrod::UiCell,
 	
 	for x in spl.iter(){
 		if (x.MP <= party[i].0.Exp - party[i].0.ExpUsed)
-		 & !lmoose::lhas(&party[i].0.Spellist,&x.id) {learnable_spells.push(x.name);};
+		 & !lhas(&party[i].0.Spellist,&x.id) {learnable_spells.push(x.name);};
 	 };
 	
 	let mut matrix_rows:usize = 1;
@@ -3932,46 +3933,6 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
     enemies
 }
 
-pub fn spell_targets_to_indices(to_hit:&Vec<(bool,bool)>,targets:&mut Vec<usize>){
-	*targets = Vec::with_capacity(25);
-	for (i,x) in to_hit.iter().enumerate() {
-		if x.1 | x.0 {targets.push(i);};
-	}
-}
-//
-//
-//
-
-//
-//function for converting spell name to global spell spell index:
-
-fn arcana_index_from_spell_id(spell_list: &Vec<Spell>, id: i8) ->Option<usize> {	
-	for i in 0..spell_list.len(){
-		if spell_list[i].id==id {return Some(i)}
-	}
-	None
-}
-pub fn arcana_index_from_spell_name(spell_list: &Vec<Spell>, name: &str) ->Option<usize> {	
-	for i in 0..spell_list.len(){
-		if spell_list[i].name==name {return Some(i)}
-	}
-	None
-}
-fn arcana_type_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) ->Option<u8> {	
-	for x in spell_list{
-		if x.id==id {return Some(x.Type)}
-	}
-	None
-}
-
-//A little unsafe
-fn arcana_name_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) -> String {	
-	for x in spell_list{
-		if x.id==id {return x.name.to_owned()}
-	}
-	String::new()
-}
-
 
 //Artefact of the terminal Moosequest.
 fn yeno_to_bool(x: &str)-> bool {
@@ -3991,69 +3952,6 @@ fn yeno_to_bool(x: &str)-> bool {
   _=>false,
  }
 }
-
-
-pub fn vwhichb<T:PartialOrd>(a:&Vec<T>, b:T)->usize{
-	for i in 0..a.len(){
-		if a[i]==b{return i}
-		else{continue}
-	}
-	99999
-}
-
-pub fn vwhicht1<T:PartialOrd>(a:&Vec<T>, b:T)->usize{
-	for i in 0..a.len(){
-		if a[i]==b{return i}
-		else{continue}
-	}
-	11111
-}
-pub fn vwhicht2<T:PartialOrd>(a:&Vec<T>, b:T)->usize{
-	for i in 0..a.len(){
-		if a[i]==b{return i}
-		else{continue}
-	}
-	11112
-}
-pub fn vwhicht3<T:PartialOrd>(a:&Vec<T>, b:T)->usize{
-	for i in 0..a.len(){
-		if a[i]==b{return i}
-		else{continue}
-	}
-	11113
-}
-//vvwhichinv returns indexs of the values in vector a which do not equal b.
-pub fn vvwhichinv<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
-	let mut ivec:Vec<usize>=Vec::new();
-	for i in 0..a.len(){
-		if a[i]!=b{ivec.push(i)}
-		else{continue}
-	}
-	ivec
-}
-
-
-
-//vvwhich returns indexs of the values in vector a which do not equal b.
-fn vvwhich<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
-	let mut ivec:Vec<usize>=Vec::new();
-	for i in 0..a.len(){
-		if a[i]==b{ivec.push(i)}
-		else{continue}
-	}
-	ivec
-}
-
-//special vvwhichfor lifeform names
-fn vvwhich_ln(a:&Vec<Lifeform>, b:&str)->Vec<usize>{
-	let mut ivec:Vec<usize> = Vec::new();
-	for i in 0..a.len(){
-		if a[i].name==b{ivec.push(i)}
-		else{continue}
-	}
-	ivec
-}
-
 
 //gmoose lvl up function. Does not currently cover spells.
 fn lvl_upg (mut party:&mut Vec<(Lifeform,usize)>,
@@ -4088,50 +3986,6 @@ fn lvl_upg (mut party:&mut Vec<(Lifeform,usize)>,
 	if expble==0.0 {t_e_c_i_ll[6] = false;};
 }
 
-
-//Auxillary functions for saving and loading games.
-fn by_f64(x:f64)->u64{
-	let y=unsafe{transmute::<f64,u64>(x)};
-	y
-}
-fn byteri32(x:i32)->[u8;4]{
-    let y= unsafe {transmute(x.to_be())};
-    y
-}
-fn byterus(x:usize)->[u8;8]{
-    let y= unsafe {transmute(x.to_be())};
-    y
-}
-fn byter64(x:u64)->[u8;8]{
-    let y= unsafe {transmute(x.to_be())};
-    y
-}
-fn unbyteus(x:[u8;8])->usize{
-    let mut out:u64=0;
-    for i in 0..8{out+=(x[7-i] as u64)*256u64.pow(i as u32)};
-    let out:usize=out as usize;
-    out
-}
-fn unbyte64(x:[u8;8])->u64{
-    let mut out:u64=0;
-    for i in 0..8{out+=(x[7-i] as u64)*256u64.pow(i as u32)};
-    let out:u64=out as u64;
-    out
-}
-fn unbyte32(x:[u8;4])->i32{
-    let mut out:u32=0;
-    for i in 0..4{out+=(x[3-i] as u32)*256u32.pow(i as u32)};
-    let out:i32=unsafe {transmute::<u32,i32>(out)};
-    out
-}
-fn un64_f64(x:u64)->f64{
-	let y=unsafe{transmute::<u64,f64>(x)};
-	y
-}
-fn byteru16(x:u16)->[u8;2]{
-    let y= unsafe {transmute(x.to_be())};
-    y
-}
 
 // write configuration into the soundtrack config sound/
 // config file has eighteen lines that look like:
@@ -4197,92 +4051,6 @@ fn defaultise_song_in_list(song_list: &mut Vec<String>,i_num:usize) {
 	};
 	//write everything to file.
 	cfgf.write_all(playlist_string.join("\n").as_bytes());
-}
-
-//SAVE FUNCTION.
-fn save(xx:&Vec<(Lifeform,usize)>,
-		nx:&Vec<String>,
-		spl:&Vec<Spell>,
-		p:&Place,
-		mut comm_text:&mut String,
-		ui: &mut conrod::UiCell,
-		ids: &mut Ids){
-	
-	let mut s_name:String = nx[0].to_owned();
-	let dir=env::current_dir().unwrap().join("as/saves");
-	let mut f1 = dir.join(s_name.clone()+".msqrtxt");
-	let mut f2 = dir.join(s_name+".msqrb");
-			
-	let mut stxt=File::create(&f1).unwrap();
-	let mut sfile=File::create(&f2).unwrap();
-
-	let n_party:u8=xx.len() as u8;
-	sfile.write_all(&[n_party]);
-	for i in 0..xx.len(){
-		let l1=xx[i].0.Spellist.len();
-		let l2=xx[i].0.Inventory.len();
-		let exp:[u8;8]=byter64(by_f64(xx[i].0.Exp as f64));
-		let expu:[u8;8]=byter64(by_f64(xx[i].0.ExpUsed as f64));
-		let mp:[u8;8]=byter64(by_f64(xx[i].0.MP as f64));
-		let hp:[u8;8]=byter64(by_f64(xx[i].0.HP as f64));
-		let speed:[u8;8]=byter64(by_f64(xx[i].0.Speed as f64));
-		let att:[u8;8]=byter64(by_f64(xx[i].0.Attack as f64));
-		let def:[u8;8]=byter64(by_f64(xx[i].0.Defence as f64));
-		let wm:[u8;8]=byter64(by_f64(xx[i].0.WM as f64));
-		let bm:[u8;8]=byter64(by_f64(xx[i].0.BM as f64));
-		let lspl:[u8;8]=byterus(l1);
-		let linv:[u8;8]=byterus(l2);
-		let live:u8=if xx[i].0.Alive==true{1}else{0};
-		let uncl:u8=if xx[i].0.Unclean==true{1}else{0};
-		let lox:[u8;4]=byteri32(p.xy[0]);
-		let loy:[u8;4]=byteri32(p.xy[1]);
-		let lgp:[u8;8]=byterus(xx[i].0.Gold);
-		let lid:[u8;8]=byterus(xx[i].0.id);
-		
-		sfile.write_all(&exp).expect("error writing sfile");
-		sfile.write_all(&expu).expect("error writing sfile");
-		sfile.write_all(&mp).expect("error writing sfile");
-		sfile.write_all(&hp).expect("error writing sfile");
-		sfile.write_all(&speed).expect("error writing sfile");
-		sfile.write_all(&att).expect("error writing sfile");
-		sfile.write_all(&def).expect("error writing sfile");
-		sfile.write_all(&wm).expect("error writing sfile");
-		sfile.write_all(&bm).expect("error writing sfile");
-		sfile.write_all(&lspl).expect("error writing sfile");
-		sfile.write_all(&linv).expect("error writing sfile");
-		sfile.write_all(&[live]).expect("error writing sfile");
-		sfile.write_all(&[uncl]).expect("error writing sfile");
-		sfile.write_all(&lox).expect("error writing sfile");
-		sfile.write_all(&loy).expect("error writing sfile");
-		sfile.write_all(&lgp).expect("error writing sfile");
-		sfile.write_all(&lid).expect("error writing sfile");
-	
-		stxt.write(&nx[i].as_bytes()).expect("error writing stxt");
-		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		stxt.write(&xx[i].0.name.as_bytes()).expect("error writing stxt");
-		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		stxt.write(&convert_mon_type(xx[i].0.Type).as_bytes()).expect("error writing stxt");
-		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		stxt.write(&convert_affinity(xx[i].0.SubType).as_bytes()).expect("error writing stxt");
-		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		stxt.write(&convert_affinity(xx[i].0.Affinity).as_bytes()).expect("error writing stxt");
-		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		if l1>0{
-			for j in 0..l1{
-				stxt.write(arcana_name_from_spell_id(spl,xx[i].0.Spellist[j]).as_bytes()).expect("error writing stxt");
-				stxt.write("\n".as_bytes()).expect("error writing stxt");
-			};
-		}else{};
-//		if l2>0{
-//			for j in 0..l2{
-//				stxt.write(xx[i].0.Inventory[j].as_bytes());
-//				stxt.write("\n".as_bytes());
-//			};
-//		}else{};
-		*comm_text = format!("O holy salvation! {} was saved to disk...",nx[0]);
-		set_comm_text(comm_text,ui,ids);
-	};
-		
 }
 
 fn marker_of_loader(){}
@@ -4359,206 +4127,20 @@ fn loader(
 	return to_load
 }	
 
-
-fn marker_of_load(){}
-//rewritten load function.
-//NB has some "illogical" stuff here to preserve backwards compatibility
-fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, mons:&Vec<Lifeform>,
-				mut party:&mut Vec<(Lifeform,usize)>,
+//A function to confirm that the game was loaded.
+fn loaded_confirmed_marker(){}
+fn loaded_confirmed(mut party:&mut Vec<(Lifeform,usize)>,
 				mut p_names:&mut Vec<String>,
-				mut p_loc:&mut Place,
-				mut pl:&mut (usize,usize),
-				mut coords: &mut [i32;2],
 				mut comm_text:&mut String,
 				ref mut ui: &mut conrod::UiCell,
-				ids:&mut Ids){	
-	println!("filename: {}",file_name);
-	//Initiate raw data constructs.
-	let mut rlb = vec![0;8000];
-	let mut ltxt:Vec<String> = Vec::new();
-	let mut rltxt = String::new();
-	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
-	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrtxt");
-
-	println!("msqrb: {:?}",to_open_a);
-	println!("msqrtxt: {:?}",to_open_b);
-	//open files and read into raw data constructs.
-	let mut loadb= File::open(to_open_a).unwrap();
-	let mut loadtxt= File::open(to_open_b).unwrap();
-	loadb.read(&mut rlb);
-	loadtxt.read_to_string(&mut rltxt);
-	
-	//reformat text file from &str to String.
-	let rrltxt:Vec<&str> = rltxt.split("\n").collect();
-	for i in 0..rrltxt.len(){ltxt.push(rrltxt[i].to_owned())};
-		
-	//reset party, party location and party names.
-	*p_names = Vec::with_capacity(5);
-	*party = Vec::with_capacity(5);		
-	*coords = [0,0];
-	
-    let mut indtrack:usize=0;
-//reconstitute party number u8->u64
-	let p_no=(rlb.remove(0)) as usize;
-	for _ in 0..p_no{		
-//reconstitute Exp.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let exp=un64_f64(unbyte64(temp)) as f32;
-//reconstitute ExpUsed.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let expu=un64_f64(unbyte64(temp)) as f32;
-//reconstitute MP.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let mp=un64_f64(unbyte64(temp)) as f32;		
-//reconstitute HP.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let hp=un64_f64(unbyte64(temp)) as f32;
-//reconstitute speed.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let speed=un64_f64(unbyte64(temp)) as f32;
-//reconstitute attack.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let attack=un64_f64(unbyte64(temp)) as f32;		
-//reconstitute defence.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let defence=un64_f64(unbyte64(temp)) as f32;			
-//reconstitute wm.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let wm=un64_f64(unbyte64(temp)) as f32;	
-//reconstitute bm.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let bm=un64_f64(unbyte64(temp)) as f32;	
-//reconstitute spell list length.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let sp_len=unbyteus(temp);
-		println!("{}",sp_len);
-//reconstitute inventory length.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let inv_len=unbyteus(temp);		
-//reconstitute Alive? Unclean?
-		let temp=rlb.remove(0);
-		let alive=if temp==0{false}else{true};
-		let temp=rlb.remove(0);
-		let unclean=if temp==0{false}else{true};
-//reconstitute longitude
-		let mut temp:[u8;4]=[0;4];
-		for i in 0..4{temp[i]=rlb.remove(0)};
-		let lox=unbyte32(temp);	
-//reconstitute latitude
-		let mut temp:[u8;4]=[0;4];
-		for i in 0..4{temp[i]=rlb.remove(0)};
-		let loy=unbyte32(temp);
-//reconstitute Gold.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let lgp=unbyteus(temp);
-//reconstitute id.
-		let mut temp:[u8;8]=[0;8];
-		for i in 0..8{temp[i]=rlb.remove(0)};
-		let lid=unbyteus(temp);
-//reconstitute name
-		let true_name= indtrack;
-		indtrack+= 1;
-		let mut lname="";
-		let mut ltype="";
-		let mut lsubtype="";
-		let mut laffinity="";
-		let mut lspellist:Vec<i8>=Vec::new();
-		let mut linventory= Vec::new();
-		for x in mons.iter(){
-			if ltxt[indtrack].as_str()==x.name{
-				lname=x.name
-			}else{lname=lname};
-			if ltxt[indtrack+1].as_str()==convert_mon_type(x.Type){
-				ltype=convert_mon_type(x.Type)
-			}else{ltype=ltype};
-			if ltxt[indtrack+2].as_str()==convert_affinity(x.SubType){
-				lsubtype=convert_affinity(x.SubType)
-			}else{lsubtype=lsubtype};
-			if ltxt[indtrack+3].as_str()==convert_affinity(x.Affinity){
-				laffinity=convert_affinity(x.Affinity)
-			}else{laffinity=laffinity};
-		};
-		indtrack+=4;
-		for i in 0..sp_len{
-			for y in spl.iter(){
-				//println!("{:?}",ltxt[i+indtrack].as_str());
-				if ltxt[i+indtrack].as_str()==y.name{
-					lspellist.push(y.id)
-				}else{};
-			};
-		};
-		println!("{:?}",lspellist);
-		indtrack+=sp_len;		
-		//implement inventory later.
-//export from iterator.
-		
-		//write final coords, names, party members and their location.
-		*coords = [loy,lox];
-		p_names.push(ltxt[true_name].clone());
-		party.push((Lifeform{
-					name: lname,
-					Type: convert_affinity_rev(ltype),
-					SubType: convert_affinity_rev(lsubtype),
-					Affinity: convert_affinity_rev(laffinity),
-					Exp: exp,
-					ExpUsed: expu,
-					Spellist: lspellist,
-					MP: mp,
-					HP: hp,
-					Speed: speed,
-					Attack: attack,
-					Defence: defence,
-					WM: wm,
-					BM: bm,
-					MP_shade: mp,
-					HP_shade: hp,
-					Speed_shade: speed,
-					Attack_shade: attack,
-					Defence_shade: defence,
-					WM_shade: wm,
-					BM_shade: bm,
-					Alive: alive,
-					Unclean: unclean,
-					Inventory: linventory,
-					Gold: lgp,
-					id: lid,
-					},0))	
-	};
-	*pl = place_loader(&world,[coords[1],coords[0]]);
-	*pl = (world.len()-1-pl.0,pl.1);
-	//*pl = (pl.0,pl.1);
-	*p_loc = world[world.len()-1-pl.0][pl.1].clone();
-	
+				ids:&mut Ids) {
 	//Say that you've done your job and everything is loaded.
 	let extra:String = if p_names.len()>1 {format!(" {} the {} is with them.",p_names[1],party[1].0.name)}else{String::new()};
+	
 	*comm_text = format!("{} the {} has been loaded.{}",p_names[0],party[0].0.name,extra);
 	set_comm_text(&mut comm_text,ui,ids);
+	
 	println!("{}",&comm_text);
-}
-
-fn place_loader(w:&Vec<[Place;19]>, coords:[i32;2])->(usize,usize){
-	let mut answer:(usize,usize)=(10,8);
-	for i in 0..w.len(){
-		for j in 0..w[i].len(){
-			if w[i][j].xy==coords{
-				answer=(i,j);
-				return answer
-			}else{};
-		};
-	};
-	answer
 }
 
 //function that tells the computer to generate a random encounter based on the monster population of the area.

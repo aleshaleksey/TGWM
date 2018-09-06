@@ -88,8 +88,10 @@ mod dmoose;
 mod cmoose;
 mod xmoose;
 mod bmoose;
+mod shared_moose;
 
 //Imports
+use shared_moose::*;
 #[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img};
 #[allow(unused_imports)] use omoose::{parse_music_config,isekai_deguchi,isekai_urusai,isekai_index};
 #[allow(unused_imports)] use conrod::UiCell;
@@ -890,7 +892,7 @@ pub fn main() {
 			
 			//Set/Reset battle variables.
 			for i in 0..party.len() {
-				exp_players[i] = bmoose::exp_calc(&encounter,i);
+				exp_players[i] = exp_calc(&encounter,i);
 			};
 			println!("Exp on victory: {:?}",exp_players);
 			battle_gold_pot = 0;
@@ -914,9 +916,9 @@ pub fn main() {
 				let time = x.0.Speed_shade.clone()+tvar;
 				battle_timer[nth] = 1.0/time
 			};
-			battle_fast = bmoose::vnmin(battle_timer.clone());
-			battle_ifast = bmoose::vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
-			println!("{} from group {} is the first to take action!",bmoose::beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
+			battle_fast = vnmin(battle_timer.clone());
+			battle_ifast = vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
+			println!("{} from group {} is the first to take action!",beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
 			println!("battle_ifast = {}, encounter.len() = {}",battle_ifast,encounter.len());
 			
 			enc_names = Vec::with_capacity(25);

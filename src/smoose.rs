@@ -12,6 +12,7 @@
 //mod lmoose;
 
 use std::io;
+use shared_moose::*;
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -84,18 +85,6 @@ fn form55_string(x:&Vec<String>,ma:usize){
 	println!("|{}|\n",&d);
 }
 
-
-//does vector contain b?
-fn lhas<T:PartialOrd>(a:&Vec<T>, b:&T)->bool{
-	let mut ihaz=false;
-	for x in a.iter(){
-		if x==b{
-			ihaz=true;
-			return ihaz}
-		else{continue}
-	}
-	ihaz
-}
 
 #[allow(unused_must_use)]
 fn any_key(){

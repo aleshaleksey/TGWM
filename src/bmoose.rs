@@ -3,12 +3,11 @@
 extern crate rand;
 extern crate inflector;
 
-use lmoose;
 use lmoose::*;
 use xmoose::*;
 use imoose::{byteru16,permit_a};
 use cmoose::*;
-use gmoose::arcana_index_from_spell_name;
+use shared_moose::*;
 
 use inflector::Inflector;
 use rand::Rng;
@@ -1885,7 +1884,7 @@ fn dumb_choice (idm:usize,
 	//println!("Point A");
 	//println!("{}",spn.len());
 	for i in 0..spn.len(){
-		if lmoose::lhas(&caster.Spellist,&spn[i]) & (spells[i].MP<=caster.MP_shade) {
+		if lhas(&caster.Spellist,&spn[i]) & (spells[i].MP<=caster.MP_shade) {
 			attackq=false;
 			permitted.push(i);
 			permitted_arcana.push(&spells[i]);
@@ -2001,28 +2000,6 @@ fn bankai (ifast:usize, all:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)->usize
 	kimegao
 }
 
-//state match return string.
-pub fn sm_rets(x:&Lifeform)->String{
-	let stater:f32 = x.HP_shade/x.HP;
-	let state:i32 =
-		if stater>= 1.0{5}
-		else if (stater<1.0) & (stater>=0.75){4}
-		else if (stater<0.75) & (stater>=0.5){3}
-		else if (stater<0.5) & (stater>=0.25){2}
-		else if(stater<0.25) & (stater>0.0){1}
-		else{0};
-	let damned:String = match state{
-		5=>"uninjured".to_owned(),
-		4=>"lightly wounded".to_owned(),
-		3=>"wounded".to_owned(),
-		2=>"gravely wounded".to_owned(),
-		1=>"on death's door".to_owned(),
-		0=>"dead".to_owned(),
-		_=>"absent".to_owned()
-	};
-	damned
-}
-
 //machine learning version of state_match()
 fn state_m(HP_tot:f32, HP_now:f32)->u8{
 let stater:f32=HP_now/HP_tot;
@@ -2081,34 +2058,7 @@ fn dangerous(L:&Lifeform,S:&Lifeform)->f32{
     lf_eval_L-lf_eval_S
 }
 
-//gmoose::beast_name(encounter[ifast],p_names)
 
-pub fn beast_name<'a>(encounter:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,ifast:usize,p_names:&'a Vec<String>)->&'a str {
-	if (encounter[ifast].1==0) & (ifast<p_names.len()) {
-		&p_names[ifast]
-	}else{
-		encounter[ifast].0.name
-	}
-}
-
-//NB xx must be encounter and not party
-pub fn exp_calc(xx: &Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, i:usize)->f32{
-	let mut expgain:f32 = 0.0;
-	let kachi = xx[i].0.HP*(xx[i].0.Attack+xx[i].0.Defence)
-		+xx[i].0.MP*(xx[i].0.BM+xx[i].0.WM)
-		+xx[i].0.Speed*(xx[i].0.HP+xx[i].0.MP);
-	
-	//Baxter to the soap factory.
-	for i in xx.iter(){
-		let baxter = i.0.HP*(i.0.Attack+i.0.Defence)
-		+i.0.MP*(i.0.BM+i.0.WM)
-		+i.0.Speed*(i.0.HP+i.0.MP);
-		expgain+= baxter/kachi;
-	};
-	expgain-= 2.0;
-	expgain= if expgain<0.0 {0.0}else{expgain};
-	expgain
-}
 
 //This translate spell damage number to a string.
 fn spd(being:String, damage:f32)->String{
@@ -2121,39 +2071,3 @@ fn spd(being:String, damage:f32)->String{
 }
 
 
-//Basic functions which will be put elsewhere afterwards:
-//A bunch of unnecessary functions from I didn't know what I was doing.
-pub fn vnmin<T:PartialOrd+Copy>(a:Vec<T>)->T{
-	let mut min:T=a[0];
-	for i in 0..a.len(){
-		if min<=a[i]{min=min}
-		else{min=a[i]};
-	};
-	min
-}
-
-pub fn vnmax<T:PartialOrd+Copy>(a:Vec<T>)->T{
-	let mut max:T=a[0];
-	for i in 0..a.len(){
-		if max<=a[i]{max=a[i]}
-		else{max=max};
-	};
-	max
-}
-//vwhich returns index of the first value in vector a which equals b.
-pub fn vwhich<T:PartialOrd>(a:&Vec<T>, b:T)->Option<usize>{
-	for i in 0..a.len(){
-		if a[i]==b{return Some(i)}
-		else{continue}
-	}
-	None
-}
-
-//vwhich returns index of the first value in vector a which equals b.
-pub fn vwhich_or<T:PartialOrd+Copy>(a:&Vec<T>, b:T, c:usize)->usize{
-	for i in 0..a.len(){
-		if a[i]==b{return i}
-		else{continue}
-	}
-	c
-}

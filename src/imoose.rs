@@ -31,6 +31,10 @@ use lmoose::{ALBION,ALIEN,ANGEL,BEAST,BONE,BRIDGE,CITY,
 		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MALACHIA,
 			 MINDLESS,MOORLAND,MOOSE,RADIANT,RUIN,STEPPE,SPIRIT,
 			 TELEPORTATION,TIME,TUNDRA,UNDEAD,WATER,WITCH,WHITE,NONE};
+use shared_moose::*;
+use shared_moose::{lhas};
+
+			 
 use num::Num;
 use std::collections::HashMap;
 use std::mem::transmute;
@@ -369,16 +373,7 @@ fn perfect_goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participat
 	output
 }
 
-
-//which function for multiple.
-fn vvwhich<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
-	let mut ivec:Vec<usize>=Vec::new();
-	for i in 0..a.len(){
-		if a[i]==b{ivec.push(i)}
-		else{continue}
-	}
-	ivec
-}
+//A vector of entries which are not the same.
 fn vvinv<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
 	let mut ivec:Vec<usize>=Vec::new();
 	for i in 0..a.len(){
@@ -418,17 +413,6 @@ fn rwhich<T:PartialOrd>(a:&Vec<T>, b:T)->Vec<usize>{
 	ivec
 }
 
-//does vector contain b?
-fn lhas<T:PartialOrd>(a:&Vec<T>, b:&T)->bool{
-	let mut ihaz=false;
-	for x in a.iter(){
-		if x==b{
-			ihaz=true;
-			return ihaz}
-		else{continue}
-	}
-	ihaz
-}
 //does vector contain b? From back.
 fn rhas<T:PartialOrd>(a:&Vec<T>, b:&T)->bool{
 	let mut ihaz=false;
@@ -499,47 +483,6 @@ fn rahas<T:PartialOrd>(a:&[T;28], b:&T)->bool{
 		else{continue}
 	}
 	ihaz
-}
-
-
-
-
-
-//machine learning version of state_match()
-fn state_m(HP_tot:f64, HP_now:f64)->u8{
-let stater:f64=HP_now/HP_tot;
-let state:u8=
-    if stater>=1.0{5}
-	else if (stater<1.0) & (stater>=0.75){4}
-	else if (stater<0.75) & (stater>=0.5){3}
-	else if (stater<0.5) & (stater>=0.25){2}
-	else if(stater<0.25) & (stater>0.0){1}
-	else{0};
-state
-}
-
-fn uniq<T:Copy + PartialOrd>(mvec:&Vec<T>)->Vec<T>{
-	let mut uniq:Vec<T>=Vec::new();
-	for x in mvec.iter(){
-		if uniq.len()==0{
-			uniq.push(*x)
-		}else if lhas(&uniq,x)==false{
-			uniq.push(*x)
-		}else{};
-	};
-	uniq
-}
-
-fn uniq_m<T:PartialOrd>(mvec:Vec<T>)->Vec<T>{
-	let mut uniq:Vec<T>=Vec::new();
-	for x in mvec.into_iter(){
-		if uniq.len()==0{
-			uniq.push(x)
-		}else if lhas(&uniq,&x)==false{
-			uniq.push(x)
-		}else{};
-	};
-	uniq
 }
 
 //Counts cases of "indv[i]" for each entry of "indv" in "mesv".

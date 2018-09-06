@@ -17,8 +17,7 @@ use lmoose::*;
 use cmoose::*;
 use cmoose::GraphicsBox::*;
 use gmoose::*;
-use gmoose::spell_targets_to_indices;
-//use gmoose::{HOLY_COLOUR};
+use shared_moose::*;
 
 use std;
 use rand::Rng;
