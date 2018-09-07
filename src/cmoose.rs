@@ -16,6 +16,7 @@
 /// CastInferno(SpellBoxInferno)
 /// AttacK(SpriteBox)
 ///
+/// NB flow control structures for story elements are kept in smoose
 ///
 ///~Alek Zholobenko
 

@@ -688,10 +688,10 @@ fn rms_builder_cause_effect(my_ce:&mut Vec<(&[u8],f32)>,
 							ce_mean_hash:&HashMap<&[u8],[f32;23]>,
 							ideal_effect:&[Option<f32>;22]) {
 	
-	for (x,y) in my_ce.iter_mut() {
+	for &mut(mut x,mut y) in my_ce.iter_mut() {
 		match ce_mean_hash.get(x) {
 			Some(effects) => {
-				*y = rms23_f32_option(ideal_effect,effects);
+				y = rms23_f32_option(ideal_effect,effects);
 			},
 			_			  => {continue;},
 		};
@@ -729,9 +729,9 @@ fn minimal_cause(source:Vec<(&[u8],f32)>) -> (usize,usize) {
 	if source.len()>0 {
 		let mut out:(usize,usize) = (source[0].0[0] as usize,source[0].0[1] as usize);
 		let mut min_val:f32 = source[0].1;
-		for (slice,val) in source.iter() {
-			if *val<min_val {
-				min_val = *val;
+		for &(slice,val) in source.iter() {
+			if val<min_val {
+				min_val = val;
 				out = (slice[0] as usize,slice[1] as usize);
 			};
 		};
@@ -948,7 +948,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				rms_builder_cause_effect(&mut my_causes_val,&cause_effect_means,&ideal_effect);
 				println!("Perfect goal: {:?}",desired_goal);
 				println!("Status stat!: {:?}",&now[6..28]);
-				for (i,(x,e)) in my_causes_val.iter().enumerate() {
+				for (i,&(x,e)) in my_causes_val.iter().enumerate() {
 					println!("{}). Cause: {:?}. RMSs: {}",i,x,e);
 				}
 				let (action,idm) = minimal_cause(my_causes_val);

@@ -1,5 +1,5 @@
-#![feature(use_extern_macros)]
-#![feature(libc)]
+//#![feature(use_extern_macros)]
+//#![feature(libc)]
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_must_use)]
@@ -45,15 +45,18 @@
 ///
 ///Tales of the Great White Moose code is split into several packages, lmoose,imoose,
 ///dmoose,smoose,gmoose,omoose and the main file.
-///-lmoose handles the main types and monster/spell/locale data.
-///-imoose handles the AI.
+///-bmoose handles the functions governing battle logic (minus AI).
+///-cmoose handles flow control structures (some also in smoose).
 ///-dmoose is an additional library for dungeon sequences.
-///-smoose is the unimplemented sage sequence library (also story)
 ///-gmoose handles the gui, graphics and game logic (merged to prevent
-///dependency hell).
-///-xmoose handles effects (such as attacks or spell effects.) Ass well
-///as certain background functions.
+/// dependency hell).
+///-imoose handles the AI.
+///-lmoose handles the main types and monster/spell/locale data.
 ///-omoose handles the audio.
+///-smoose is the unimplemented sage sequence library (also story and
+/// story flow elements.
+///-xmoose handles effects (such as attacks or spell effects.) Ass well
+/// as certain background functions.
 ///-The main function handles global flow variables, event loop, combat
 ///loops, and redraw loops.
 ///
@@ -61,7 +64,7 @@
 ///	Alek Zholobenko 2018	
 
 /// To compile for linux:
-///		cargo build --release --features="winit glium"
+///		cargo build --release --features="winit glium libc"
 ///		cargo run --features="winit glium"
 /// Try try compile for windows:
 ///		cargo rustc --bin q-moose --release --features="winit glium" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C link-args="-Wl,--subsystem,windows"

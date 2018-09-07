@@ -1836,7 +1836,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					n_s_l_q_f[6] = false;
 					wo.song_to_swap = None;
 					if new_game_init {
-							save(&party,&p_names,spl,&p_loc,&mut comm_text,ui,ids);							
+							save(&party,&p_names,spl,&p_loc);							
 							comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 							set_comm_text(&mut comm_text,ui,ids);
 							n_s_l_q_f[1] = false;
@@ -2568,36 +2568,36 @@ fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
 	}else if *n_s_l_q_f==[false,false,true,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
 		if *new_game_init & (pressed.0==1){
 			*new_game_init = false;
-			save(&party,&p_names,spl,&p_loc,comm_text,ui,ids);
+			save(&party,&p_names,spl,&p_loc);
 			*comm_text = "Backup complete... Choose a moose to load:".to_owned();
 			set_comm_text(comm_text,ui,ids);
 		}else if !*new_game_init & (pressed.0!=5){
-										if to_load.0.is_some() & (pressed.0==42) {
-											load(to_load.0.clone().unwrap(),
-												&spl,
-												world,
-												mons,
-												party,
-												p_names,
-												p_loc,
-												pl,
-												coords);
-											loaded_confirmed(party,p_names,comm_text,ui,ids);
-											
-											*n_s_l_q_f = [false,false,false,false,false,false,false];
-											*to_load = (None,1);
-											*new_game_init = true;
-											tt_e_c_i_ll[0] = true;
-											
-											*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
-														 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
-														 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-														 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
-											println!("Party on! {:?}",&party);
-										}else if pressed.0==0 {
-											*comm_text = "Could not load this moose. Try another maybe?".to_owned();
-											set_comm_text(comm_text,ui,ids);
-										};
+			if to_load.0.is_some() & (pressed.0==42) {
+				load(to_load.0.clone().unwrap(),
+					&spl,
+					world,
+					mons,
+					party,
+					p_names,
+					p_loc,
+					pl,
+					coords);
+				loaded_confirmed(party,p_names,comm_text,ui,ids);
+				
+				*n_s_l_q_f = [false,false,false,false,false,false,false];
+				*to_load = (None,1);
+				*new_game_init = true;
+				tt_e_c_i_ll[0] = true;
+				
+				*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
+							 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
+							 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
+							 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
+				println!("Party on! {:?}",&party);
+			}else if pressed.0==0 {
+				*comm_text = "Could not load this moose. Try another maybe?".to_owned();
+				set_comm_text(comm_text,ui,ids);
+			};
 		}else{};
 	}else if tt_e_c_i_ll[2] & (*dungeon_pointer==0) {
 		match pressed.0 {

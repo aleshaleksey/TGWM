@@ -11,7 +11,6 @@ use std::mem::transmute;
 
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
-use gmoose::Ids;
 
 
 //Basic functions which will be put elsewhere afterwards:
@@ -449,10 +448,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 pub fn save(xx:&Vec<(Lifeform,usize)>,
 		nx:&Vec<String>,
 		spl:&Vec<Spell>,
-		p:&Place,
-		mut comm_text:&mut String,
-		ui: &mut conrod::UiCell,
-		ids: &mut Ids){
+		p:&Place){
 	
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");

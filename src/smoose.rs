@@ -25,7 +25,57 @@ use shared_moose::*;
 		     DEATH,DESERT,ELF,EVIL,FALLEN,FIRE,FOREST,GIANT,GOBLIN,GRASSLAND,
 		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MALACHIA,
 			 MINDLESS,MOORLAND,MOOSE,RADIANT,RUIN,STEPPE,SPIRIT,
-			 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE};
+			 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE,
+			 
+			 S_LESSER_CURE,S_CURE,S_GREATER_CURE,S_SACRED_CURE,S_INFERNO,S_FIREBALL,S_FIRE,S_EMBER,
+			 S_LESSER_CRYSTALLISE,S_CRYSTALLISE,S_TRUE_CRYSTALLISE,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM,
+			 S_SUMMON_REAPER,S_TELEPORT,S_GREATER_TELEPORT,S_LIGHT,S_SACRED_LIGHT,S_DARKNESS,S_ABYSSAL_DARKNESS,
+			 S_SLOW,S_HASTE,S_APOCALYPSE,S_GENESIS,S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING,S_TIMESTOP,
+			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};
+
+//A structure to contain spells, prices therefore
+//and fixed answers to questions.
+//this structure will change with time		
+#[derive(Clone,Debug)] 
+pub struct Sage<'a> {
+	pub exp_min: f32,
+	pub spells: Vec<i8>,
+	pub dialog_greeting:&'a str,
+	pub dialog_magic:&'a str,
+	pub dialog_sages:&'a str,
+	pub dialog_world:&'a str,
+	pub dialog_terrain:&'a str,
+	pub dialog_goodbye:&'a str,
+}
+
+pub struct Story<'a> {
+	pub trigger: Vec<Trigger>,
+	pub content: Content,
+	pub conclusion: &'a str,
+	pub id:usize,
+}
+
+
+pub struct Content {
+	
+}
+
+//Trigger for the start of  story dialog can be any of the below,
+//or a combination thereof. Not sure combinations will work yet.
+pub enum Trigger {
+	HasSpell(i8),
+	CastSpell(i8),
+	HasItem(u8),
+	UseItem(u8),
+	LFType(u8),
+	LFSubType(u8),
+	Exp(f32),
+	StartedStory(usize),
+	FinishedStory(usize),
+	FinishedDungeon(usize),
+	Other(usize),
+	Locus(Place),
+}
 
 fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell,usize)>{
 	let mut shopping:Vec<(&Spell,usize)>=Vec::new();
