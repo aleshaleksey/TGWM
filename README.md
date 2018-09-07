@@ -38,7 +38,7 @@ music is half-hearted and the in-game song list can be changed.
 
 Widget buttons as sprites. Uses images as backgrounds. World map is generated from instructions in the executable.
 In battle sprite shake on damage.
-*Update 11-08-2018: Some graphics for spell effects and attacks have been implemented.*
+*Update 11-08-2018: Basic graphics for spell effects and attacks have been implemented.*
 
 ***Mechanics:***
 
@@ -62,13 +62,14 @@ Monsters use a simple algorithm in battle, as a function of the stats of a battl
 
 The computer simulates battles for ten seconds at the start of a battle (using the above algorithm),
 and then uses this battle record to make a decision. Currenly the algorithm probability tables of actions and
-consequences, and uses them to decide the best action. If the "statistics are weak" it will resort to the first
+consequences, and uses them to decide the best action. As a back up uses a cause-effect algorithm, however this currently has some "bugs" related to healing spells. If the "statistics are weak" it will resort to the first
 two methods. Currently this approach is problematic for battles which aren't one-on-one, and where there is a
 small chance of winning or losing. In fact it's problematic in general and needs work.
 
 Notes on compiling
 ------------------
-Originally compiled with Rust  ~~1.1.9-nightly to 1.2.4-nightly~~ nightly (for now I think most versions will work).
+~~Originally compiled with Rust  1.1.9-nightly to 1.2.4-nightly nightly (for now I think most versions will wor~~
+This version is compiled using rust stable (so far compiled succesfully with 1.22.1).
 There are a lot of indirect dependencies which may go horribly wrong when compiling (see below),
 therefore I have included an old Cargo.lock file for troubleshooting.
 
@@ -76,11 +77,11 @@ NB: for a clean, release version add " --release -C link-args="-Wl,--subsystem,w
 
 ***Linux:***
 
-cargo run --release --features="winit glium"
+cargo run --release --features="winit glium libc"
 
 ***Windows (x64):***
 
-cargo rustc q-moose --release --features="winit glium" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
+cargo rustc q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
 
 ***Dependencies:***
 
