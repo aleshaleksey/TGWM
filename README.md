@@ -69,7 +69,7 @@ small chance of winning or losing. In fact it's problematic in general and needs
 Notes on compiling
 ------------------
 ~~Originally compiled with Rust  1.1.9-nightly to 1.2.4-nightly nightly (for now I think most versions will wor~~
-This version is compiled using rust stable (so far compiled succesfully with 1.22.1).
+This version is compiled using rust stable (so far compiled successfully with 1.22.1).
 There are a lot of indirect dependencies which may go horribly wrong when compiling (see below),
 therefore I have included an old Cargo.lock file for troubleshooting.
 
