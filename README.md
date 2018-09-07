@@ -81,7 +81,7 @@ cargo run --release --features="winit glium libc"
 
 ***Windows (x64):***
 
-cargo rustc q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
+cargo rustc --bin q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
 
 ***Dependencies:***
 
