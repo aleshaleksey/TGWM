@@ -95,13 +95,14 @@ mod shared_moose;
 
 //Imports
 use shared_moose::*;
+use smoose::{MyStories,Story,Sage};
 #[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img};
 #[allow(unused_imports)] use omoose::{parse_music_config,isekai_deguchi,isekai_urusai,isekai_index};
 #[allow(unused_imports)] use conrod::UiCell;
 #[allow(unused_imports)] use conrod::widget::button::Interaction;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
+#[allow(unused_imports)] use cmoose::{Landscapes,FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,
 									 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 									 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 									 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -328,6 +329,9 @@ pub fn main() {
 	let world:Vec<[Place;19]> = world();
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
+	let mut sages:Vec<Sage> = Vec::new(); //Currently a placeholder.
+	let mut stories:Vec<Story> = Vec::new(); //Currently placeholder.
+	let mut my_stories:MyStories = MyStories::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
 	let mut p_names:Vec<String> = Vec::with_capacity(5);
@@ -751,7 +755,10 @@ pub fn main() {
 					&mut wo,
 					&mut ipath,
 					&mut sprite_boxer,
-					&mut sprite_pos);
+					&mut sprite_pos,
+					&mut my_stories,
+					&stories,
+					&sages);
 		
 		//reload backgrounds if graphical settings have been changed.			
 		if wo.update_bgc {		

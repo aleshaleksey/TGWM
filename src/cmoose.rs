@@ -21,10 +21,27 @@
 ///~Alek Zholobenko
 
 
+extern crate conrod;
+extern crate std;
+
 use lmoose::{Lifeform};
 use gmoose;
 
-extern crate std;
+//A vector-like structure for carrying image ids for landscape features.
+pub struct Landscapes {
+	pub city: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub desert: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub forest: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub grassland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub highland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub moorland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub ruin: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub steppe: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub tundra: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub void: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub water: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+	pub ice: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
+}
 
 // NB: Some of these structures are currently the same internally.
 // But in order to be able to change later, they're kept the same.

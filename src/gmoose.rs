@@ -39,6 +39,7 @@ extern crate time;
 use shared_moose::*;
 use omoose::{parse_music_config,ISEKAIN};
 use smoose;
+use smoose::{MyStories,Story,Sage};
 #[allow(unused_imports)] use inflector::Inflector;
 #[allow(unused_imports)] use num::Num;
 #[allow(unused_imports)] use rand::Rng;
@@ -81,11 +82,11 @@ use std;
 			  sync_s,sync_t,shake_pos_a,shake_pos_b,cosp,cospt,sinp,sinpt};
 			  
 #[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxT,
-									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno};
+									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno,Landscapes};
 									  
 #[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI,CastS,CastR,CastT,CastInferno};
 
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,Landscapes,
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,
 			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -1510,7 +1511,11 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					wo: &mut FlowCWin,
 					ipath:&mut Option<(usize,String)>,
 					sprite_boxer: &mut GraphicsBox,
-					sprite_pos: &mut [[f64;2];25]) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
+					sprite_pos: &mut [[f64;2];25],
+					my_stories:&mut MyStories,
+					stories: &Vec<Story>,
+					sage: &Vec<Sage>,
+					) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
 	
 	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets A");};
 	//create an initial backup of comm_text					
@@ -1836,7 +1841,7 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					n_s_l_q_f[6] = false;
 					wo.song_to_swap = None;
 					if new_game_init {
-							save(&party,&p_names,spl,&p_loc);							
+							save(&party,&p_names,spl,&p_loc,my_stories);							
 							comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 							set_comm_text(&mut comm_text,ui,ids);
 							n_s_l_q_f[1] = false;
@@ -2002,7 +2007,8 @@ pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					enemies,
 					&text_input,
 					dream_time,
-					&men_wh,wml);
+					&men_wh,wml,
+					my_stories);
 	};
 	
 	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets E");};	
@@ -2358,7 +2364,8 @@ fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
 					text_input:&Option<std::string::String>,
 					dream_time:&mut bool,
 					men_wh:&[f64;2],
-					wml:usize){
+					wml:usize,
+					my_stories:&mut MyStories){
 	
 	let pressed:(usize,String) = if *n_s_l_q_f==[true,false,false,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
 								  match *stage {
@@ -2568,7 +2575,7 @@ fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
 	}else if *n_s_l_q_f==[false,false,true,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
 		if *new_game_init & (pressed.0==1){
 			*new_game_init = false;
-			save(&party,&p_names,spl,&p_loc);
+			save(&party,&p_names,spl,&p_loc,my_stories);
 			*comm_text = "Backup complete... Choose a moose to load:".to_owned();
 			set_comm_text(comm_text,ui,ids);
 		}else if !*new_game_init & (pressed.0!=5){
@@ -2581,7 +2588,8 @@ fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
 					p_names,
 					p_loc,
 					pl,
-					coords);
+					coords,
+					my_stories);
 				loaded_confirmed(party,p_names,comm_text,ui,ids);
 				
 				*n_s_l_q_f = [false,false,false,false,false,false,false];
@@ -4170,57 +4178,6 @@ fn ingrids(xx:&Vec<(Lifeform,usize)>, ifast:usize)->([usize;5],Vec<usize>){
 		}else{};		
 	};
 	(ingrids,is)
-}
-
-fn any_key(){
-	println!("[Press any key to continue]\n");
-	let mut steserifu=String::new();
-	io::stdin().read_line(&mut steserifu).expect("Error in any_key()");
-}
-
-
-//NB, final output is fn(a,b,c)->fn(party){} (aka sage function), current output is party. 
-fn sage_caller(party:Vec<(Lifeform,usize)>, loc:&Place, summon:&str,spl:&Vec<Spell>)->Vec<(Lifeform,usize)>{
-	let mut spell:&Spell= &spl[0];
-	for x in spl.iter(){
-		if summon==x.name{spell=x}else{spell=spell}
-	};
-	
-	let die=rand::thread_rng().gen_range(0,20);
-	
-	if (loc.scape==DESERT) & (spell.Type==FIRE) & (die>10){
-		smoose::sage_fire(party,loc,&summon,spl)
-		//(mut party:Vec<(Lifeform,usize)>, loc:&Place, summon:&str,spl:&Vec<Spell>)
-	}else if (loc.scape==ICE) & (spell.Type==ICE) & (die>10){
-		party
-		//sage_ice(party)
-	}else if (loc.name=="Albion") & (spell.name=="Light") & (die>15){
-		party
-		//sage_albion(party)
-	}else if (loc.name=="Malachia") & (spell.name=="Summon Reaper") & (die>18){
-		party
-		//sage_apocalypse(party)
-	}else if (loc.affinity==LIGHTNING) & (spell.Type==LIGHTNING) & (die>10){
-		party
-		//sage_lightning(party)
-	}else if (loc.name=="White Sea") & (spell.Type==HEALING) & (die>12){
-		party
-		//sage_life(party)
-	}else if ((loc.name=="City of the Dead")||(loc.name=="Citadel of Death")) & (spell.name=="Exorcism"){
-		party
-		//sage_death(party)
-	}else if (loc.name=="Black Obelisk") & (spell.name=="Darkness") & (die>10){
-		party	
-		//sage_darkness(party)
-	}else{
-		println!("...But nothing happens.");
-		party
-	}
-}
-
-fn null_sage(party:Vec<(Lifeform,usize)>)->Vec<(Lifeform,usize)>{
-	println!("I did nothing with party.");
-	party
 }
 
 

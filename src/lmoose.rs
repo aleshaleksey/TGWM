@@ -21,7 +21,6 @@
 
 //Constants at the bottom.
 
-extern crate conrod;
 extern crate std;
 
 use shared_moose::*;
@@ -157,22 +156,6 @@ pub struct Dungeon{
 	pub scenes: Vec<Place>,						//Place vector for dungeon battles
 	pub denizens: Vec<Lifeform>,				//Dungeons have their own bestiary.
 	pub afterstory: &'static str,						//The dungeon's backstory.
-}
-
-//A vector-like structure for carrying image ids for landscape features.
-pub struct Landscapes {
-	pub city: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub desert: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub forest: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub grassland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub highland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub moorland: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub ruin: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub steppe: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub tundra: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub void: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub water: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
-	pub ice: Vec<(conrod::image::Id,[conrod::Scalar;2])>,
 }
 
 //IMPL DISPLAY PLACE

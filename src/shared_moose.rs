@@ -6,9 +6,9 @@ extern crate conrod;
 use std::fs::File;
 use std::env;
 use std::io::{Read,Write};
-use std::mem::transmute;
+use std::mem::{forget,transmute};
 
-
+use smoose::MyStories;
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
 
@@ -224,7 +224,7 @@ pub fn exp_calc(xx: &Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, i:usize)->f32{
 		expgain+= baxter/kachi;
 	};
 	expgain-= 2.0;
-	expgain= if expgain<0.0 {0.0}else{expgain};
+	expgain = if expgain<0.0 {0.0}else{expgain};
 	expgain
 }
 
@@ -252,16 +252,15 @@ pub fn sm_rets(x:&Lifeform)->String{
 		else if (stater<0.5) & (stater>=0.25){2}
 		else if(stater<0.25) & (stater>0.0){1}
 		else{0};
-	let damned:String = match state{
-		5=>"uninjured".to_owned(),
-		4=>"lightly wounded".to_owned(),
-		3=>"wounded".to_owned(),
-		2=>"gravely wounded".to_owned(),
-		1=>"on death's door".to_owned(),
-		0=>"dead".to_owned(),
-		_=>"absent".to_owned()
-	};
-	damned
+	match state {
+		5 => "uninjured".to_owned(),
+		4 => "lightly wounded".to_owned(),
+		3 => "wounded".to_owned(),
+		2 => "gravely wounded".to_owned(),
+		1 => "on death's door".to_owned(),
+		0 => "dead".to_owned(),
+		_ => "absent".to_owned(),
+	}
 }
 
 fn load_marker(){}
@@ -272,22 +271,48 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 				mut p_names:&mut Vec<String>,
 				mut p_loc:&mut Place,
 				mut pl:&mut (usize,usize),
-				mut coords: &mut [i32;2]){	
+				mut coords: &mut [i32;2],
+				my_stories:&mut MyStories){	
 	println!("filename: {}",file_name);
 	//Initiate raw data constructs.
-	let mut rlb = vec![0;8000];
+	let mut rlb = Vec::with_capacity(8000);
 	let mut ltxt:Vec<String> = Vec::new();
 	let mut rltxt = String::new();
 	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
-	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrtxt");
+	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrtxt");
+	let to_open_s = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrp");
 
 	println!("msqrb: {:?}",to_open_a);
 	println!("msqrtxt: {:?}",to_open_b);
+	println!("msqrp: {:?}",to_open_s);
 	//open files and read into raw data constructs.
 	let mut loadb= File::open(to_open_a).unwrap();
 	let mut loadtxt= File::open(to_open_b).unwrap();
-	loadb.read(&mut rlb);
+	loadb.read_to_end(&mut rlb);
 	loadtxt.read_to_string(&mut rltxt);
+	
+	//NB old files will not have a plot file initially, so for compat.
+	//this is written to taken that into account.
+	match File::open(to_open_s) {
+		Ok(mut fp) => {
+			println!("There is a plot");
+			let mut rplot:Vec<u8> = Vec::with_capacity(500);
+			fp.read_to_end(&mut rplot);
+			let plot_len = rplot.len()/5; //Assumes vec<(u32,bool)>, hence 5 bytes,
+			let plot_pointer = unsafe {transmute::<*mut u8,*mut (u32,bool)>(rplot.as_mut_ptr())};
+			forget(rplot);
+			let rplottrans = unsafe {
+				Vec::from_raw_parts(
+					plot_pointer,
+					plot_len,
+					plot_len,
+				)
+			};
+			my_stories.make_ids(rplottrans);
+		},
+		_		=> {println!("There is no plot.");},
+	};
+	println!("Got here");
 	
 	//reformat text file from &str to String.
 	let rrltxt:Vec<&str> = rltxt.split("\n").collect();
@@ -448,15 +473,36 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 pub fn save(xx:&Vec<(Lifeform,usize)>,
 		nx:&Vec<String>,
 		spl:&Vec<Spell>,
-		p:&Place){
+		p:&Place,
+		s:&MyStories){
 	
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");
 	let mut f1 = dir.join(s_name.clone()+".msqrtxt");
-	let mut f2 = dir.join(s_name+".msqrb");
-			
-	let mut stxt=File::create(&f1).unwrap();
-	let mut sfile=File::create(&f2).unwrap();
+	let mut f2 = dir.join(s_name.clone()+".msqrb");
+	let mut fs = dir.join(s_name+".msqrp");
+	
+	
+	//Need to "safetify" this.		
+	let mut stxt = File::create(&f1).unwrap();
+	let mut sfile = File::create(&f2).unwrap();
+	let mut splot = File::create(&fs).unwrap();
+	
+	if s.len()>0 {
+		let finlen = s.len()*5;
+		let mut sids = s.get_ids();
+		let ids_pointer = unsafe {transmute::<*mut (u32,bool),*mut u8>(sids.as_mut_ptr())};
+		forget(sids);
+		let sids = unsafe {
+			 Vec::from_raw_parts(
+				ids_pointer,
+				finlen,
+				finlen,
+			)
+		};
+	
+		splot.write_all(&sids).expect("Tried to save plot, but lost it.");
+	};				
 
 	let n_party:u8=xx.len() as u8;
 	sfile.write_all(&[n_party]);
