@@ -53,8 +53,6 @@
 
 extern crate conrod;
 
-use std::io;
-use shared_moose::*;
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
@@ -143,8 +141,8 @@ pub enum Trigger {
 	HasSpell(i8),
 	CastSpell(i8),
 	CastSpellType(u8),
-	HasItem(u8),
-	UseItem(u8),
+	HasItem(usize),
+	UseItem(usize),
 	LFType(u8),
 	LFSubType(u8),
 	Exp(f32),
@@ -179,8 +177,68 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 	shopping
 }
 
+//A function to poll sages vs conditions. If triggers are met, sage is summoned.
+pub fn sage_poller<'a,'b,'c,'d>(sages: &'a Vec<Sage>,p_loc:&'b Place,spell:&'c Spell,party:&'d Vec<(Lifeform,usize)>)->Option<&'a Sage<'a>> {
+	//Initiate summoned sage.
+	let mut summoned_sage:Option<&Sage> = None;
+	//iterate over the sages.
+	for x in sages.iter() {
+		for y in x.trigger.iter() {
+			
+			//NB, not all triggers are relevent for sages.
+			//The main ones are locus and spell cast.
+			match y {
+				Trigger::LocusXY(tr) => {
+					if p_loc.xy==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::LocusType(tr) => {
+					if p_loc.affinity==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::CastSpell(tr) => {
+					if spell.id==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::HasSpell(tr) => {
+					for z in party[0].0.Spellist.iter() {
+						if z==tr {summoned_sage = Some(x);};
+					};
+				},
+				Trigger::CastSpellType(tr) => {
+					if spell.Type==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::HasItem(tr) => {
+					for z in party[0].0.Inventory.iter() {
+						if z==tr {summoned_sage = Some(x);};
+					};
+				},
+				Trigger::LFType(tr) => {
+					if party[0].0.Type==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::LFSubType(tr) => {
+					if party[0].0.SubType==*tr {summoned_sage = Some(x);};
+				},
+				Trigger::Exp(tr) => {
+					if party[0].0.ExpUsed>=*tr {summoned_sage = Some(x);};
+				},
+				Trigger::Locus(tr) => {
+					if p_loc==tr {summoned_sage = Some(x);};
+				},
+				_				   => {},
+			};
+		}
+	}
+	
+	//last check to check if summon is valid.
+	if summoned_sage.is_some() {
+		if summoned_sage.unwrap().exp_min>party[0].0.ExpUsed {
+			summoned_sage = None
+		};
+	};
+	
+	summoned_sage
+}
 
-pub fn sage_fire<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+
+pub fn sage_fire<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 10.0,
 		face: &mon_faces[22][1],
@@ -189,7 +247,8 @@ pub fn sage_fire<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["You light a fire in the desert night and realise \
 that you are not alone. The form of a nomad sits by the fire, adoring it \
 like a dear child...\n...\"I am the Sage of Fire\" it states.\n".to_owned(),
-"\nWhy did you call me, PLAYER? Or did you just want to stay warm?".to_owned()],
+format!("\nWhy did you call me, {}? Or did you just want to stay warm?",p_names[0])
+],
 		dialog_magic:["Tell me about fire spells.".to_owned(),
 "Fire magic is the light born of destruction that burns up everything. \
 Fire magic is the most destructive of magics, but it also carries the seed of rebirth. \
@@ -211,7 +270,7 @@ you are left alone in the desert again.\n".to_owned()],
 }
 
 
-pub fn sage_lightning<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_lightning<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 50.0,
 		face: &mon_faces[19][0],
@@ -220,7 +279,8 @@ pub fn sage_lightning<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["A single spark in the stony labyrinth...\n...Calls down lightning from a clear sky. \
 The flash momentarily blinds you and you realise that this lightning is something else. \
 \n...\"I am the Sage of Lighning\" it states.\n".to_owned(),
-"\nWhy did you call me, PLAYER?".to_owned()],
+format!("\nWhy did you call me, {}?",p_names[0])
+],
 		dialog_magic:["Tell me about lightning spells.".to_owned(),
 "Lightning magic is the anger of the gods. \
 It destroys and disempowers. Only the truly righteous can withstand it. \
@@ -242,7 +302,7 @@ Jovian Lightning is the greatest lightning magic. It is the spear of burning gol
 	}
 }
 
-pub fn sage_ice<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_ice<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 50.0,
 		face: &mon_faces[25][0],
@@ -251,7 +311,8 @@ pub fn sage_ice<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["You try to make the artic wastes a little colder...\n...And the air around you begins to coalesce. \
 Before you stands the White Queen. \
 \n...\"I am the Sage of Ice\" it states.\n".to_owned(),
-"\nWhy did you call me, PLAYER?".to_owned()],
+format!("\nWhy did you call me, {}?",p_names[0])
+],
 		dialog_magic:["Tell me about ice spells.".to_owned(),
 "Ice magic is the destruction of fire. \
 It is the stillness that waits at the end of the world. \
@@ -273,7 +334,7 @@ We have become inseperate from the sacred laws that have created the world.\n".t
 	}
 }
 
-pub fn sage_light<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_light<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
@@ -282,7 +343,8 @@ pub fn sage_light<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["As you cast your spell, a shining figure approaches you from the mists. \
 Serene, it walks over the water. As it approaches your ship, it says: \
 \n...\"I am the Sage of Light\" it states.\n".to_owned(), 
-"\nWhy did you call me, PLAYER?".to_owned()],
+format!("\nWhy did you call me, {}?",p_names[0])
+],
 		dialog_magic:["Tell me about light spells.".to_owned(),
 "Light spells bring light to dark places, be they physical or metaphysical.
 White magic is strengthened and black magic is weakened in the light.
@@ -306,7 +368,7 @@ When projected as a spell, white magic preserves and restores things to the way 
 
 
 
-pub fn sage_darkness<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_darkness<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
@@ -315,7 +377,7 @@ pub fn sage_darkness<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["As darkness descends upon the Black Obelisk, you feel a presence besides you. \
 Standing at your side, darker than black, it utters: \
 \n...\"I am the Sage of Darkness\".\n".to_owned(),
-"\nWhy did you call me, PLAYER?".to_owned(),
+format!("\nWhy did you call me, {}?",p_names[0]),
 ],
 		dialog_magic:["Tell me about darkness spells.".to_owned(),
 "My magic gives birth to darkness, extinguishing the light that gives life its meaning. \
@@ -340,7 +402,7 @@ You can see all that is wrong with yourself if you look for long enough into thi
 	}
 }
 
-pub fn sage_life<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_life<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
@@ -349,7 +411,7 @@ pub fn sage_life<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["You cast your spell amongst the harsh winds of the White Island. \
 Someone stands before you. \
 \n...\"I am the Sage of Light\" it utters.\n".to_owned(),
-"\nWhy did you call me, PLAYER?".to_owned(),
+format!("\nWhy did you call me, {}?",p_names[0]),
 ],
 		dialog_magic:["Tell me about healing spells.".to_owned(),
 "Healing spells return all things and beings to their true and rightful form. \
@@ -374,7 +436,7 @@ remember whether an old man or a young child stood before you...".to_owned()
 	}
 }
 
-pub fn sage_death<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_death<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 200.0,
 		face: &mon_faces[13][2],
@@ -383,7 +445,7 @@ pub fn sage_death<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["You finish exorcising the crypts and the dead lie still as they should. Then they rise again. \
 The corpses bow as one and speak as a raspy chorus: \
 \n...\"I am the Sage of Death\"\n".to_owned(),
-"\nWhy did you call me, PLAYER?".to_owned(),
+format!("\nWhy did you call me, {}?",p_names[0]),
 ],
 		dialog_magic:["Tell me about death spells.".to_owned(),
 "My magic gives birth to darkness, extinguishing the light that gives life its meaning. \
@@ -410,7 +472,7 @@ just as they should have to start of with...".to_owned()
 }
 
 
-pub fn sage_albion<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_albion<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 200.0,
 		face: &mon_faces[26][0],
@@ -419,7 +481,7 @@ pub fn sage_albion<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["O Albion! Is this your former splendour?..
 You illuminate the empty temples with your spell and see a young man stride towards you.
 \n...\"I am the Sage of Albion\" he states.\n".to_owned(),
-"\nWelcome to the Albion of my youth, PLAYER. My apologies for this poor hospitality.".to_owned()
+format!("\nWelcome to the Albion of my youth, {}. My apologies for this poor hospitality.",p_names[0])
 ],
 		dialog_magic:["Tell me about time magic.".to_owned(),
 "Chronomancy is the power to manipulate your vector in a non-spacial dimension.
@@ -445,7 +507,7 @@ It can change the course of history...
 	}
 }
 
-pub fn sage_malachia<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
+pub fn sage_malachia<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
 		exp_min: 1000.0,
 		face: &mon_faces[20][1],
@@ -454,7 +516,7 @@ pub fn sage_malachia<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>)->Sage {
 		dialog_greeting:["You summon death incarnate at the square of Malachia...
 The reaper stands motionless, observing the sky, then it turns to face you.
 \n...\"I am the Sage of Malachia\" it states.\n".to_owned(),
-"\nHas the time finally come, PLAYER?".to_owned()
+format!("\nHas the time finally come, {}?",p_names[0])
 ],
 		dialog_magic:["Tell me about Apocaplypse.".to_owned(),
 "Apocalypse is a magic that can wrong all that is wrong..
@@ -482,4 +544,17 @@ Perhaps next time it will not end like this.\n".to_owned()
 	}
 }
 
-
+pub fn sage_generator<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Vec<Sage<'a>> {
+	
+	vec![
+		sage_fire(mon_faces,p_names),
+		sage_ice(mon_faces,p_names),
+		sage_lightning(&mon_faces,&p_names),
+		sage_darkness(&mon_faces,&p_names),
+		sage_light(&mon_faces,&p_names),
+		sage_death(&mon_faces,&p_names),
+		sage_life(&mon_faces,&p_names),
+		sage_albion(&mon_faces,&p_names),
+		sage_malachia(&mon_faces,&p_names)
+	]
+}

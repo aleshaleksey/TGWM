@@ -132,8 +132,7 @@ pub struct Shade{
  pub Timestop: f32,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 #[allow(non_snake_case)]
 pub struct Place{
  pub name: &'static str,

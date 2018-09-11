@@ -608,7 +608,6 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 						timer: usize,
 						mut freeze_timer:&mut usize,
 						mut yt_adcwpe_bw: &mut [bool;9],
-						mut n_s_l_q_f: &mut [bool;7],
 						mut recl: &mut [u8;28],
 						mut comm_text: &mut String,
 						mut sel_targets:&mut Vec<usize>,
@@ -784,6 +783,22 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 					println!("{:?}",to_hit);
 					let shades=magic(to_hit.clone(),&encounter,&ns,&y[to_cast_ind],*battle_ifast,comm_text);
 					let hpo:f32=0.0;
+					
+					//Fills the graphics box with the appropriate information,
+					//to launch the sprites into tomorrow.
+					//NB, this needs to be done before mana subtraction.
+					if y[to_cast_ind].MP<=encounter[*battle_ifast].0.MP_shade {
+						sprite_box_filler(&y[to_cast_ind],sprite_boxer,
+							 &encounter[*battle_ifast],
+							 *battle_ifast,
+							 &to_hit,
+							 targets,
+							 &sprite_pos,
+							 shaking_dam
+						);
+						//println!("Sprite boxer post filling: {:?}",sprite_boxer);
+					};
+					
 					for z in 0..cms{
 						let hpo=encounter[z].0.HP_shade;
 						encounter[z].0.MP_shade+=shades.0[z].MP_shade;
@@ -824,19 +839,6 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 						}else{};	
 					};
 					println!("Effects of spellcasting over");
-
-					//Fills the graphics box with the appropriate information,
-					//to launch the sprites into tomorrow.
-					if y[to_cast_ind].MP<=encounter[*battle_ifast].0.MP_shade {
-						sprite_box_filler(&y[to_cast_ind],sprite_boxer,
-							 &encounter[*battle_ifast],
-							 *battle_ifast,
-							 &to_hit,
-							 targets,
-							 &sprite_pos,
-							 shaking_dam
-						);
-					};
 										
 					//*sel_targets = Vec::with_capacity(25);
 					*to_hit = vec![(false,false);cms];	
@@ -919,7 +921,7 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 				mut enemies:  &mut Vec<(Lifeform,usize)>,
 				mut party: &mut Vec<(Lifeform,usize)>,
 				dungeons: &mut Vec<Dungeon>,
-				mut n_s_l_q_f:&mut [bool;7],
+				mut fight:&mut bool,
 				mut tt_e_c_i_ll:&mut [bool;8],
 				mut exp_players:&mut [f32; 5],
 				mut battle_gold_pot:&mut usize,
@@ -949,11 +951,11 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 	let mut victory:(bool,Option<usize>)= if !omnicide | (*battle_tturns>600) | escape {who_won(&alive)}else{(false,None)};
 	//println!("b2");
 	if escape {
-		n_s_l_q_f[4] = false;
+		*fight = false;
 		*freeze_timer = timer;
 		dungeon_navigator_a(false,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
 	}else if !alive[0] {
-		n_s_l_q_f[4] = false;
+		*fight = false;
 		*freeze_timer = timer;
 		*comm_text = "Your party has fallen in battle. Moose over.".to_owned();
 		dungeon_navigator_a(false,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
@@ -966,17 +968,17 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 			}; 	
 		};
 	}else if omnicide {
-		n_s_l_q_f[4] = false;
+		*fight = false;
 		*freeze_timer = timer;
 		*comm_text = "In the wake of this battle there are no survivors. Moose over.".to_owned();
 		dungeon_navigator_a(false,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
 	}else if *battle_tturns>600 {
-		n_s_l_q_f[4] = false;
+		*fight = false;
 		*freeze_timer = timer;
 		*comm_text = "The sun sets on your anger... And you live to rage another day.".to_owned();
 		dungeon_navigator_a(true,idungeon,dungeon_pointer,dungeons,tt_e_c_i_ll);
 	}else if victory.0 {
-		n_s_l_q_f[4] = false;
+		*fight = false;
 		*freeze_timer = timer;
 		let winner:String = match victory.1 {
 			Some(x) => format!("Group {}",x),
@@ -1017,7 +1019,6 @@ pub fn lvlq(party:&Vec<(Lifeform,usize)>,
 		};
 	};
 }
-
 
 //function to produce battle ending bool (draw).
 fn all_dead_marker(){}

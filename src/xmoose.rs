@@ -191,6 +191,7 @@ pub fn sprite_box_filler(magic:&Spell,
 
 	match magic.Type {
 		LIGHTNING => {
+			println!("filling lightning box with {}",magic.name);
 			*gx_box = GraphicsBox::CastL
 			(
 				SpellBoxL::new
@@ -217,6 +218,7 @@ pub fn sprite_box_filler(magic:&Spell,
 			);
 		},
 		FIRE => {
+			println!("filling lightning box with {}",magic.name);
 			match magic.id {
 				S_INFERNO => {
 					//println!("Going for inferno!");
@@ -582,9 +584,9 @@ pub fn set_inferno(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							     sbi.turns_init);
 			if let Some(mut thing) = fire_matrix.next(ui) {
 				
-				thing.rel_x = sbi.tracks[i][0];
-				thing.rel_y = sbi.tracks[i][1];
-				let size = 10.0+(sbi.turns_after%5) as f64;
+				thing.rel_x = sbi.tracks[i][0]+(i%4-sbi.turns_after%5) as f64;
+				thing.rel_y = sbi.tracks[i][1]-(i%3+sbi.turns_after%5) as f64;
+				let size = 10.0+(sbi.turns_after%5+i%7) as f64;
 				thing.w = size*2.0;
 				thing.h = size*2.0;
 				
@@ -603,9 +605,9 @@ pub fn set_inferno(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							     sbi.turns_init);
 			if let Some(mut thing) = fire_matrix.next(ui) {
 				
-				thing.rel_x = sbi.tracks[i][0];
-				thing.rel_y = sbi.tracks[i][1];
-				let size = 10.0+(sbi.turns_after%5) as f64;
+				thing.rel_x = sbi.tracks[i][0]+(i%4-sbi.turns_after2%5) as f64;
+				thing.rel_y = sbi.tracks[i][1]-(i%3+sbi.turns_after2%5) as f64;
+				let size = 10.0+(sbi.turns_after2%5+i%8) as f64;
 				thing.w = size*2.0;
 				thing.h = size*2.0;
 				
@@ -620,9 +622,9 @@ pub fn set_inferno(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		for i in 0..sbi.targets.len() {
 			if let Some(mut thing) = fire_matrix.next(ui) {
 				
-				thing.rel_x = sprite_pos[sbi.targets[i]][0];
-				thing.rel_y = sprite_pos[sbi.targets[i]][1];
-				let size = 40.0+5.0*((sbi.stage_four%FPSU) as f64);
+				thing.rel_x = sprite_pos[sbi.targets[i]][0]+(i%4-sbi.stage_four%5) as f64;
+				thing.rel_y = sprite_pos[sbi.targets[i]][1]-(i%3+sbi.stage_four%5) as f64;
+				let size = 40.0+5.0*((sbi.stage_four%FPSU+i%4) as f64);
 				thing.w = size;
 				thing.h = size;
 				

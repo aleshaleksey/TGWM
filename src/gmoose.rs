@@ -26,9 +26,9 @@ extern crate winit;
 ///~Alek Zholobenko
 ///
 extern crate find_folder;
-#[allow(unused_imports)] extern crate num_cpus;
+extern crate num_cpus;
 extern crate inflector;
-#[allow(unused_imports)] extern crate num;
+extern crate num;
 extern crate rand;
 extern crate time;
 
@@ -38,82 +38,46 @@ extern crate time;
 //mod smoose;
 use shared_moose::*;
 use omoose::{parse_music_config,ISEKAIN};
-use smoose;
 use smoose::{MyStories,Story,Sage};
-#[allow(unused_imports)] use inflector::Inflector;
-#[allow(unused_imports)] use num::Num;
-#[allow(unused_imports)] use rand::Rng;
+use smoose::sage_generator;
+			
+use inflector::Inflector;
+use rand::Rng;
 
 use std;
-#[allow(unused_imports)] use std::ffi::OsStr;
-#[allow(unused_imports)] use std::fs::File;
-#[allow(unused_imports)] use std::clone;
-#[allow(unused_imports)] use std::cmp;
-#[allow(unused_imports)] use std::env;
-#[allow(unused_imports)] use std::fmt::{self, Formatter, Display};
-#[allow(unused_imports)] use std::fs::{self, DirEntry};
-#[allow(unused_imports)] use std::io;
-#[allow(unused_imports)] use std::io::Read;
-#[allow(unused_imports)] use std::io::Write;
-#[allow(unused_imports)] use std::mem;
-#[allow(unused_imports)] use std::mem::transmute;
-#[allow(unused_imports)] use std::ops::Deref;
-#[allow(unused_imports)] use std::path::{Component, Path, PathBuf};
-#[allow(unused_imports)] use std::prelude::*;
-#[allow(unused_imports)] use std::str::Split;
-#[allow(unused_imports)] use std::sync::mpsc::{sync_channel,SyncSender,Receiver,TryRecvError};
-#[allow(unused_imports)] use std::thread;
-#[allow(unused_imports)] use std::time::Duration;
-#[allow(unused_imports)] use time::{PreciseTime};
-#[allow(unused_imports)] use std::f32;
+use std::ffi::OsStr;
+use std::fs::File;
+use std::env;
+use std::fs::{self};
+use std::io::Write;
+use std::path::{Component, PathBuf};
+use std::sync::mpsc::SyncSender;
+use std::thread;
+use std::time::Duration;
+use std::f32;
 
-#[allow(unused_imports)] use conrod::Dimensions;
-#[allow(unused_imports)] use conrod::color::{Colour, Color, hsl, hsla, rgb, rgba};
-#[allow(unused_imports)] use conrod::text::Justify;
-#[allow(unused_imports)] use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
-#[allow(unused_imports)] use glium::Surface;
-#[allow(unused_imports)] use conrod::widget::BorderedRectangle;
+use conrod::color::{Colour, Color, rgba};
+use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
 
-#[allow(unused_imports)] use imoose::permit_a;
-
-#[allow(unused_imports)] use xmoose::{border_crawler_a,border_crawler_b,border_crawler_c,border_crawler_d,
-			  poly_star,poly_round,sprite_box_filler,sprite_box_decrement,sprite_approach,spell_setter,
-			  set_fire,set_lightning,set_holy,set_radiant,set_heal,set_ice,set_time,set_inferno,set_death,
-			  sync_s,sync_t,shake_pos_a,shake_pos_b,cosp,cospt,sinp,sinpt};
+use xmoose::{border_crawler_a,border_crawler_b,border_crawler_c,border_crawler_d,
+			sprite_box_decrement,sprite_approach,spell_setter,sync_s,sync_t,
+			shake_pos_a,cosp,sinp};
 			  
-#[allow(unused_imports)] use cmoose::{FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,SpellBoxF,SpellBoxI,SpellBoxT,
-									  SpellBoxH,SpellBoxD,SpellBoxS,SpellBoxR,SpellBoxInferno,Landscapes};
+use cmoose::{FlowCWin,GraphicsBox,Landscapes,GUIBox};
 									  
-#[allow(unused_imports)] use cmoose::GraphicsBox::{Attack,CastL,CastF,CastH,CastD,CastI,CastS,CastR,CastT,CastInferno};
+use cmoose::GraphicsBox::Attack;
 
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,
-			 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
-			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
-			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
-			 apocalypse,timestop,sword_of_perseus,bow_of_traveller,dagger_of_fawn,
-			 world,goblin_dem,goblin_sco,goblin_witch,bandit,bandit_lord,dark_apprentice,
-			 necromancer,necromancer_lord,skeleton,skeleton_kn,ghost,ghost_an,white_witch,beast_green,
-			 beast_red,beast_great,fallen,titan,warrior,witch,wonderer,alien,loser,beast_serpent,sage_forsaken,
-			 white_queen,
-			 shortstaff,
-			 convert_affinity,convert_mag_type,convert_mon_type,convert_affinity_rev};	
+use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};	
 			  
-#[allow(unused_imports)] use lmoose::{ADVENT,ALBION,ALIEN,ANGEL,BEAST,BONE,BRIDGE,CITY,
-		     DEATH,DESERT,ELF,EVIL,FALLEN,FIRE,FOREST,GIANT,GOBLIN,GRASSLAND,
-		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MALACHIA,
-			 MINDLESS,MOORLAND,MOOSE,RADIANT,RUIN,STEPPE,SPIRIT,
-			 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE,
-			 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY,
+use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
+		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MOORLAND,RADIANT,RUIN,
+		     STEPPE,SPIRIT,TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,
 			 
-			 S_LESSER_CURE,S_CURE,S_GREATER_CURE,S_SACRED_CURE,S_INFERNO,S_FIREBALL,S_FIRE,S_EMBER,
-			 S_LESSER_CRYSTALLISE,S_CRYSTALLISE,S_TRUE_CRYSTALLISE,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM,
-			 S_SUMMON_REAPER,S_TELEPORT,S_GREATER_TELEPORT,S_LIGHT,S_SACRED_LIGHT,S_DARKNESS,S_ABYSSAL_DARKNESS,
-			 S_SLOW,S_HASTE,S_APOCALYPSE,S_GENESIS,S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING,S_TIMESTOP,
-			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};			 
+			 S_CURE,S_EMBER,S_EXORCISM,S_LIGHT,S_DARKNESS,S_SLOW,S_HASTE,S_SPARK};			 
 			 
-#[allow(unused_imports)] use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
-									  door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
-									  tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace};
+use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
+			door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
+			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace};
 			 
 //General constacts.			 
 const VOID_TEXT:&str = "You cannot travel through the void.";
@@ -121,6 +85,7 @@ const BLANK_THREAD:&str = "";
 const SQUARES:[usize;3] = [20,5,2];
 const TRAVEL_DELAY:usize = 15;
 const BORDER:f64 = 3.0;
+const SIDE_MENU_W:f64 = 220.0;
 const BORDER_COLOUR:color::Colour = Color::Rgba(237.0/255.0, 212.0/255.0, 0.0, 128.0/255.0);
 const BACKGR_COLOUR:color::Colour = color::BLACK;
 const BUTTON_COLOUR:color::Colour = color::DARK_RED;
@@ -186,6 +151,17 @@ pub fn set_comm_text(mut comm_text:&mut String, ui: &mut conrod::UiCell, ids: & 
 		.padded_w_of(ids.comm_box,9.0)
 		.line_spacing(5.0)
 		.set(ids.comm, ui);
+}
+
+//function to set middle column label.
+//text should be provided beforehand.
+fn set_middle_label(ui: &mut conrod::UiCell, ids: & Ids,text:&str,wh:&[f64;2]){
+	widget::Text::new(text)
+				.color(color::YELLOW)
+				.font_size(font_size_chooser(wh))
+				.center_justify()
+				.middle_of(ids.mid_label_can)
+				.set(ids.mid_label, ui);
 }
 
 //function to pick a random scenery image for a battle background.
@@ -624,44 +600,6 @@ fn set_mutant_menu_tri (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,e:&
 	(out,comm_text)
 }
 
-#[allow(unused_variables)]
-fn quitter_marker(){}
-fn quitter (ui: &mut conrod::UiCell, ids: &mut Ids, mut n_s_l_q_f: [bool;7], mut truly_quit: &mut bool) -> [bool;7] {
-			   
-	//get window size and set all the sizes as is appropriate.	   
-	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
-	
-	let canvas = widget::Canvas::new().length_weight(1.0);
-	//draw quit canvas
-	widget::Canvas::new().flow_right(&[
-				//(ids.header, widget::Canvas::new().color(color::BLUE).pad_bottom(2.0)),
-				(ids.quit_true_can, canvas.clone().color(color::BLACK)
-												  .pad(BORDER)),
-				(ids.quit_false_can, canvas.clone().color(color::BLACK)
-												   .pad(BORDER)),
-			]).border(BORDER)
-			  .border_color(BORDER_COLOUR)
-			  .set(ids.master, ui);
-	
-	let mut button = widget::Button::new().label_font_size(font_size_chooser_button(win_wh[0]));
-	
-	for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
-						.w_of(ids.quit_true_can).h(200.0)
-						.border(BORDER)
-						.border_color(BORDER_COLOUR)
-						.mid_left_of(ids.quit_true_can).set(ids.quit_true_but,ui){
-		*truly_quit = true;
-	};
-	for _click in button.color(color::DARK_GREEN).label("Please don't...").label_color(color::DARK_GREEN.complement())
-						.w_of(ids.quit_false_can).h(200.0)
-						.border(BORDER)
-						.border_color(BORDER_COLOUR)
-						.mid_right_of(ids.quit_false_can).set(ids.quit_false_but,ui){
-		n_s_l_q_f[3] = false;
-	};
-	n_s_l_q_f	   
-}
-
 // A number of functions for making text with various settings.
 
 fn text_maker0(text: widget::Text, col:Colour, x:u32) -> widget::Text { text.color(col).font_size(x) }
@@ -869,7 +807,6 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  mon_faces: &Vec<[conrod::image::Id;3]>,
 				  mon_facesz: &Vec<[conrod::Scalar;2]>,
 				  world: &Vec<[Place;19]>,
-				  mut diff:i32,
 				  p_names:&mut Vec<String>,
 				  mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				  sprite_boxer:&mut GraphicsBox,
@@ -1145,9 +1082,7 @@ fn set_marker_of_go(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 fn marker_of_set_init_world_map(){}
 #[allow(unused_variables)]
 fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
-						mut n_s_l_q_f:&mut [bool;7],
 						world: &Vec<[Place;19]>,
-						mut diff:i32,
 						p_names:&mut Vec<String>,
 						party:&mut Vec<(Lifeform,usize)>,
 						p_loc:&mut Place,
@@ -1220,11 +1155,9 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 fn marker_of_set_init_world_map2(){}
 #[allow(unused_variables)]
 fn set_init_world_map2 (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
-						mut n_s_l_q_f:&mut [bool;7],
 						world: &Vec<[Place;19]>,
 						map: &conrod::image::Id,
 						mon_faces: &Vec<[conrod::image::Id;3]>,
-						mut diff:i32,
 						p_names:&mut Vec<String>,
 						party:&mut Vec<(Lifeform,usize)>,
 						p_loc:&mut Place,
@@ -1265,15 +1198,6 @@ fn set_init_world_map2 (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		
 		//initate pulse variable
 		let s_sync = sync_s(timer);
-		
-		//TODO(DONE): Replace with pulsing image button.
-		//button_c = button_c.wh([square_size[0]*0.8,square_size[1]*0.8])
-					 	   //.color(butt_col.with_luminance(sync_t(timer)))
-						   //.label(&world[wml-c][r].name[0..1])
-						   //.label_color(butt_txc)
-						   //.border(0.0)
-						   //.border_color(butt_col.with_luminance(sync_t(timer)))
-						   //.bottom_left_of(ids.middle_column);
 						   
 		let mut button_c = widget::Button::image(mon_faces[party[0].0.id][0])
 										.wh([square_size[0]*s_sync,square_size[0]*s_sync])
@@ -1445,1200 +1369,7 @@ fn within_one(r:usize,c:usize,pl:&(usize,usize)) ->bool {
 	|| ((c,r)==(pl.0+1,pl.1))|((c,r)==(pl.0,pl.1+1)) {true}else{false}
 }
 
-fn marker_of_set_widgets(){}
-//Output is "mutm_box_vis" (bool), "comm_text" (String), "new_game_init" (bool), "new,load,save,quit tuple".
-//this is followed by a large number of variables from Q-ft-M itself.
-#[allow(unused_variables)]
-pub fn set_widgets (ref mut ui: conrod::UiCell, ids: &mut Ids,
-					mon_faces: &Vec<[conrod::image::Id;3]>,
-					mon_facesz: &Vec<[conrod::Scalar;2]>,
-					mut comm_text:String,
-					player_input:&mut String,
-					mut mutm_box_vis:bool,
-					mut new_game_init:bool,
-					mut1_text:&str,mut2_text:&str,mut3_text:&str,mut4_text:&str,
-					main_vis:bool,adv_vis:bool,fight_vis:bool,
-					mut n_s_l_q_f:[bool;7],
-					mut tt_e_c_i_ll: &mut [bool;8],
-					mut provisional_loc: &mut (usize,usize),
-					mut battled:usize,
-					mut action:u8,
-					world: &Vec<[Place;19]>,
-					world_map: &conrod::image::Id,
-					spl:&Vec<Spell>,
-					mons:&Vec<Lifeform>,
-					mut diff:i32,
-					p_names_m:&mut Vec<&str>,
-					mut p_names:&mut Vec<String>,
-					mut party:&mut Vec<(Lifeform,usize)>,
-					p_loc:&mut Place,
-					pl:&mut (usize,usize),
-					encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-					enemies:&mut Vec<(Lifeform,usize)>,
-					field:&mut Place,
-					lore_empty:&mut bool,
-					aftermath:&mut (Lifeform,Lifeform,Vec<[u8;28]>),
-					rrrltxt:&mut Vec<String>,
-					rltxt:&mut String,
-					ltxt:&mut Vec<&'static str> ,
-					rlb:&mut Vec<u8>,
-					coords:&mut [i32;2],
-					mut stage:usize,
-					mut to_load:&mut (Option<String>,usize),
-					mut dream_time:&mut bool,
-					timer:usize,
-					mut freeze_timer: &mut usize,
-					mut yt_adcwpe_bw: &mut [bool;9],
-					mut sel_targets: &mut Vec<usize>,
-					mut to_cast: &mut String,
-					battle_ifast: usize,
-					battle_ttakes: &mut u16,
-					mut chosen_hero: &mut usize,
-					mut dungeons: &mut Vec<Dungeon>,
-					mut idungeon: &mut Option<usize>,
-					mut dungeon_pointer: &mut usize,
-					mut truly_quit: &mut bool,
-					mut shaking_dam: &mut [bool;25],
-					shaking_timer: &mut usize,
-					pause:bool,
-					mut scenery_index: &mut usize,
-					landscapes: &Landscapes,
-					mut centre_h: &mut f64,
-					mut centre_w: &mut f64,
-					mut gui_song_list: &mut Vec<String>,
-					mut silent_sender: &mut SyncSender<bool>,
-					mut p_scape: &mut u8,
-					wo: &mut FlowCWin,
-					ipath:&mut Option<(usize,String)>,
-					sprite_boxer: &mut GraphicsBox,
-					sprite_pos: &mut [[f64;2];25],
-					my_stories:&mut MyStories,
-					stories: &Vec<Story>,
-					sage: &Vec<Sage>,
-					) -> (bool,String,bool,[bool;7],usize,u8,i32,usize) {
-	
-	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets A");};
-	//create an initial backup of comm_text					
-	let comm_text_bckup1:String = comm_text.clone();
-	
-	//if quit==true, make dialog with two buttons (quit and cancel), which lets you finally quit!
-	if n_s_l_q_f[3] {
-		n_s_l_q_f = quitter(ui,ids,n_s_l_q_f,truly_quit);			   
-		return (mutm_box_vis,comm_text,new_game_init,n_s_l_q_f,battled,action,diff,stage);
-	};
-	//get canvas size:
-	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
-	
-	let wml = world.len()-1;
-	
-	let hide_all_but = if n_s_l_q_f[0] | n_s_l_q_f[1] | n_s_l_q_f[2] {
-		mutm_box_vis = true;
-		true
-	}else{
-		mutm_box_vis = if tt_e_c_i_ll[1] & (world[wml-provisional_loc.0][provisional_loc.1].scape!=VOID) {
-			true
-		}else if tt_e_c_i_ll[2]
-		 & (*dungeon_pointer>1)
-		  & idungeon.is_some() {
-			  //println!("mb1, dp: {}\ndunlen: {}",dungeon_pointer,dungeons[idungeon.unwrap()].scenes.len());
-			if *dungeon_pointer<dungeons[idungeon.unwrap()].scenes.len()+2 {
-				//println!("mb2");
-				mutm_box_vis = false;
-				false
-			}else{
-				//println!("mb3");
-				mutm_box_vis = true;
-				true
-			}
-		}else if tt_e_c_i_ll[2] {
-			mutm_box_vis
-		}else{
-			*dungeon_pointer = 0;
-			false};
-		false
-	};
-	
-	//show the right menus depending on whether there's a fight or not.
-	let right_menu_l = if !n_s_l_q_f[4] | hide_all_but {0.0}else{220.0};
-	let left_menu_l = if n_s_l_q_f[4] | hide_all_but {0.0}else{220.0};
-	
-	let wml = world.len()-1;
-	
-	let men_wh = [214.0,win_wh[1]];
-									
-	let mut right_menus_canvas = widget::Canvas::new()
-												//.color(color::DARK_GREY
-												.length(right_menu_l)
-												.h(win_wh[1]-6.0)
-												.pad(BORDER);
-									
-	let mut comm_box = canvas_bord_col(widget::Canvas::new()
-											  .color(color::BLACK)
-											  .scroll_kids_vertically()
-											  .length_weight(0.5),
-									   Some(BORDER),
-									   BORDER_COLOUR);
-	let mut coml_box = widget::Canvas::new()
-									.color(BACKGR_COLOUR)
-									.scroll_kids_vertically()
-									.pad(BORDER)
-									.border(BORDER)
-									.border_color(BORDER_COLOUR)
-									.length(if !mutm_box_vis {0.0}else{36.0});
-	
-	let background_colour:Color = if idungeon.is_none() {
-		*p_scape = p_loc.scape;
-		map_sq_colour(p_loc)
-	}else if (*dungeon_pointer<2) | (*dungeon_pointer>dungeons[idungeon.unwrap()].scenes.len()+1) {
-		*p_scape = p_loc.scape;
-		map_sq_colour(p_loc)
-	}else{
-		*p_scape = dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].scape;
-		map_sq_colour(&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2])
-	};
-									
-	let mut map_column = canvas_bord_col(widget::Canvas::new()
-												.color(background_colour)
-												.scroll_kids_vertically()
-												.length_weight(1.5)
-												.pad(BORDER),
-												Some(BORDER),
-												BORDER_COLOUR);
-									
-	let mutm_box_l:f64 = if mutm_box_vis {50.0}else{0.0};
-	let butt_h:f64 = if new_game_init {men_wh[1]/10.0}else{0.0};
-	let but_hb:f64 = men_wh[1]/10.0;
-	let mut mutm_minibox = widget::Canvas::new().color(BACKGR_COLOUR).length(mutm_box_l);
-	
-	widget::Canvas::new().flow_down(&[
-				//(ids.header, widget::Canvas::new().color(color::BLUE).pad_bottom(2.0)),
-				(ids.body, widget::Canvas::new()
-				//.length(300.0)
-				.flow_right(&[
-					(ids.far_left_column, canvas_bord_col(widget::Canvas::new()
-						.length(left_menu_l)
-						.pad(BORDER)
-					    .h(win_wh[1]-6.0),
-						Some(BORDER),
-						BORDER_COLOUR)
-					),
-					(ids.map_and_word, widget::Canvas::new().flow_down(&[
-						(ids.mid_label_can, widget::Canvas::new().pad(BORDER)
-																 .color(color::DARK_BLUE.with_luminance(0.1))
-																 .length(if n_s_l_q_f[4] {30.0}else{0.0})
-						),
-						(ids.middle_column, map_column),
-						(ids.coml_box, coml_box.pad(BORDER)),
-						(ids.mutant_menu, widget::Canvas::new()
-									.flow_right(&[
-										((ids.mut1_box),(mutm_minibox.length_weight(1.0))),
-										((ids.mut2_box),(mutm_minibox.length_weight(1.0))),
-										((ids.mut3_box),(mutm_minibox.length_weight(1.0))),
-										((ids.mut4_box),(mutm_minibox.length_weight(1.0))),
-										((ids.mut5_box),(mutm_minibox.length_weight(1.0))),
-									])
-									.color(BACKGR_COLOUR)
-									.length(mutm_box_l)
-									.pad(BORDER)),
-						(ids.comm_box, comm_box.pad(BORDER)),
-					]).pad(6.0)
-					  .length(win_wh[0]-left_menu_l-right_menu_l-6.0)
-					  .h(win_wh[1]-6.0)),
-					(ids.fight_menu_canvas, right_menus_canvas),
-				]),
-			)]).pad(6.0).set(ids.master, ui);
-			
-	//println!("{:?}",ui.wh_of(ids.middle_column));
-	
-	
-	//Layout the comment box and make the scrollbar:
-	set_comm_text(&mut comm_text,ui,ids);
-	widget::Scrollbar::y_axis(ids.comm_box).auto_hide(true).set(ids.comm_scroll, ui);
-	
-	let text_input = widget::TextEdit::new(player_input)
-		.color(color::DARK_RED)
-		.font_size(24)
-		.top_left_of(ids.coml_box)
-		.padded_w_of(ids.coml_box,5.0)
-		.line_spacing(5.0)
-		.restrict_to_height(false)
-		.set(ids.comm_link, ui);
-	
-	
-	//Layout the input box and make the scrollbar:
-	widget::Scrollbar::y_axis(ids.coml_box).auto_hide(true).set(ids.coml_scroll, ui);
-	                  
-	//Alternative model fight menu buttons matrix.
-	let game_menu_button = widget::Button::new().color(color::DARK_RED)
-												.w_h(men_wh[0]-6.0,butt_h)
-												.label_font_size(font_size_chooser_button_b(win_wh[0]));
-	let main_menu_button = widget::Button::new().color(color::DARK_RED)
-												.w_h(men_wh[0]-6.0,but_hb)
-												.label_font_size(font_size_chooser_button_b(win_wh[0]));
-     
-    //if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets B");};
-    //fight menu buttons.
-    if (n_s_l_q_f[4]) & (!hide_all_but) {
-		//Place title.
-		text_maker_m(if (*dungeon_pointer>1) & idungeon.is_some() {
-											dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name
-										}else{
-											p_loc.name
-										},
-		color::YELLOW,20).middle_of(ids.mid_label_can).set(ids.mid_label,ui);
-		//println!("gmoose731!");
-		//Tell the world you're in a fight.
-		// Menu in fight_menu_canvas
-		widget::Canvas::new()
-			.w_h(right_menu_l,men_wh[1])
-			//.color(color::DARK_BLUE)
-			.label_color(color::YELLOW)
-			.mid_right_of(ids.fight_menu_canvas)
-			.set(ids.fight_menu,ui);
-		//Fight menu button canvases.
-		 let long_l:f64 = men_wh[1]/10.0-BORDER;
-		 let short_l:f64 = men_wh[1]-butt_h*6.0-BORDER*7.0;
-		 let fight_buttons = canvas_bord_col(widget::Canvas::new()
-													.mid_top_of(ids.fight_menu)
-													.wh_of(ids.fight_menu_canvas)
-													.pad(BORDER),
-													Some(BORDER),
-													BORDER_COLOUR)
-							.set(ids.fight_menu_buttons, ui);
-		//Fight menu buttons.
-		let attack_button = game_menu_button.clone().label("Attack").w(right_menu_l-6.0).mid_top_of(ids.fight_menu).set(ids.at_button,ui);		
-		let defend_button = game_menu_button.clone().label("Defend").w(right_menu_l-6.0).down_from(ids.at_button,0.0).set(ids.de_button,ui);
-		let cast_button = game_menu_button.clone().label("Cast a spell").w(right_menu_l-6.0).down_from(ids.de_button,0.0).set(ids.ca_button,ui);
-		let wait_button = game_menu_button.clone().label("Wait..").w(right_menu_l-6.0).down_from(ids.ca_button,0.0).set(ids.wa_button,ui);
-		let panic_button = game_menu_button.clone().label("Panic!").w(right_menu_l-6.0).down_from(ids.wa_button,0.0).set(ids.pa_button,ui);
-		let escape_button = game_menu_button.clone().label("Escape!").w(right_menu_l-6.0).down_from(ids.pa_button,0.0).set(ids.es_button,ui);
-		
-		//Prepare battle spell menu. Excess work here?
-		let mut battle_spell_menu = widget::Canvas::new().scroll_kids_vertically()
-										 .w_of(ids.es_button)
-										 .x(ui.xy_of(ids.es_button).unwrap()[0])
-										 .h(short_l)
-										 .down_from(ids.es_button,0.0);
-		 
-		if *dream_time {
-			//println!("gmoose765");
-			*freeze_timer = timer;
-			
-			//scenery index is moved here.
-			*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);
-			println!("p_scape = {}, scenery_index = {}",p_scape,scenery_index);
-			if (*dungeon_pointer<2) | idungeon.is_none() {
-				comm_text = "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned()
-			}else if idungeon.is_some() {
-				comm_text = format!("You proceed to {} of {}...",dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name,dungeons[idungeon.unwrap()].name);
-			};
-			set_comm_text(&mut comm_text,ui,ids);
-			if (*p_scape != VOID) & (*p_scape != TIME) {
-				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
-			};
-							
-		}else if !*lore_empty {
-			if (*battle_ttakes==0) & (*dungeon_pointer>1) & idungeon.is_some() {
-				comm_text = "May the Great White Moose protect you!\n***Press Enter to Continue***".to_owned();
-			}else if *battle_ttakes==0 {
-				comm_text = "The Great White Moose has seen how this can end, but not how this will end...\n***Press Enter to Continue***".to_owned();
-			};
-			//println!("gmoose 1114-entering set_battle_background");
-			if (*p_scape != VOID) & (*p_scape != TIME) {
-				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
-			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
-			};
-			//println!("gmoose 1114-entering set_battle_map");
-			set_battle_map(ids,ui,
-						mon_faces,mon_facesz,
-						world,
-						diff,
-						p_names,
-						encounter,
-						sprite_boxer,
-						wo,
-						if (*dungeon_pointer<2) | idungeon.is_none() {
-							p_loc
-						}else{
-							&mut dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2]
-						},
-						&mut comm_text,
-						timer,
-						&mut yt_adcwpe_bw,
-						&mut sel_targets,
-						shaking_dam,
-						sprite_pos,
-						shaking_timer,
-						battle_ifast,
-						pause);
-			//println!("gmoose1046-exiting set_battle_map");
-			//Activate fight menu buttons.
-			if yt_adcwpe_bw[0] {
-				comm_text = comm_text_bckup1;
-				for _click in attack_button{
-					//println!("Attack in battle Button Pressed");
-					yt_adcwpe_bw[1] = true;
-				};
-				for _click in defend_button{
-					//println!("Defend in battle Button Pressed");
-					yt_adcwpe_bw[2] = true;
-				};
-				for _click in cast_button{
-						//println!("Cast in battle Button Pressed");
-						yt_adcwpe_bw[3] = !yt_adcwpe_bw[3];
-				}
-				for _click in wait_button{
-					//println!("Wait in battle Button Pressed");
-					yt_adcwpe_bw[4] = true;
-				};
-				for click in panic_button{
-					//println!("Panic in battle Button Pressed");
-					comm_text = format!("{} loses it and starts running in circles...",p_names[battle_ifast]);
-					yt_adcwpe_bw[5] = true;
-				};
-				for _click in escape_button{
-					yt_adcwpe_bw[6] = true;
-				};
-				if yt_adcwpe_bw[3] {
-					//set the battle spell canvas...
-					battle_spell_menu.border(BORDER)
-							 .border_color(color::BLUE.with_luminance(0.66))
-							 .set(ids.spells_can,ui);
-					//...and enter the battle spell menu function.
-					set_battle_spell_menu( ui,ids,&mut comm_text,
-														spl,party,
-														&mut to_cast,
-														battle_ifast);
-				};
-			};	
-			set_comm_text(&mut comm_text,ui,ids);
-		};
-		//println!("gmoose838!");
-		//if tt_e_c_i_ll[2] {println!("tecill[2], Coming out of set_widgets B");};
-		return (mutm_box_vis,comm_text,new_game_init,n_s_l_q_f,battled,action,diff,stage)	
-	};
-		
-	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets C");};	
-	//Set up the main and adventure menus.
-	if left_menu_l>0.0 {
-		let short_l:f64 = left_menu_l-6.0;
-		//create main menu burrons
-		if !new_game_init || n_s_l_q_f[5] {
-			//If game is not started, or menu entered voluntarily, activate main menu.
-			let ng_button = main_menu_button.clone().label("New Moose").w(short_l).mid_top_of(ids.far_left_column).set(ids.ng_button,ui);		
-			let lg_button = main_menu_button.clone().label("Load Moose").w(short_l).down_from(ids.ng_button,0.0).set(ids.lg_button,ui);
-			let sg_button = main_menu_button.clone().label("Save Moose").w(short_l).down_from(ids.lg_button,0.0).set(ids.sg_button,ui);
-			let op_button = main_menu_button.clone().label("Options").w(short_l).down_from(ids.sg_button,0.0).set(ids.op_button,ui);
-			for _click in ng_button{
-					println!("New Game button pressed.");
-					n_s_l_q_f[0] = true;
-					n_s_l_q_f[6] = false;
-					wo.song_to_swap = None;
-			};
-			for _click in sg_button{
-					println!("Save Game button pressed.");
-					n_s_l_q_f[6] = false;
-					wo.song_to_swap = None;
-					if new_game_init {
-							save(&party,&p_names,spl,&p_loc,my_stories);							
-							comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
-							set_comm_text(&mut comm_text,ui,ids);
-							n_s_l_q_f[1] = false;
-					}else{
-						comm_text = "There is nothing to save- start or load a moose first.".to_owned();
-						set_comm_text(&mut comm_text,ui,ids);
-						n_s_l_q_f[1] = false;
-					};
-			};
-			for _click in lg_button{
-				println!("Load Game button pressed.");
-				n_s_l_q_f[2] = true;
-				n_s_l_q_f[6] = false;
-				wo.song_to_swap = None;
-			};
-			for _click in op_button{
-				println!("Options menu button pressed.");
-				// update song list once per show of music menu (by default).
-				parse_music_config(&mut gui_song_list);
-				if n_s_l_q_f[6] {
-					n_s_l_q_f[6] = false;
-					wo.song_to_swap = None;	
-				}else{
-					n_s_l_q_f[6] = true;
-				};
-			};
-			
-			let mut qt_button:conrod::widget::button::TimesClicked;
-			
-			// If game is started and main menu active activate gm_button.
-			if new_game_init {
-				let gm_button = main_menu_button.clone().label("Back to Moose").w(short_l).down_from(ids.op_button,0.0).set(ids.gm_button,ui);
-				qt_button = main_menu_button.clone().label("Quit").w(short_l).down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
-				
-				for _click in gm_button{
-					println!("Returning to game. Main menu be gone!.");
-					n_s_l_q_f[5] = false;
-					n_s_l_q_f[6] = false;
-					wo.song_to_swap = None;
-				};			
-			}else{
-				qt_button = main_menu_button.clone().label("Quit").w(short_l).down_from(ids.op_button,0.0).set(ids.qt_button,ui);
-			};
-			
-			for _click in qt_button{
-				println!("Quit game button pressed. This should quit.");
-				n_s_l_q_f[3] = true;
-			};
-			
-			if n_s_l_q_f[6] {
-				//important hack to stop crashing on reload backgrounds.
-				if new_game_init {
-					tt_e_c_i_ll[2] = false;
-					tt_e_c_i_ll[0] = true;
-				};
-				set_options_canvas(ui,ids,ipath,gui_song_list,
-												silent_sender,
-												wo,
-												mon_faces,
-												landscapes);
-				if ipath.is_some() {
-					set_music_browser(ui,ids,ipath,gui_song_list,wo);
-				};
-			};
-			// NOT IMPLEMENTED FULLY YET.
-					
-		}else{
-			//If game is started, activate play menu.
-			let travel_button = game_menu_button.clone().label("Travel").w(short_l).h(butt_h).mid_top_of(ids.far_left_column).set(ids.travel_button,ui);		
-			let fight_button = game_menu_button.clone().label("Pick a Fight").w(short_l).h(butt_h).down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
-			let explore_button = game_menu_button.clone().label("Explore").w(short_l).h(butt_h).down_from(ids.fight_button,0.0).set(ids.explore_button,ui);			
-			let cast_button = game_menu_button.clone().label("Cast a Spell").w(short_l).h(butt_h).down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
-			let party_button = game_menu_button.clone().label("Inspect Party").w(short_l).h(butt_h).down_from(ids.cast_button,0.0).set(ids.party_button,ui);
-			let gm_button = main_menu_button.clone().label("Main Menu").w(short_l).down_from(ids.party_button,0.0).set(ids.gm_button,ui);
-			
-			//Activate main menu buttons.	
-			for _click in travel_button{
-				println!("Travel Button Pressed");
-				*tt_e_c_i_ll = if new_game_init {[true,false,false,false,false,false,tt_e_c_i_ll[6],false]}else{*tt_e_c_i_ll};
-			};
-			for _click in fight_button{
-				println!("Pick a fight button pressed.");
-				n_s_l_q_f[4] = true;
-				tt_e_c_i_ll[2] = false;
-				encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
-				
-				//might not be necessary here, but there is a leak somewhere.
-				//*scenery_index = scenery_setter(landscapes,p_scape,centre_w,centre_h);
-				set_comm_text(&mut "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned(),ui,ids);
-			};
-			for _click in explore_button{
-				*tt_e_c_i_ll = if new_game_init & !tt_e_c_i_ll[2] & !n_s_l_q_f[6] {
-					*idungeon = dungeon_finder(p_loc,dungeons,party);
-					*freeze_timer = timer;
-					if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-					[false,false,true,false,false,false,tt_e_c_i_ll[6],false]
-				}else if new_game_init & tt_e_c_i_ll[2] {
-					[true,false,false,false,false,false,tt_e_c_i_ll[6],false]
-				}else{
-					*tt_e_c_i_ll
-				};
-				println!("Explore button pressed.");
-			};
-			for _click in cast_button{
-				println!("Cast a spell button pressed.");
-			};
-			for _click in party_button{
-				println!("Inspect party button pressed..");
-				*tt_e_c_i_ll = if new_game_init {[false,false,false,false,true,false,tt_e_c_i_ll[6],false]}else{*tt_e_c_i_ll};
-			};
-			for _click in gm_button{
-				println!("Returning to game. Main menu be gone!.");
-				n_s_l_q_f[5] = true;
-			};		
-		};	
-	};
-	
-	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets D");};		
-    //make the mutant menu appear if needs be.
-    if mutm_box_vis & !n_s_l_q_f[4] {
-		//println!("Visible!");
-		mutm_box_responder(ui, ids,
-					&mut comm_text,
-					player_input,
-					&mut mutm_box_vis,
-					&mut new_game_init,
-					mut1_text,mut2_text,mut3_text,mut4_text,
-					main_vis,adv_vis,fight_vis,
-					&mut n_s_l_q_f,
-					tt_e_c_i_ll,
-					provisional_loc,
-					world,
-					world_map,
-					spl,
-					mons,
-					&mut diff,
-					p_names_m,
-					p_names,
-					party,
-					p_loc,
-					pl,
-					field,
-					rrrltxt,
-					rltxt,
-					ltxt,
-					rlb,
-					coords,
-					&mut stage,
-					to_load,
-					timer,
-					freeze_timer,
-					yt_adcwpe_bw,
-					chosen_hero,
-					dungeons,
-					idungeon,
-					dungeon_pointer,
-					scenery_index,
-					landscapes,
-					p_scape,
-					wo,
-					ipath,
-					encounter,
-					enemies,
-					&text_input,
-					dream_time,
-					&men_wh,wml,
-					my_stories);
-	};
-	
-	//if tt_e_c_i_ll[2] {println!("tecill[2], In sset_widgets E");};	
-	//set the GUI centerpiece depending on whether a new game has been selected or not.
-	if !new_game_init & !n_s_l_q_f[2] {
-		//set_uninit_centerpiece(ids,ui); (Maybe implement this, or not)
-	}else if new_game_init & (n_s_l_q_f[2..7]==[false,false,false,false,false]) & tt_e_c_i_ll[4] {
-		//Put player desc here.
-		show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,&mut comm_text,timer,chosen_hero);
-	}else if new_game_init & !n_s_l_q_f[2] & tt_e_c_i_ll[2] {
-		if *idungeon==None {
-			comm_text = format!("You explore the nooks and crannies of {}, but find nothing of note.",p_loc.name);
-			set_comm_text(&mut comm_text,ui,ids);
-		}else{
-			if (*dungeon_pointer==0) & !mutm_box_vis {
-				comm_text = format!("You explore the nooks and crannies of {}, and make a discovery:\n{}",p_loc.name,dungeons[idungeon.unwrap()]);
-				set_comm_text(&mut comm_text,ui,ids);
-				if timer>*freeze_timer+63 {
-					mutm_box_vis = true;
-					n_s_l_q_f[4] = false;
-				};
-			}else if *dungeon_pointer==1 {
-				comm_text = format!("You take a step over the threshold separating {} from {}..\nYou stand in {}.",
-									p_loc.name,
-									dungeons[idungeon.unwrap()].name,
-									dungeons[idungeon.unwrap()].scenes[0].name);
-				if timer>*freeze_timer+63 {
-					*dungeon_pointer = 2;
-					*dream_time = true;
-					n_s_l_q_f[4] = true;
-					
-					dungeon_updater(&mut dungeons,&mut party,idungeon.unwrap()); 
-					encounter_starter_dun(party, enemies, encounter,
-								&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
-								&dungeons[idungeon.unwrap()].denizens,
-								dream_time);
-				};
-			}else if (*dungeon_pointer>2)
-			 & (*dungeon_pointer<dungeons[idungeon.unwrap()].scenes.len()+2)
-			   & !n_s_l_q_f[4] {
-				*freeze_timer = timer;
-				*dream_time = true;
-				n_s_l_q_f[4] = true;
-				encounter_starter_dun(party, enemies, encounter,
-								&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
-								&dungeons[idungeon.unwrap()].denizens,
-								dream_time);
-				comm_text = format!("Having battled your way through {} you proceed to {}",
-									dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-3].name,
-									dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name);
-				set_comm_text(&mut comm_text,ui,ids);
-				//println!("got to where I should be!");
-			}else if *dungeon_pointer+1>dungeons[idungeon.unwrap()].scenes.len() {
-				let len_dun = dungeons[idungeon.unwrap()].scenes.len()-1;
-				comm_text = format!("You have defeated the master of {1} and return alive from {0}",
-									dungeons[idungeon.unwrap()].name,
-									dungeons[idungeon.unwrap()].scenes[len_dun].name);
-				set_comm_text(&mut comm_text,ui,ids);
-				if (*p_scape != VOID) & (*p_scape != TIME)
-				 & (!scenery_l_checker(landscapes,*p_scape)<*scenery_index) {
-					*scenery_index = scenery_setter(landscapes,*p_scape,centre_w,centre_h);
-				};
-			};
-		};
-	//if tt_e_c_i_ll[2] & (*dungeon_pointer>2) {println!("Still not crashed!");};
-	}else if new_game_init & !n_s_l_q_f[2] & !n_s_l_q_f[4] & tt_e_c_i_ll[0] {
-		//set_init_world_map(ids,ui,
-						//&mut n_s_l_q_f,
-						//world,
-						//diff,
-						//p_names,
-						//party,
-						//p_loc,
-						//pl,
-						//coords,
-						//&mut comm_text,
-						//timer,
-						//tt_e_c_i_ll,
-						//provisional_loc);
-	set_init_world_map2(ids,ui,
-						&mut n_s_l_q_f,
-						world,
-						world_map,
-						mon_faces,
-						diff,
-						p_names,
-						party,
-						p_loc,
-						pl,
-						coords,
-						&mut comm_text,
-						timer,
-						tt_e_c_i_ll,
-						provisional_loc);
-	};
-	
-	//set level up alert.
-	if !n_s_l_q_f[4]
-	 & tt_e_c_i_ll[5]
-	  & !mutm_box_vis
-	   & (left_menu_l>0.0)
-	    & new_game_init {
-		
-		//println!("X0");
-		widget::Canvas::new().floating(true)
-							 .color(BACKGR_COLOUR)
-							 .border_color(BORDER_COLOUR)
-							 .border(3.0)
-							 .middle_of(ids.middle_column)
-							 .wh([360.0,240.0])
-							 .pad(20.0)
-							 .set(ids.lvl_up_alert_canvas,ui);
-				 
-		text_maker_m("Someone's gained enough experience to grasp something...",color::GREEN.with_luminance(0.66), 24)
-											.middle_of(ids.lvl_up_alert_canvas)
-											.padded_w_of(ids.lvl_up_alert_canvas,10.0)
-											.set(ids.lvl_up_alert_text,ui);
-		for _click in widget::Button::new().mid_bottom_of(ids.lvl_up_alert_canvas)
-										   .wh([160.0,40.0])
-										   .color(color::GREEN.with_luminance(0.3))
-										   .label("...")
-										   .set(ids.lvl_up_alert_button,ui) {
-			tt_e_c_i_ll[5] = false;
-			tt_e_c_i_ll[7] = false;
-		};
-	};
-	if *dream_time & (*p_scape != VOID) & (*p_scape != TIME) {
-		//println!("line 1625");
-		//set pretty background.
-		*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);
-		set_battle_background(ui,ids,&landscapes,*p_scape, *scenery_index,centre_w,centre_h);
-	}else if tt_e_c_i_ll[2] & !n_s_l_q_f[4] & (*p_scape != VOID) & (*p_scape != TIME) {
-		//println!("X1");
-		set_battle_background(ui,ids,&landscapes,*p_scape, *scenery_index,centre_w,centre_h);
-	}else if tt_e_c_i_ll[2] & !n_s_l_q_f[4] & (*p_scape==TIME) {
-		//println!("X2");
-		set_timescape(ui,ids,timer);
-	};
-	
-	//Try to bloody well write the afterstory.
-	//if tt_e_c_i_ll[2] & (*dungeon_pointer>2) {println!("Still not crashed!X2");};
-	if idungeon.is_some(){
-		if *dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
-			set_afterstory(ui,ids,dungeons[idungeon.unwrap()].afterstory,dungeon_pointer);
-			//println!("Afterstory should have been set now!");
-		};
-	};
-	
-	//println!("Exiting set_widgets");
-	(mutm_box_vis,comm_text,new_game_init,n_s_l_q_f,battled,action,diff,stage)	
-}
 
-// Generate a unique `WidgetId` for each widget.
-#[recursion_limit="1024"]
-widget_ids! {
-	pub struct Ids {
-		master,							//Main screen
-		header,							//Not used anymore
-		body,							//Am I even using that now?
-		marker_shape, 					//highlight battling monster
-		marker_shape2, 					//highlight battling monster.
-		battle_background,				//image background in battle
-		battle_background_time_a,		//matrix for timescape
-		battle_background_time_b,		//matrix for timescape
-		battle_background_time_c,		//matrix for timescape
-		battle_background_time_d,		//matrix for timescape
-		dungeon_afterstory,				//text story to receive after background.
-		
-		
-		far_left_column,				//far left column containing main and play menu.
-				ng_button,				//Main menu buttons.		
-				lg_button,
-				sg_button,
-				gm_button,
-				op_button,
-				qt_button,
-				travel_button,			//Play menu buttons
-				fight_button,
-				explore_button,
-				cast_button,
-				party_button,
-				
-		map_and_word,					//Main part of screen
-			mid_label_can,				//label telling whether you are.
-				mid_label,
-			middle_column,				//The column of everything.
-				global_map,				//global map (matrix version)
-				global_map_image,		//global map (image version)
-				center_button,			//buttons for global map versions.
-				north_button,
-				east_button,
-				south_button,
-				west_button,
-				party_stats,			//party stats canvas and ensuing stuff.
-					party_stats_c1,
-						party_stats_a,
-					party_stats_c2,
-						party_stats_b,
-					char1_n,			//ids of textboxes holding character names.
-					char2_n,
-					char3_n,
-					char4_n,
-					char5_n,
-				spell_list_can,			//Spell list can in party stats can
-					spell_list,
-					spell_list_scroll,
-					spell_list_title,
-				party_stats_scroll,
-				load_menu,				//menu of save game file buttons
-					load_menu_scroll,
-				partyc_can,				//battle canvas containing party
-					partyc_mtrx,
-				enemyn_can,				//battle canvases containing enemies.
-					enemyn_mtrx,
-				enemye_can,
-					enemye_mtrx,
-				enemys_can,
-					enemys_mtrx,
-				enemyw_can,
-					enemyw_mtrx,
-				lvl_up_alert_canvas,	//level up canvas alert.
-					lvl_up_alert_text,
-					lvl_up_alert_button,
-			coml_box,					//comm box for text input
-				comm_link,
-				coml_scroll,
-			mutant_menu,				//mutant menu for options dialogs.
-				mut1_box,
-					mut1_but,
-				mut2_box,
-					mut2_but,
-				mut3_box,
-					mut3_but,
-				mut4_box,
-					mut4_but,
-				mut5_box,
-					mut5_but,
-			comm_box,					//the box which tells you everything.
-				comm,
-				comm_scroll,
-		fight_menu_canvas,				//battle menu.
-			fight_menu_tab,				//I have no idea why I've kept this.
-				fight_menu,				
-					fight_menu_buttons,
-							at_button,
-							de_button,
-							ca_button,
-							wa_button,
-							pa_button,
-							es_button,
-						spare_fight_can,
-						spells_can,
-							spells_can_scroll,
-							spells_mtrx,
-		quit_canvas,					//quit canvas and pertaining buttons.
-			quit_true_can,
-				quit_true_but,
-			quit_false_can,
-				quit_false_but,
-				
-		options_canvas,
-			opt_can_tabs,
-			opt_music,
-				update_song_list_button,	//update song list (why not?)
-				toggle_sound_button, 		//no idea how to implement this yet.
-				song_list_can,
-					songl_scroll,
-					song_list,
-				change_song_list,
-			opt_graphics,
-				opt_graphics_unimp,
-				opt_interface_brightness_text,
-				opt_interface_brightness_slider,
-				opt_background_brightness_text,
-				opt_background_brightness_slider,
-				opt_reload_backgrounds_default,
-				opt_reload_backgrounds,
-				opt_sample_background,
-				opt_sample_sprite,
-			opt_antlers,
-				opt_antlers_unimp,
-				opt_antlers_text,
-				opt_antlers_slider,
-				opt_antlers_reset_but,
-				
-		file_browser_can, //File browser for dealing with swapping out of songs.
-			fb_navi,
-			fb_select_but,
-			fb_back_but,
-			fb_cancel_but,
-			fb_standard_but,
-			fb_display_current,
-			
-		eclair_matrix, //Set lightning.
-		eclair_matrix_two, //Set the lightning ends.
-		fire_matrix, //Set fire.
-		//NB inferno uses fire_matrix for balls, and eclair_matrix for lines (for now)
-		ice_matrix, //set ice.
-		healing_matrix,
-		death_matrix,
-		holy_matrix,
-		radiant_matrix,
-		time_matrix,
-				
-	}
-}
-
-//A function that tidies up the main set_widget function
-//replies to mutm_box vis question.
-fn mutm_box_responder_marker(){}
-fn mutm_box_responder(ref mut ui: &mut conrod::UiCell, ids: &mut Ids,
-					comm_text:&mut String,
-					player_input:&mut String,
-					mutm_box_vis:&mut bool,
-					new_game_init:&mut bool,
-					mut1_text:&str,mut2_text:&str,mut3_text:&str,mut4_text:&str,
-					main_vis:bool,adv_vis:bool,fight_vis:bool,
-					n_s_l_q_f: &mut [bool;7],
-					mut tt_e_c_i_ll: &mut [bool;8],
-					mut provisional_loc: &mut (usize,usize),
-					world: &Vec<[Place;19]>,
-					world_map: &conrod::image::Id,
-					spl:&Vec<Spell>,
-					mons:&Vec<Lifeform>,
-					diff:&mut i32,
-					p_names_m:&mut Vec<&str>,
-					p_names:&mut Vec<String>,
-					party:&mut Vec<(Lifeform,usize)>,
-					p_loc:&mut Place,
-					pl:&mut (usize,usize),
-					field:&mut Place,
-					rrrltxt:&mut Vec<String>,
-					rltxt:&mut String,
-					ltxt:&mut Vec<&'static str> ,
-					rlb:&mut Vec<u8>,
-					coords:&mut [i32;2],
-					stage:&mut usize,
-					to_load:&mut (Option<String>,usize),
-					timer:usize,
-					freeze_timer: &mut usize,
-					yt_adcwpe_bw: &mut [bool;9],
-					chosen_hero: &mut usize,
-					dungeons: &mut Vec<Dungeon>,
-					idungeon: &mut Option<usize>,
-					dungeon_pointer: &mut usize,
-					scenery_index: &mut usize,
-					landscapes: &Landscapes,
-					p_scape: &mut u8,
-					wo: &mut FlowCWin,
-					ipath:&mut Option<(usize,String)>,
-					encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-					enemies:&mut Vec<(Lifeform,usize)>,
-					text_input:&Option<std::string::String>,
-					dream_time:&mut bool,
-					men_wh:&[f64;2],
-					wml:usize,
-					my_stories:&mut MyStories){
-	
-	let pressed:(usize,String) = if *n_s_l_q_f==[true,false,false,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
-								  match *stage {
-									  0=> 
-										  { if *new_game_init {
-											  *comm_text = "The game has already begun. \
-											  If you start again now, it will all be lost.".to_owned();
-											  set_comm_text(comm_text,ui,ids);
-											  set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
-											}else{
-											  *comm_text = "What would you call yourself?".to_owned();
-											  set_comm_text(comm_text,ui,ids);
-											  for edit in text_input {
-												  *player_input = edit.clone();
-												  if edit.chars().rev().nth(0)==Some('\n') {
-													  let name_1 = edit.trim().to_title_case().to_owned();
-													  p_names.push(name_1.clone());
-													  *comm_text = format!("I see, your name is {}",p_names[0]);
-													  set_comm_text(comm_text,ui,ids);
-													  *stage=1;
-													  *player_input = String::new();
-												  }else{
-													  *player_input = edit.to_owned();
-												  };
-											  };
-											  set_mutant_menu_uni(ui,ids,"Cancel")}
-										  },
-									 1 => { set_mutant_menu_bin(ui,ids,"Yes, it is I!","Cancel",comm_text.clone())},
-									 2 => { set_mutant_menu(ui,ids,"Warrior","Witch","Wonderer","Loser","Cancel")},
-									 3 => { if comm_text!="That's not even a number... So how many hours?"{
-												*comm_text = "How many hours do you spend thinking happy thoughts?".to_owned();
-												set_comm_text(comm_text,ui,ids);
-											};
-											for edit in text_input {
-												*player_input = edit.clone();
-												  if edit.chars().rev().nth(0)==Some('\n') {
-													  let ed = edit.trim().to_owned();
-													  *player_input = String::new();
-													  let mut darkness = ed.parse::<isize>();
-													  match darkness {
-														  Ok(mut num) => {if num<0 {
-																		num = 0
-																	  }else if num>24 {
-																		num = 24;
-																	  };
-																	  *comm_text = format!("I see, {} hours...",num);
-																	  set_comm_text(comm_text,ui,ids);
-																	  *stage+= 1;
-																	  character_dl_mod(&mut party[0].0,num-12);
-																	 },
-														  Err(_) => {*comm_text = "That's not even a number... So how many hours?".to_owned();
-																	 set_comm_text(comm_text,ui,ids);
-																	},
-																};
-															};
-												};
-												set_mutant_menu_uni(ui,ids,"Cancel")
-											
-											},
-										4 => {	*comm_text = "Are you alone?".to_owned();
-												set_comm_text(comm_text,ui,ids);
-												set_mutant_menu_tri(ui,ids,"All alone.","Never...","Cancel")},
-										5 => {	set_mutant_menu(ui,ids,"A warrior..","A witch..","A wonderer..","A loser..","Cancel")},
-										6 => {	let follower = if party.len()>1 {format!("a {}",party[1].0.name)}else{"no one".to_owned()};
-												let light_dark = if party[0].0.Attack>party[0].0.Defence {"of darkness"}else{"of light"};
-												*comm_text = format!("So, {}, you are a {} of {} followed by {}...",p_names[0],party[0].0.name,light_dark,follower);
-												set_comm_text(comm_text,ui,ids);
-												set_mutant_menu_bin(ui,ids,"Aye..","I don't want to do this.","Then let the adventure begin?".to_owned())
-											 },
-										_ => {set_mutant_menu_bin(ui,ids,"Into the sunset!","I don't want to do this.","A new moose has begun!".to_owned())},
-										}
-								 }else if *n_s_l_q_f==[false,false,true,false,false,n_s_l_q_f[5],n_s_l_q_f[6]]{
-									 if *new_game_init {
-									 *comm_text = "The moose has already begun. \
-									 If you load another now, it will all be lost.".to_owned();
-									 set_comm_text(comm_text,ui,ids);
-									 set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
-									}else{
-										let a = set_mutant_menu_uni(ui,ids,"Cancel");
-										*to_load = loader(comm_text,ui,ids,&men_wh);
-										if a.0!=5 {(to_load.1,"".to_owned())}else{a}
-									}
-								 }else if tt_e_c_i_ll[1] {
-									if world[wml-provisional_loc.0][provisional_loc.1].scape!=VOID{ 
-										go_there(comm_text,ui,ids,
-												party,
-												p_names,enemies,encounter,
-												pl,
-												p_loc,
-												world,mons,
-												coords,
-												provisional_loc,
-												tt_e_c_i_ll,
-												n_s_l_q_f,
-												dream_time);
-									}else{
-										*mutm_box_vis==false;
-									};
-									(0,comm_text.clone())
-								}else if tt_e_c_i_ll[2]
-								 & (*dungeon_pointer==0) {
-									set_mutant_menu_bin(ui,ids,
-														"Lets do this!",
-														"I want to live.",
-														format!("{}\nEnter {}?",dungeons[idungeon.unwrap()],dungeons[idungeon.unwrap()].name)
-									)
-								}else{(0,comm_text.clone())};
-								 
-								 
-	if pressed.0==5 {		
-				//if cancel new_game click, reset new game variables.
-		if n_s_l_q_f[0] {
-			n_s_l_q_f[0] = false;
-			if !*new_game_init {
-				*party = Vec::with_capacity(5);
-				*p_names = Vec::with_capacity(5);
-				*p_loc = world[8][6].clone();
-				*pl = (13,5);
-			};
-			*stage = 0;
-		 }else if n_s_l_q_f[1] {n_s_l_q_f[1] = false
-		 }else if n_s_l_q_f[2] {n_s_l_q_f[2] = false
-		 }else if tt_e_c_i_ll[2] {
-			tt_e_c_i_ll[2] = false;
-			tt_e_c_i_ll[0] = true;
-		 }else{};
-	}else if *n_s_l_q_f==[true,false,false,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
-		//new game matcher.
-		match *stage {
-			
-			0 => {	if *new_game_init & (pressed.0==1) {
-					*new_game_init = false;
-					*party = Vec::with_capacity(5);
-					*p_names = Vec::with_capacity(5);
-					*p_loc = world[8][6].clone();
-					*pl = (13,5);
-				};
-				},
-			1 => {	if pressed.0==1{
-						*stage = 2;
-						*comm_text = format!("What would you be, {}?",&p_names[0]);
-						set_comm_text(comm_text,ui,ids);
-					};
-				},
-			2 => {	match pressed.0 {
-						1 => {	party.push((warrior(),0));
-								*stage = 3;
-								*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
-								set_comm_text(comm_text,ui,ids);},
-						2 => {	party.push((witch(),0));
-								*stage = 3;
-								*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
-								set_comm_text(comm_text,ui,ids);},
-						3 => {	party.push((wonderer(),0));
-								*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
-								set_comm_text(comm_text,ui,ids);
-								*stage = 3;},
-						4 => {	party.push((loser(),0));
-								*stage = 3;
-								*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
-								set_comm_text(comm_text,ui,ids);},
-						_ => {},
-					};
-				},
-			3 => {},
-			4 => {  match pressed.0 {
-					1 => { *stage = 6;},
-					2 => {	*stage = 5;
-							*comm_text = format!("Who follows you?");
-							set_comm_text(comm_text,ui,ids);},
-					_ => {},
-					};
-				},
-			5 => { match pressed.0 {
-					1 => {	party.push((warrior(),0));
-							sidekick_maker(party, p_names);
-							*stage+= 1;},
-					2 => {	party.push((witch(),0));
-							sidekick_maker(party, p_names);
-							*stage+= 1;},
-					3 => {	party.push((wonderer(),0));
-							sidekick_maker(party, p_names);
-							*stage+= 1;},
-					4 => {	party.push((loser(),0));
-							sidekick_maker(party, p_names);
-							*stage+= 1;},
-					_ => {},
-					};
-				},
-			6 => { if pressed.0==1 {*stage = 7;};},
-			7 => { *stage = 0;
-					n_s_l_q_f[0] = false;
-					*mutm_box_vis = false;
-					*comm_text = "Then let the adventure begin?".to_owned();
-					set_comm_text(comm_text,ui,ids);
-					println!("Party debug: {:?}",party);
-					println!("Party names: {:?}",p_names);
-					*new_game_init = true;
-					tt_e_c_i_ll[0] = true;
-					*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
-														 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
-														 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-														 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
-				},
-			_ => {},
-		};
-	}else if *n_s_l_q_f==[false,false,true,false,false,n_s_l_q_f[5],n_s_l_q_f[6]] {
-		if *new_game_init & (pressed.0==1){
-			*new_game_init = false;
-			save(&party,&p_names,spl,&p_loc,my_stories);
-			*comm_text = "Backup complete... Choose a moose to load:".to_owned();
-			set_comm_text(comm_text,ui,ids);
-		}else if !*new_game_init & (pressed.0!=5){
-			if to_load.0.is_some() & (pressed.0==42) {
-				load(to_load.0.clone().unwrap(),
-					&spl,
-					world,
-					mons,
-					party,
-					p_names,
-					p_loc,
-					pl,
-					coords,
-					my_stories);
-				loaded_confirmed(party,p_names,comm_text,ui,ids);
-				
-				*n_s_l_q_f = [false,false,false,false,false,false,false];
-				*to_load = (None,1);
-				*new_game_init = true;
-				tt_e_c_i_ll[0] = true;
-				
-				*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
-							 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
-							 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-							 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
-				println!("Party on! {:?}",&party);
-			}else if pressed.0==0 {
-				*comm_text = "Could not load this moose. Try another maybe?".to_owned();
-				set_comm_text(comm_text,ui,ids);
-			};
-		}else{};
-	}else if tt_e_c_i_ll[2] & (*dungeon_pointer==0) {
-		match pressed.0 {
-			1 => {
-					*dungeon_pointer = 1;
-					*comm_text = format!("You take a step over the threshold separating {} from {}...",p_loc.name,dungeons[idungeon.unwrap()].name);
-					set_comm_text(comm_text,ui,ids);
-					*freeze_timer = timer;
-					*mutm_box_vis = false;
-				 },
-			5 => {
-					*comm_text = format!("You turn around and head back to {}...",p_loc.name);
-					set_comm_text(comm_text,ui,ids);
-					*freeze_timer = timer;
-					*mutm_box_vis = false;
-					tt_e_c_i_ll[2] = false;
-				 },
-			_=>{},
-		};
-	}else{
-		//General matcher, mainly works the cancel button.
-		match pressed.0 {
-			//if cancel:
-			5 => {},
-			1 => {},
-			2 => {},
-			3 => {},
-			4 => {},
-			_ => {},
-		};
-	};
-	*comm_text = if pressed.1==String::new() {comm_text.to_owned()}else{pressed.1};
-}
 
 //function to set the options menu and thereafter certain settings.
 fn set_options_dialog_marker(){}
@@ -3013,13 +1744,11 @@ fn encounter_starter(party: &mut Vec<(Lifeform,usize)>,
 					 mut enemies: &mut Vec<(Lifeform,usize)>,
 					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					 p_loc: &Place,
-					 mons: &Vec<Lifeform>,
-					 dream_time: &mut bool) {
+					 mons: &Vec<Lifeform>) {
 	*enemies = engenB(&engenA(),&p_loc,mons);
 	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
-	*dream_time = true;
 }
 
 //Dungeon encounter generator.
@@ -3027,13 +1756,11 @@ fn encounter_starter_dun(party: &mut Vec<(Lifeform,usize)>,
 					 mut enemies: &mut Vec<(Lifeform,usize)>,
 					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					 p_loc: &Place,
-					 mons: &Vec<Lifeform>,
-					 dream_time: &mut bool) {
+					 mons: &Vec<Lifeform>) {
 	*enemies = engenB(&engenA_dun(p_loc),&p_loc,mons);
 	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
-	*dream_time = true;
 }
 
 fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
@@ -3309,7 +2036,7 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 	
 	//set spell list if permitted	
 	if tt_e_c_i_ll[7] & tt_e_c_i_ll[6] {
-		set_learnable_spell_list(ui,ids,comm_text,party,tt_e_c_i_ll,spl,p_names,*chosen_hero,m_w);
+		set_spell_list_learnable(ui,ids,comm_text,party,tt_e_c_i_ll,spl,p_names,*chosen_hero,m_w);
 	}else if tt_e_c_i_ll[7] {
 		set_spell_list(ui,ids,comm_text,party,spl,p_names,*chosen_hero,m_w);
 	};
@@ -3380,11 +2107,11 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	if party[i].0.Spellist.len()>0 {
 		while let Some(spell) = spell_list.next(ui) {
 			let snow = spell.row;
-			let spell_name:String = arcana_name_from_spell_id(spl,party[i].0.Spellist[snow-1]);
 			if snow==0{
 				let title:String = format!("{} the {}'s Spellbook",p_names[i],party[i].0.name);
 				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
 			}else{
+				let spell_name:String = arcana_name_from_spell_id(spl,party[i].0.Spellist[snow-1]);
 				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,party[i].0.Spellist[snow-1]).unwrap()];
 				let x = widget::Button::new().label(&spell_name)
 											 .label_font_size(font_size_chooser_button_b(w))
@@ -3406,9 +2133,9 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	};	   
 }
 
-fn set_learnable_spell_list_marker(){}
+fn set_spell_list_learnable_marker(){}
 //A function to learn new spells.
-fn set_learnable_spell_list (ref mut ui: &mut conrod::UiCell,
+fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
 				   mut comm_text:&mut String,
 				   mut party: &mut Vec<(Lifeform,usize)>,
@@ -3508,6 +2235,100 @@ fn set_learnable_spell_list (ref mut ui: &mut conrod::UiCell,
 	};	   
 }
 
+//set global spell list when choosing a global spell to cast.
+//set spell list into party inspector
+fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   mut comm_text:&mut String,
+				   party: &Vec<(Lifeform,usize)>,
+				   spl: &Vec<Spell>,
+				   p_names:&Vec<String>,
+				   w: f64,
+				   gui_box:&mut GUIBox) { //nb i is "chosen_hero"
+	
+	//set up some variables for canvas size			   
+	let mut matrix_rows:usize = 1;
+	let rows:usize = if party[0].0.Spellist.len()==0 {
+		1
+	}else if party[0].0.Spellist.len()<10 {
+		matrix_rows = party[0].0.Spellist.len()+1;
+		party[0].0.Spellist.len()+1
+	}else{
+		matrix_rows = 9;
+		party[0].0.Spellist.len()+1
+	};	
+	
+	//calculate canvas sized based on spb length and window size.
+	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
+	let mrf64:f64 = 50.0*(matrix_rows as f64);
+	
+	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
+	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
+	
+	//make canvas for spell_list.
+	if party[0].0.Spellist.len()>9 {
+		widget::Canvas::new()
+			.scroll_kids_vertically()
+			.floating(true)
+			.mid_top_of(ids.map_and_word)
+			.wh(wh_m)
+			.pad(10.0)
+			.color(BACKGR_COLOUR)
+			.border(BORDER)
+			.border_color(BORDER_COLOUR)
+			.set(ids.spell_list_can,ui);
+		widget::Scrollbar::y_axis(ids.spell_list_can).auto_hide(true).set(ids.coml_scroll, ui);
+	}else{
+		widget::Canvas::new()
+			.floating(true)
+			.mid_top_of(ids.map_and_word)
+			.wh(wh_m)
+			.pad(10.0)
+			.color(BACKGR_COLOUR)
+			.border(BORDER)
+			.border_color(BORDER_COLOUR)
+			.set(ids.spell_list_can,ui);
+	};
+	
+	//make matrix containing spell list.	
+	let mut spell_list = widget::Matrix::new(1,rows)
+					   .w(wh_m[0]-2.0*BORDER)
+					   .h(40.0*(rows as f64)-BORDER*2.0)
+					   .mid_top_of(ids.spell_list_can)
+					   .set(ids.spell_list,ui);
+				   
+	//Write spell list if character has spells. Write sorry otherwise.
+	if party[0].0.Spellist.len()>0 {
+		while let Some(spell) = spell_list.next(ui) {
+			let snow = spell.row;
+			if snow==0{
+				let title:String = format!("{} the {}'s Spellbook",p_names[0],party[0].0.name);
+				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+			}else{
+				let spell_name:String = arcana_name_from_spell_id(spl,party[0].0.Spellist[snow-1]);
+				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,party[0].0.Spellist[snow-1]).unwrap()];
+				let x = widget::Button::new().label(&spell_name)
+											 .label_font_size(font_size_chooser_button_b(w))
+											 .color(colour_of_magic(spell_out_spell.Type));
+				for _click in spell.set(x,ui){
+					*comm_text = format!("{}",spell_out_spell);
+					set_comm_text(&mut comm_text,ui,ids);
+					*gui_box = GUIBox::GameCastCast(spell_out_spell.clone());
+				};
+			};
+		};
+	}else{
+		while let Some(spell) = spell_list.next(ui) {
+			let spell_button_label:String = format!("{} knows no spells...",p_names[0]);
+			let x = widget::Button::new().label(&spell_button_label)
+										 .label_font_size(font_size_chooser_button_b(w))
+										 .color(BUTTON_COLOUR);
+			spell.set(x,ui);
+		};	
+	};	  
+}
+
+
 //set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,comm_text:String)
 
 //function to cross the pole correctly.
@@ -3522,19 +2343,19 @@ fn cross_pole(strt_longitude:usize, wld: &Vec<[Place;19]>)->usize {
 
 
 //function to travel down the world map:
-pub fn travel_down(mut pl:&mut (usize,usize),
+pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
 				   mut coords:&mut [i32;2],
 				   timer:usize,
 				   mut freeze_timer: &mut usize,
 				   mut comm_text: &mut String,
-				   mut n_s_l_q_f: &mut [bool;7],
+				   mut gui_box: GUIBox<'a>,
+				   mut gui_box_previous: GUIBox<'a>,
 				   mut party:&mut Vec<(Lifeform,usize)>,
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-				   mons:&Vec<Lifeform>,
-				   mut dream_time: &mut bool) {
+				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
 	
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1<17 {(pl.0,pl.1+1)}else{(cross_pole(pl.0,world),18)};
@@ -3546,29 +2367,31 @@ pub fn travel_down(mut pl:&mut (usize,usize),
 			*coords = p_loc.xy;
 			*comm_text = format!("You journey south to {}...",p_loc.name);
 			if rand_enc(p_loc) {
-				n_s_l_q_f[4] = true;
-				encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
 				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
 			};
 		}else{
 			*comm_text = "You cannot travel through the Void.".to_owned();
 		};
 	};
+	(gui_box,gui_box_previous)
 }
 
-pub fn travel_up(mut pl:&mut (usize,usize),
+pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
 				   mut coords:&mut [i32;2],
 				   timer:usize,
 				   mut freeze_timer: &mut usize,
 				   mut comm_text: &mut String,
-				   mut n_s_l_q_f: &mut [bool;7],
+				   mut gui_box: GUIBox<'a>,
+				   mut gui_box_previous: GUIBox<'a>,
 				   mut party:&mut Vec<(Lifeform,usize)>,
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-				   mons:&Vec<Lifeform>,
-				   mut dream_time: &mut bool) {
+				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
 	
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1>0 {(pl.0,pl.1-1)}else{(cross_pole(pl.0,world),0)};
@@ -3580,29 +2403,31 @@ pub fn travel_up(mut pl:&mut (usize,usize),
 			*coords = p_loc.xy;
 			*comm_text = format!("You journey north to {}...",p_loc.name);
 			if rand_enc(p_loc) {
-				n_s_l_q_f[4] = true;
-				encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
 				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
 			};
 		}else{
 			*comm_text = "You cannot travel through the Void.".to_owned();
 		};
 	};
+	(gui_box,gui_box_previous)
 }
 
-pub fn travel_left(mut pl:&mut (usize,usize),
+pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
 				   mut coords:&mut [i32;2],
 				   timer:usize,
 				   mut freeze_timer: &mut usize,
 				   mut comm_text: &mut String,
-				   mut n_s_l_q_f: &mut [bool;7],
+				   mut gui_box: GUIBox<'a>,
+				   mut gui_box_previous: GUIBox<'a>,
 				   mut party:&mut Vec<(Lifeform,usize)>,
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-				   mons:&Vec<Lifeform>,
-				   mut dream_time: &mut bool) {
+				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
 	
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0>0 {(pl.0-1,pl.1)}else{(world.len()-1,pl.1)};
@@ -3614,30 +2439,32 @@ pub fn travel_left(mut pl:&mut (usize,usize),
 			*coords = p_loc.xy;
 			*comm_text = format!("You journey west to {}...",p_loc.name);
 			if rand_enc(p_loc) {
-				n_s_l_q_f[4] = true;
-				encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
 				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
 			};
 		}else{
 			*comm_text = "You cannot travel through the Void.".to_owned();
 		};
 	};
+	(gui_box,gui_box_previous)
 }
 
 
-pub fn travel_right(mut pl:&mut (usize,usize),
+pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
 				   mut coords:&mut [i32;2],
 				   timer:usize,
 				   mut freeze_timer: &mut usize,
 				   mut comm_text: &mut String,
-				   mut n_s_l_q_f: &mut [bool;7],
+				   mut gui_box: GUIBox<'a>,
+				   mut gui_box_previous: GUIBox<'a>,
 				   mut party:&mut Vec<(Lifeform,usize)>,
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-				   mons:&Vec<Lifeform>,
-				   mut dream_time: &mut bool) {
+				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
 	
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0<world.len()-1 {(pl.0+1,pl.1)}else{(0,pl.1)};
@@ -3649,20 +2476,22 @@ pub fn travel_right(mut pl:&mut (usize,usize),
 			*coords = p_loc.xy;
 			*comm_text = format!("You journey east to {}...",p_loc.name);
 			if rand_enc(p_loc) {
-				n_s_l_q_f[4] = true;
-				encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
 				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
 			};
 		}else{
 			*comm_text = "You cannot travel through the Void.".to_owned();
 		};
 	};
+	(gui_box,gui_box_previous)
 }
 
 
 
 //Type A worldwalker function (after taking into account of voidwalking.
-fn go_there(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut Ids,
+fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut Ids,
 							 mut party:&mut Vec<(Lifeform,usize)>,
 							 p_names:&Vec<String>,
 							 mut enemies:&mut Vec<(Lifeform,usize)>,
@@ -3674,8 +2503,8 @@ fn go_there(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut
 							 coords:&mut [i32;2],
 							 clicked:&(usize,usize),
 							 mut tt_e_c_i_ll: &mut [bool;8],
-							 mut n_s_l_q_f: &mut [bool;7],
-							 mut dream_time: &mut bool) {
+							 gui_box: &'a mut GUIBox<'a>,
+							 gui_box_previous:  &'a mut GUIBox<'a>) {
 	let lon:usize = clicked.0;
 	let lat:usize = clicked.1;
 	
@@ -3701,8 +2530,9 @@ fn go_there(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut
 		set_comm_text(&mut comm_text,ui,ids);
 		tt_e_c_i_ll[1] = false;
 		if rand_enc(p_loc) {
-			n_s_l_q_f[4] = true;
-			encounter_starter(party, enemies, encounter, p_loc, mons, dream_time);
+			*gui_box_previous = gui_box.clone();
+			*gui_box = GUIBox::GameFight(true);
+			encounter_starter(party, enemies, encounter, p_loc, mons);
 			*comm_text = format!("{}\n...Where you are clearly expected!",comm_text);
 		};
 	};
@@ -3743,8 +2573,8 @@ fn sm_retc(x:&Lifeform,t:usize)->conrod::color::Colour{
 }
 
 
-pub fn correct_comm_text(mut comm_text:&mut String,pause:bool,mut n_s_l_q_f:&mut [bool;7]){
-	if pause & n_s_l_q_f[4] {
+pub fn correct_comm_text(mut comm_text:&mut String,pause:bool,gui_box:&mut GUIBox){
+	if pause & gui_box.is_fight() {
 		if !comm_text.contains("***Press Enter to Continue***") {
 			*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
 		};
@@ -4151,6 +2981,10 @@ fn loaded_confirmed(mut party:&mut Vec<(Lifeform,usize)>,
 	println!("{}",&comm_text);
 }
 
+//A function to set sages.
+fn sage_dialog(){}
+
+
 //function that tells the computer to generate a random encounter based on the monster population of the area.
 fn rand_enc(p_loc:&Place)->bool{
 		let mut totapop=0;
@@ -4381,3 +3215,1358 @@ fn saw_tooth_img(base:usize,x_ind:usize,attenuation:usize)->usize {
 }
 
 
+// Generate a unique `WidgetId` for each widget.
+#[recursion_limit="1024"]
+widget_ids! {
+	pub struct Ids {
+		master,							//Main screen
+		header,							//Not used anymore
+		body,							//Am I even using that now?
+		marker_shape, 					//highlight battling monster
+		marker_shape2, 					//highlight battling monster.
+		battle_background,				//image background in battle
+		battle_background_time_a,		//matrix for timescape
+		battle_background_time_b,		//matrix for timescape
+		battle_background_time_c,		//matrix for timescape
+		battle_background_time_d,		//matrix for timescape
+		dungeon_afterstory,				//text story to receive after background.
+		
+		
+		far_left_column,				//far left column containing main and play menu.
+				ng_button,				//Main menu buttons.		
+				lg_button,
+				sg_button,
+				gm_button,
+				op_button,
+				qt_button,
+				travel_button,			//Play menu buttons
+				fight_button,
+				explore_button,
+				cast_button,
+				party_button,
+				
+		map_and_word,					//Main part of screen
+			mid_label_can,				//label telling whether you are.
+				mid_label,
+			middle_column,				//The column of everything.
+				global_map,				//global map (matrix version)
+				global_map_image,		//global map (image version)
+				center_button,			//buttons for global map versions.
+				north_button,
+				east_button,
+				south_button,
+				west_button,
+				party_stats,			//party stats canvas and ensuing stuff.
+					party_stats_c1,
+						party_stats_a,
+					party_stats_c2,
+						party_stats_b,
+					char1_n,			//ids of textboxes holding character names.
+					char2_n,
+					char3_n,
+					char4_n,
+					char5_n,
+				spell_list_can,			//Spell list can in party stats can
+					spell_list,
+					spell_list_scroll,
+					spell_list_title,
+				party_stats_scroll,
+				load_menu,				//menu of save game file buttons
+					load_menu_scroll,
+				partyc_can,				//battle canvas containing party
+					partyc_mtrx,
+				enemyn_can,				//battle canvases containing enemies.
+					enemyn_mtrx,
+				enemye_can,
+					enemye_mtrx,
+				enemys_can,
+					enemys_mtrx,
+				enemyw_can,
+					enemyw_mtrx,
+				lvl_up_alert_canvas,	//level up canvas alert.
+					lvl_up_alert_text,
+					lvl_up_alert_button,
+			coml_box,					//comm box for text input
+				comm_link,
+				coml_scroll,
+			mutant_menu,				//mutant menu for options dialogs.
+				mut1_box,
+					mut1_but,
+				mut2_box,
+					mut2_but,
+				mut3_box,
+					mut3_but,
+				mut4_box,
+					mut4_but,
+				mut5_box,
+					mut5_but,
+			comm_box,					//the box which tells you everything.
+				comm,
+				comm_scroll,
+		fight_menu_canvas,				//battle menu.
+			fight_menu_tab,				//I have no idea why I've kept this.
+				fight_menu,				
+					fight_menu_buttons,
+							at_button,
+							de_button,
+							ca_button,
+							wa_button,
+							pa_button,
+							es_button,
+						spare_fight_can,
+						spells_can,
+							spells_can_scroll,
+							spells_mtrx,
+		quit_canvas,					//quit canvas and pertaining buttons.
+			quit_true_can,
+				quit_true_but,
+			quit_false_can,
+				quit_false_but,
+				
+		options_canvas,
+			opt_can_tabs,
+			opt_music,
+				update_song_list_button,	//update song list (why not?)
+				toggle_sound_button, 		//no idea how to implement this yet.
+				song_list_can,
+					songl_scroll,
+					song_list,
+				change_song_list,
+			opt_graphics,
+				opt_graphics_unimp,
+				opt_interface_brightness_text,
+				opt_interface_brightness_slider,
+				opt_background_brightness_text,
+				opt_background_brightness_slider,
+				opt_reload_backgrounds_default,
+				opt_reload_backgrounds,
+				opt_sample_background,
+				opt_sample_sprite,
+			opt_antlers,
+				opt_antlers_unimp,
+				opt_antlers_text,
+				opt_antlers_slider,
+				opt_antlers_reset_but,
+				
+		file_browser_can, //File browser for dealing with swapping out of songs.
+			fb_navi,
+			fb_select_but,
+			fb_back_but,
+			fb_cancel_but,
+			fb_standard_but,
+			fb_display_current,
+			
+		eclair_matrix, //Set lightning.
+		eclair_matrix_two, //Set the lightning ends.
+		fire_matrix, //Set fire.
+		//NB inferno uses fire_matrix for balls, and eclair_matrix for lines (for now)
+		ice_matrix, //set ice.
+		healing_matrix,
+		death_matrix,
+		holy_matrix,
+		radiant_matrix,
+		time_matrix,
+				
+	}
+}
+
+
+//Rework of set widgets with sanity in mind.
+//Will require a rework of the whole module.
+//commented out inputs can be gontrolled by GUIBox.
+fn set_widgets_rework_marker(){}
+pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
+					mut gui_box: GUIBox<'a>,
+					mut gui_box_previous: GUIBox<'a>,
+					mon_faces: &'a Vec<[conrod::image::Id;3]>,
+					mon_facesz: &Vec<[conrod::Scalar;2]>,
+					comm_text:&mut String,
+					player_input:&mut String,
+					mutm_box_vis:&mut bool,
+					tt_e_c_i_ll: &mut [bool;8],
+					mut yt_adcwpe_bw: &mut [bool;9],
+					provisional_loc: &mut (usize,usize),
+					battled:&mut usize,
+					action:&mut u8,
+					world: &Vec<[Place;19]>,
+					world_map: &conrod::image::Id,
+					spl:&Vec<Spell>,
+					mons:&Vec<Lifeform>,
+					p_names_m:&mut Vec<&str>,
+					p_names:&mut Vec<String>,
+					party:&mut Vec<(Lifeform,usize)>,
+					p_loc:&mut Place,
+					pl:&mut (usize,usize),
+					encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+					enemies:&mut Vec<(Lifeform,usize)>,
+					field:&mut Place,
+					lore_empty:&mut bool,
+					aftermath:&mut (Lifeform,Lifeform,Vec<[u8;28]>),
+					rrrltxt:&mut Vec<String>,
+					rltxt:&mut String,
+					ltxt:&mut Vec<&'static str> ,
+					rlb:&mut Vec<u8>,
+					coords:&mut [i32;2],
+					to_load:&mut (Option<String>,usize),
+					timer:usize,
+					freeze_timer: &mut usize,
+					sel_targets: &mut Vec<usize>,
+					to_cast: &mut String,
+					battle_ifast: usize,
+					battle_ttakes: &mut u16,
+					chosen_hero: &mut usize,
+					dungeons: &mut Vec<Dungeon>,
+					idungeon: &mut Option<usize>,
+					dungeon_pointer: &mut usize,
+					truly_quit: &mut bool,
+					shaking_dam: &mut [bool;25],
+					shaking_timer: &mut usize,
+					pause:bool,
+					scenery_index: &mut usize,
+					landscapes: &Landscapes,
+					centre_h: &mut f64,
+					centre_w: &mut f64,
+					gui_song_list: &mut Vec<String>,
+					silent_sender: &mut SyncSender<bool>,
+					p_scape: &mut u8,
+					wo: &mut FlowCWin,
+					ipath:&mut Option<(usize,String)>,
+					sprite_boxer: &mut GraphicsBox,
+					sprite_pos: &mut [[f64;2];25],
+					my_stories:&mut MyStories,
+					stories: &Vec<Story>,
+					mut sage: Vec<Sage<'a>>) 
+//	->(bool,String,bool,[bool;7],usize,u8,i32,usize,Vec<Sage<'a>>)
+->(GUIBox<'a>,GUIBox<'a>,Vec<Sage<'a>>)
+{
+	//get window size.
+	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
+	let men_wh = [214.0,win_wh[1]];
+	let comm_text_bckup1:String = comm_text.clone();
+	
+	match gui_box.clone() {
+		
+		GUIBox::Main(init) => {
+			//Preliminarily set canvases.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			
+			//If game is not started, or menu entered voluntarily, activate main menu.
+			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
+						
+			let mut qt_button:conrod::widget::button::TimesClicked;
+			
+			// If game is started and main menu active activate gm_button.
+			// Also set the default view (aka world map view).
+			//NB, sg and gm buttons' reaction directly depend on init.
+			if init {
+				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
+				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
+				
+				for _click in gm_button{
+					println!("Returning to game. Main menu be gone!.");
+					gui_box = GUIBox::GameExplore;
+					wo.song_to_swap = None;
+				};
+				for _click in sg_button{
+					println!("Save Game button pressed.");
+					wo.song_to_swap = None;
+					save(&party,&p_names,spl,&p_loc,my_stories);							
+					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
+					set_comm_text(comm_text,ui,ids);
+				};			
+			}else{
+				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
+				for _click in sg_button{
+					println!("Save Game button pressed.");
+					wo.song_to_swap = None;
+					*comm_text = "There is nothing to save- start or load a moose first.".to_owned();
+					set_comm_text(comm_text,ui,ids);
+				};
+			};
+			
+			//NB the remaining buttons' reactions are indy of init.
+			for _click in ng_button{
+				println!("New Game button pressed.");
+				gui_box = GUIBox::MainNew((0,init));
+				wo.song_to_swap = None;
+			};
+			for _click in lg_button{
+				println!("Load Game button pressed.");
+				gui_box = GUIBox::MainLoad((0,init));
+				wo.song_to_swap = None;
+			};
+			for _click in op_button{
+				println!("Options menu button pressed.");
+				// update song list once per show of music menu (by default).
+				parse_music_config(gui_song_list);
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::MainOptions(init);
+			};
+			for _click in qt_button{
+				println!("Quit game button pressed. This should quit.");
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::MainQuit(false);
+			};
+			set_comm_text(comm_text,ui,ids);	
+		},
+		
+		GUIBox::MainNew((x,init)) => {
+			//not finished.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			
+			let text_input = set_text_input(ui,ids,player_input);
+			
+			//Query mutmbox based on stage.
+			let answer:(usize,String) = match x {
+				0=> 
+				  { if init {
+					  *comm_text = "The game has already begun. \
+					  If you start again now, it will all be lost.".to_owned();
+					  set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
+					}else{
+					  *comm_text = "What would you call yourself?".to_owned();
+					  for edit in text_input {
+						  *player_input = edit.clone();
+						  if edit.chars().rev().nth(0)==Some('\n') {
+							  let name_1 = edit.trim().to_title_case().to_owned();
+							  p_names.push(name_1.clone());
+							  *comm_text = format!("I see, your name is {}",p_names[0]);
+							  gui_box = GUIBox::MainNew((1,init));
+							  *player_input = String::new();
+						  }else{
+							  *player_input = edit.to_owned();
+						  };
+					  };
+					  set_mutant_menu_uni(ui,ids,"Cancel")
+					}
+				},
+				1 => { set_mutant_menu_bin(ui,ids,"Yes, it is I!","Cancel",comm_text.clone())},
+				2 => { set_mutant_menu(ui,ids,"Warrior","Witch","Wonderer","Loser","Cancel")},
+				3 => { if comm_text!="That's not even a number... So how many hours?"{
+						*comm_text = "How many hours do you spend thinking happy thoughts?".to_owned();
+					};
+					for edit in text_input {
+					*player_input = edit.clone();
+					  if edit.chars().rev().nth(0)==Some('\n') {
+						  let ed = edit.trim().to_owned();
+						  *player_input = String::new();
+						  let mut darkness = ed.parse::<isize>();
+						  match darkness {
+							  Ok(mut num) => {if num<0 {
+											num = 0
+										  }else if num>24 {
+											num = 24;
+										  };
+										  *comm_text = format!("I see, {} hours...",num);
+										  let stage = x+1;
+										  gui_box = GUIBox::MainNew((stage,init));
+										  character_dl_mod(&mut party[0].0,num-12);
+										 },
+							  Err(_) => {*comm_text = "That's not even a number... So how many hours?".to_owned();
+										},
+									};
+								};
+					};
+					set_mutant_menu_uni(ui,ids,"Cancel")
+				},
+				4 => {	*comm_text = "Are you alone?".to_owned();
+						set_mutant_menu_tri(ui,ids,"All alone.","Never...","Cancel")
+				},
+				5 => {	set_mutant_menu(ui,ids,"A warrior..","A witch..","A wonderer..","A loser..","Cancel")},
+				6 => {	let follower = if party.len()>1 {format!("a {}",party[1].0.name)}else{"no one".to_owned()};
+						let light_dark = if party[0].0.Attack>party[0].0.Defence {"of darkness"}else{"of light"};
+						*comm_text = format!("So, {}, you are a {} of {} followed by {}...",p_names[0],party[0].0.name,light_dark,follower);
+						set_mutant_menu_bin(ui,ids,"Aye..","I don't want to do this.","Then let the adventure begin?".to_owned())
+				},
+				_ => {set_mutant_menu_bin(ui,ids,"Into the sunset!","I don't want to do this.","A new moose has begun!".to_owned())},
+			};
+			
+			//Get an answer to the previous question and advance things.
+			if answer.0==5 {
+				if !init {
+					*party = Vec::with_capacity(5);
+					*p_names = Vec::with_capacity(5);
+					*p_loc = world[8][6].clone();
+					*pl = (13,5);
+				};
+				gui_box = GUIBox::Main(init);
+			}else{
+				match x {
+				
+					0 => {	if init & (answer.0==1) {
+							gui_box = GUIBox::MainNew((0,false));
+							*party = Vec::with_capacity(5);
+							*p_names = Vec::with_capacity(5);
+							*p_loc = world[8][6].clone();
+							*pl = (13,5);
+						};
+					},
+					1 => {	if answer.0==1{
+								gui_box = GUIBox::MainNew((2,init));
+								*comm_text = format!("What would you be, {}?",&p_names[0]);
+								set_comm_text(comm_text,ui,ids);
+							};
+					},
+					2 => {	match answer.0 {
+								1 => {	party.push((warrior(),0));
+										gui_box = GUIBox::MainNew((3,init));
+										*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
+								},
+								2 => {	party.push((witch(),0));
+										gui_box = GUIBox::MainNew((3,init));
+										*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
+								},
+								3 => {	party.push((wonderer(),0));
+										*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
+										gui_box = GUIBox::MainNew((3,init));
+								},
+								4 => {	party.push((loser(),0));
+										gui_box = GUIBox::MainNew((3,init));
+										*comm_text = format!("I see, so you're a \'{}\'...",party[0].0.name);
+								},
+								_ => {},
+							};
+					},
+					3 => {},
+					4 => {  match answer.0 {
+							1 => { gui_box = GUIBox::MainNew((6,init));},
+							2 => { gui_box = GUIBox::MainNew((5,init));
+									*comm_text = format!("Who follows you?");
+							},
+							_ => {},
+							};
+					},
+					5 => { match answer.0 {
+							1 => {	party.push((warrior(),0));
+									sidekick_maker(party, p_names);
+									 gui_box = GUIBox::MainNew((6,init));
+							},
+							2 => {	party.push((witch(),0));
+									sidekick_maker(party, p_names);
+									 gui_box = GUIBox::MainNew((6,init));
+							},
+							3 => {	party.push((wonderer(),0));
+									sidekick_maker(party, p_names);
+									 gui_box = GUIBox::MainNew((6,init));
+							},
+							4 => {	party.push((loser(),0));
+									sidekick_maker(party, p_names);
+									 gui_box = GUIBox::MainNew((6,init));
+							},
+							_ => {},
+							};
+					},
+					6 => { if answer.0==1 {gui_box = GUIBox::MainNew((7,init));};
+					},
+					7 => {  gui_box = GUIBox::GameTravel;
+							*mutm_box_vis = false;
+							*comm_text = "Then let the adventure begin?".to_owned();
+							println!("Party debug: {:?}",party);
+							println!("Party names: {:?}",p_names);
+							*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
+											 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
+											 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
+											 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
+					},
+					_ => {},
+				};
+			};
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::MainLoad((x,init)) => {
+			//not finished.
+			*mutm_box_vis = true;
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			
+			let answer:(usize,String) =  if init {
+				*comm_text = "The moose has already begun. \
+				If you load another now, it will all be lost.".to_owned();
+				set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
+			}else{
+				let a = set_mutant_menu_uni(ui,ids,"Cancel");
+				*to_load = loader(comm_text,ui,ids,&men_wh);
+				if a.0!=5 {(to_load.1,"".to_owned())}else{a}
+			};
+			
+			if init & (answer.0==1){
+				gui_box = GUIBox::MainLoad((0,false));
+				save(&party,&p_names,spl,&p_loc,my_stories);
+				*comm_text = "Backup complete... Choose a moose to load:".to_owned();
+			}else if !init & (answer.0!=5){
+				if to_load.0.is_some() & (answer.0==42) {
+					load(to_load.0.clone().unwrap(),
+						&spl,
+						world,
+						mons,
+						party,
+						p_names,
+						p_loc,
+						pl,
+						coords,
+						my_stories);
+					loaded_confirmed(party,p_names,comm_text,ui,ids);
+					
+					*to_load = (None,1);
+					gui_box = GUIBox::GameTravel;
+					*mutm_box_vis = false;
+					
+					*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
+								 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
+								 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
+								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
+					println!("Party on! {:?}",&party);
+				}else if answer.0==0 {
+					*comm_text = "Could not load this moose. Try another maybe?".to_owned();
+				};
+			}else if answer.0==5 {
+				*comm_text = "Unloading mooses. Try another maybe?".to_owned();
+				gui_box = GUIBox::Main(false);
+				*mutm_box_vis = false;
+			};
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		//Need to find a more elegant solution.
+		GUIBox::MainOptions(init) => {
+			//Preliminarily set canvases.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			
+			//If game is not started, or menu entered voluntarily, activate main menu.
+			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
+						
+			let mut qt_button:conrod::widget::button::TimesClicked;
+			
+			// If game is started and main menu active activate gm_button.
+			// Also set the default view (aka world map view).
+			//NB, sg and gm buttons' reaction directly depend on init.
+			if init {
+				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
+				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
+				
+				for _click in gm_button{
+					println!("Returning to game. Main menu be gone!.");
+					gui_box = GUIBox::GameTravel;
+					wo.song_to_swap = None;
+				};
+				for _click in sg_button{
+					println!("Save Game button pressed.");
+					wo.song_to_swap = None;
+					save(&party,&p_names,spl,&p_loc,my_stories);							
+					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
+					set_comm_text(comm_text,ui,ids);
+				};			
+			}else{
+				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
+				for _click in sg_button{
+					println!("Save Game button pressed.");
+					wo.song_to_swap = None;
+					*comm_text = "There is nothing to save- start or load a moose first.".to_owned();
+					set_comm_text(comm_text,ui,ids);
+				};
+			};
+			
+			//NB the remaining buttons' reactions are indy of init.
+			for _click in ng_button{
+				println!("New Game button pressed.");
+				gui_box = GUIBox::MainNew((0,init));
+				wo.song_to_swap = None;
+			};
+			for _click in lg_button{
+				println!("Load Game button pressed.");
+				gui_box = GUIBox::MainLoad((0,init));
+				wo.song_to_swap = None;
+			};
+			for _click in op_button{
+				println!("Options menu button pressed.");
+				// update song list once per show of music menu (by default).
+				parse_music_config(gui_song_list);
+				gui_box = gui_box_previous.clone();
+			};
+			for _click in qt_button{
+				println!("Quit game button pressed. This should quit.");
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::MainQuit(false);
+			};
+			
+			set_options_canvas(ui,ids,ipath,gui_song_list,
+							   silent_sender,
+						       wo,
+							   mon_faces,
+							   landscapes);
+							   
+			if ipath.is_some() {
+				set_music_browser(ui,ids,ipath,gui_song_list,wo);
+			};
+			
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::MainQuit(x) => {
+			let canvas = widget::Canvas::new().length_weight(1.0);
+			//draw quit canvas
+			widget::Canvas::new().flow_right(&[
+				(ids.quit_true_can, canvas.clone().color(color::BLACK).pad(BORDER)),
+				(ids.quit_false_can, canvas.clone().color(color::BLACK).pad(BORDER)),
+			]).border(BORDER).border_color(BORDER_COLOUR).set(ids.master, ui);
+			
+			let mut button = widget::Button::new().label_font_size(font_size_chooser_button(win_wh[0]));
+			
+			for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
+								.w_of(ids.quit_true_can).h(200.0)
+								.border(BORDER)
+								.border_color(BORDER_COLOUR)
+								.mid_left_of(ids.quit_true_can).set(ids.quit_true_but,ui){
+				gui_box = GUIBox::MainQuit(true);
+			};
+			for _click in button.color(color::DARK_GREEN).label("Please don't...").label_color(color::DARK_GREEN.complement())
+								.w_of(ids.quit_false_can).h(200.0)
+								.border(BORDER)
+								.border_color(BORDER_COLOUR)
+								.mid_right_of(ids.quit_false_can).set(ids.quit_false_but,ui){
+				gui_box = gui_box_previous.clone();
+			};	 	
+		},
+		
+		GUIBox::GameTravel => {
+			//If game is started, activate play menu.
+			//Preliminarily set canvases.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			let (travel_button,fight_button,explore_button,
+				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
+
+			for _click in fight_button{
+				println!("Pick a fight button pressed.");
+				gui_box_previous = gui_box.clone();
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				set_comm_text(&mut "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned(),ui,ids);
+			};
+			for _click in explore_button{
+				gui_box = GUIBox::GameExplore;
+				*idungeon = dungeon_finder(p_loc,dungeons,party);
+				*freeze_timer = timer;
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				println!("Explore button pressed.");
+			};
+			for _click in cast_button{
+				//Prepare the sages!
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				sage = sage_generator(&mon_faces,&p_names);		
+				gui_box = GUIBox::GameCastPre; 			
+				//Put a function to cast a spell here and then poll sages.
+			};
+			for _click in party_button{
+				println!("Inspect party button pressed..");
+				gui_box = GUIBox::GameInspectParty(false);
+			};
+			for _click in gm_button{
+				println!("Main manu button pressed..");
+				gui_box = GUIBox::Main(true);
+			};
+			
+			set_init_world_map2(ids,ui,
+						world,
+						world_map,
+						mon_faces,
+						p_names,
+						party,
+						p_loc,
+						pl,
+						coords,
+						comm_text,
+						timer,
+						tt_e_c_i_ll,
+						provisional_loc);	
+						
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameExplore => {
+			//If explore screen shown, do explore stuff.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			
+			if (*p_scape != VOID) & (*p_scape != TIME) {
+				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+			}else if *p_scape==TIME {
+				set_timescape(ui,ids,timer);
+			};
+			
+			//insert old exploration scheme.
+			if idungeon.is_none() {
+				*comm_text = format!("You explore the nooks and crannies of {}, but find nothing of note.",p_loc.name);
+				*mutm_box_vis = true;
+				let pressed = set_mutant_menu_uni(ui,ids,"...");
+				if pressed.0==5 {
+					*mutm_box_vis = false;
+					gui_box = GUIBox::GameTravel;
+				};
+				set_middle_label(ui,ids,p_loc.name,&win_wh);
+			}else{
+				set_middle_label(ui,ids,dungeons[idungeon.unwrap()].name,&win_wh);
+				if *dungeon_pointer==0 {
+					
+					*mutm_box_vis = true;
+					let pressed = set_mutant_menu_bin(ui,ids,
+						"Lets do this!",
+						"I want to live.",
+						format!("{}\nEnter {}?",dungeons[idungeon.unwrap()],dungeons[idungeon.unwrap()].name)
+					);
+					
+					match pressed.0 {
+						1 => {
+								*dungeon_pointer = 1;
+								*comm_text = format!("You take a step over the threshold separating {} from {}...",p_loc.name,dungeons[idungeon.unwrap()].name);
+								*freeze_timer = timer;
+								*mutm_box_vis = false;
+							 },
+						5 => {
+								*comm_text = format!("You turn around and head back to {}...",p_loc.name);
+								*freeze_timer = timer;
+								*mutm_box_vis = false;
+								gui_box = GUIBox::GameTravel;
+							 },
+						_=>{},
+					};				
+				};
+				
+				if (*dungeon_pointer==0) & !*mutm_box_vis {
+					*comm_text = format!("You explore the nooks and crannies of {}, and make a discovery:\n{}",p_loc.name,dungeons[idungeon.unwrap()]);
+					if timer>*freeze_timer+63 {
+						*mutm_box_vis = true;
+					};
+				}else if *dungeon_pointer==1 {
+					*comm_text = format!("You take a step over the threshold separating {} from {}..\nYou stand in {}.",
+										p_loc.name,
+										dungeons[idungeon.unwrap()].name,
+										dungeons[idungeon.unwrap()].scenes[0].name);
+					if timer>*freeze_timer+63 {
+						*dungeon_pointer = 2;
+						gui_box_previous = gui_box.clone();
+						gui_box = GUIBox::GameFight(true);
+						
+						dungeon_updater(dungeons,party,idungeon.unwrap()); 
+						encounter_starter_dun(party, enemies, encounter,
+									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
+									&dungeons[idungeon.unwrap()].denizens);
+					};
+				}else if (*dungeon_pointer>2)
+				 & (*dungeon_pointer<dungeons[idungeon.unwrap()].scenes.len()+2) {
+					*freeze_timer = timer;
+					gui_box_previous = gui_box.clone();
+					gui_box = GUIBox::GameFight(true);
+						
+					encounter_starter_dun(party, enemies, encounter,
+									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
+									&dungeons[idungeon.unwrap()].denizens);
+					*comm_text = format!("Having battled your way through {} you proceed to {}",
+										dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-3].name,
+										dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name);
+
+				}else if *dungeon_pointer+1>dungeons[idungeon.unwrap()].scenes.len() {
+					let len_dun = dungeons[idungeon.unwrap()].scenes.len()-1;
+					*comm_text = format!("You have defeated the master of {1} and return alive from {0}",
+										dungeons[idungeon.unwrap()].name,
+										dungeons[idungeon.unwrap()].scenes[len_dun].name);
+					*freeze_timer = timer;
+					if (*p_scape != VOID) & (*p_scape != TIME)
+					 & (!scenery_l_checker(landscapes,*p_scape)<*scenery_index) {
+						*scenery_index = scenery_setter(landscapes,*p_scape,centre_w,centre_h);
+					};
+				};
+			};
+			
+			if idungeon.is_some(){
+				if *dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
+					set_afterstory(ui,ids,dungeons[idungeon.unwrap()].afterstory,dungeon_pointer);
+					*mutm_box_vis = true;
+					let pressed = set_mutant_menu_uni(ui,ids,"...");
+					if pressed.0==5 {
+						*mutm_box_vis = false;
+						gui_box = GUIBox::GameTravel;
+					};
+					//println!("Afterstory should have been set now!");
+				};
+			};
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameCastPre => {
+			//not finished.
+			*mutm_box_vis = true;
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			if (*p_scape != VOID) & (*p_scape != TIME) {
+				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+			}else if *p_scape==TIME {
+				set_timescape(ui,ids,timer);
+			};
+			set_spell_list_global(ui,ids, 
+								  comm_text,
+								  party,
+								  spl,
+								  p_names,
+								  win_wh[0],
+								  &mut gui_box);
+			
+			let exit = set_mutant_menu_uni(ui,ids,"Better Not...");
+			
+			if exit.0==5 {
+				gui_box = GUIBox::GameTravel;
+				*mutm_box_vis = false;
+				*comm_text = "You decide against casting anything and return to walking the world.".to_owned();
+			};
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameCastCast(x) => {
+			//not finished.
+			*mutm_box_vis = true;
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			if (*p_scape != VOID) & (*p_scape != TIME) {
+				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+			}else if *p_scape==TIME {
+				set_timescape(ui,ids,timer);
+			};
+			*comm_text = format!("Cast {}?",x.name);
+			
+			//Set mutant menu to cast. Currently a pseudo function.
+			let exit = set_mutant_menu_bin(ui,ids,"Cast","Hmm..",comm_text.clone());
+			if exit.0==1 {
+				*comm_text = format!("You cast {}!",x.name);
+				//Placeholder!
+				gui_box = GUIBox::GameCastPre;
+			}else if exit.0==5 {
+				*comm_text = format!("You take a deep breath and lower your hands.");
+				gui_box = GUIBox::GameCastPre;
+			};
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameCastSage(x) => {
+			
+			//not finished.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			if (*p_scape != VOID) & (*p_scape != TIME) {
+				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+			}else if *p_scape==TIME {
+				set_timescape(ui,ids,timer);
+			};
+			
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameInspectParty(bool) => {
+			//If game is started, activate play menu.
+			//Preliminarily set canvases.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			
+			let (travel_button,fight_button,explore_button,
+				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
+
+			for _click in fight_button{
+				println!("Pick a fight button pressed.");
+				gui_box = GUIBox::GameFight(true);
+				encounter_starter(party, enemies, encounter, p_loc, mons);
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				set_comm_text(&mut "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned(),ui,ids);
+			};
+			for _click in explore_button{
+				gui_box = GUIBox::GameExplore;
+				*idungeon = dungeon_finder(p_loc,dungeons,party);
+				*freeze_timer = timer;
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				println!("Explore button pressed.");
+			};
+			for _click in cast_button{
+				//Prepare the sages!
+				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
+				sage = sage_generator(&mon_faces,&p_names);		
+				gui_box = GUIBox::GameCastPre; 			
+				//Put a function to cast a spell here and then poll sages.
+			};
+			for _click in party_button{
+				println!("Inspect party button pressed..");
+				gui_box = GUIBox::GameTravel;
+			};
+			for _click in gm_button{
+				println!("Main manu button pressed..");
+				gui_box = GUIBox::Main(true);
+			};
+			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);	
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		GUIBox::GameFight(tr) => {
+			//Prepare canvases.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_fight_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			
+			//Set label conditionally on whether you'r outsid eor in a dungeon.
+			//Not the most superefficient, but the briefest.
+			if idungeon.is_some() {
+				set_middle_label(ui,ids,dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name,&win_wh);
+			}else{
+				set_middle_label(ui,ids,p_loc.name,&win_wh);	
+			};
+			
+			//Generate buttons
+			let (attack_button,defend_button,cast_button,
+				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,&men_wh,&win_wh);
+				 
+			if tr {
+				//println!("gmoose765");
+				*freeze_timer = timer;
+				
+				//scenery index is moved here.
+				*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);
+				println!("p_scape = {}, scenery_index = {}",p_scape,scenery_index);
+				if (*dungeon_pointer<2) | idungeon.is_none() {
+					*comm_text = "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned()
+				}else if idungeon.is_some() {
+					*comm_text = format!("You proceed to {} of {}...",dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name,dungeons[idungeon.unwrap()].name);
+				};
+			}else{
+				if (*battle_ttakes==0) & (*dungeon_pointer>1) & idungeon.is_some() {
+					*comm_text = "May the Great White Moose protect you!\n***Press Enter to Continue***".to_owned();
+				}else if *battle_ttakes==0 {
+					*comm_text = "The Great White Moose has seen how this can end, but not how this will end...\n***Press Enter to Continue***".to_owned();
+				};
+				//println!("gmoose 1114-entering set_battle_background");
+				//println!("gmoose1046-exiting set_battle_map");
+				//Activate fight menu buttons.
+				if yt_adcwpe_bw[0] {
+					*comm_text = comm_text_bckup1;
+					for _click in attack_button{
+						//println!("Attack in battle Button Pressed");
+						yt_adcwpe_bw[1] = true;
+					};
+					for _click in defend_button{
+						//println!("Defend in battle Button Pressed");
+						yt_adcwpe_bw[2] = true;
+					};
+					for _click in cast_button{
+						//println!("Cast in battle Button Pressed");
+						yt_adcwpe_bw[3] = !yt_adcwpe_bw[3];
+					}
+					for _click in wait_button{
+						//println!("Wait in battle Button Pressed");
+						yt_adcwpe_bw[4] = true;
+					};
+					for click in panic_button{
+						//println!("Panic in battle Button Pressed");
+						*comm_text = format!("{} loses it and starts running in circles...",p_names[battle_ifast]);
+						yt_adcwpe_bw[5] = true;
+					};
+					for _click in escape_button{
+						yt_adcwpe_bw[6] = true;
+					};
+					if yt_adcwpe_bw[3] {
+						
+						set_battle_spell_menu_wrapper(ui,ids,
+														 bkg_colour.clone(),
+														 &men_wh,
+														 &win_wh,
+														 comm_text,
+														 spl,
+														 party,
+														 to_cast,
+														 battle_ifast);
+					};
+				};
+				
+				//Background should be set before anything else. Or you will see zilch.
+				if (*p_scape != VOID) & (*p_scape != TIME) {
+					set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+				}else if *p_scape==TIME {
+					set_timescape(ui,ids,timer);
+				};
+				
+				//println!("gmoose 1114-entering set_battle_map");
+				set_battle_map(ids,ui,
+							mon_faces,mon_facesz,
+							world,
+							p_names,
+							encounter,
+							sprite_boxer,
+							wo,
+							if (*dungeon_pointer<2) | idungeon.is_none() {
+								p_loc
+							}else{
+								&mut dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2]
+							},
+							comm_text,
+							timer,
+							yt_adcwpe_bw,
+							sel_targets,
+							shaking_dam,
+							sprite_pos,
+							shaking_timer,
+							battle_ifast,
+							pause);
+			};
+			set_comm_text(comm_text,ui,ids); 			
+		},
+		
+		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
+	};
+	(gui_box,gui_box_previous,sage)
+}
+
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+//END OF SET WIDGETS V2 FUNCTION;
+
+//Function to set the canvas as seen when main menu is active.
+fn set_main_canvas_marker(){}
+fn set_main_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&[f64;2],mutm_box_vis:bool,title:bool){
+
+	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
+												
+	widget::Canvas::new().flow_down(&[
+		(ids.body, widget::Canvas::new()
+			.flow_right(&[
+				(ids.far_left_column, canvas_bord_col(widget::Canvas::new()
+					.length(SIDE_MENU_W)
+					.pad(BORDER)
+					.h(win_wh[1]-BORDER*2.0),
+					Some(BORDER),
+					BORDER_COLOUR)
+				),
+				(ids.map_and_word, widget::Canvas::new().flow_down(&[
+					(ids.mid_label_can, widget::Canvas::new().pad(BORDER)
+															 .color(color::DARK_BLUE.with_luminance(0.1))
+															 .length(if title {30.0}else{0.0})
+					),
+					(ids.middle_column, map_column),
+					(ids.coml_box, coml_box.pad(BORDER)),
+					(ids.mutant_menu, widget::Canvas::new()
+								.flow_right(&[
+									((ids.mut1_box),(mutm_minibox.length_weight(1.0))),
+									((ids.mut2_box),(mutm_minibox.length_weight(1.0))),
+									((ids.mut3_box),(mutm_minibox.length_weight(1.0))),
+									((ids.mut4_box),(mutm_minibox.length_weight(1.0))),
+									((ids.mut5_box),(mutm_minibox.length_weight(1.0))),
+								])
+								.color(BACKGR_COLOUR)
+								.length(mutm_box_l)
+								.pad(BORDER)
+					),
+					(ids.comm_box, comm_box.pad(BORDER)),
+				]).pad(BORDER*2.0)
+				  .length(win_wh[0]-SIDE_MENU_W-BORDER*2.0)
+				  .h(win_wh[1]-BORDER*2.0)),
+			]),
+		)
+	]).pad(BORDER*2.0).set(ids.master, ui);
+	widget::Scrollbar::y_axis(ids.comm_box).auto_hide(true).set(ids.comm_scroll, ui);
+}
+
+//Function to set the canvas as seen when main menu is active.
+fn set_fight_canvas_marker(){}
+fn set_fight_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&[f64;2],mutm_box_vis:bool,title:bool){
+
+	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
+												
+	widget::Canvas::new().flow_down(&[
+				//(ids.header, widget::Canvas::new().color(color::BLUE).pad_bottom(2.0)),
+				(ids.body, widget::Canvas::new()
+				//.length(300.0)
+				.flow_right(&[
+					(ids.map_and_word, widget::Canvas::new().flow_down(&[
+						(ids.mid_label_can, widget::Canvas::new().pad(BORDER)
+																 .color(color::DARK_BLUE.with_luminance(0.1))
+																 .length(if title {30.0}else{0.0})
+						),
+						(ids.middle_column, map_column),
+						(ids.coml_box, coml_box.pad(BORDER)),
+						(ids.mutant_menu, widget::Canvas::new()
+									.flow_right(&[
+										((ids.mut1_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut2_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut3_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut4_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut5_box),(mutm_minibox.length_weight(1.0))),
+									])
+									.color(BACKGR_COLOUR)
+									.length(mutm_box_l)
+									.pad(BORDER)),
+						(ids.comm_box, comm_box.pad(BORDER)),
+					]).pad(6.0)
+					  .length(win_wh[0]-SIDE_MENU_W-BORDER*2.0)
+					  .h(win_wh[1]-6.0)),
+					(ids.fight_menu_canvas, right_menus_canvas),
+				]),
+			)]).pad(6.0).set(ids.master, ui);
+	widget::Scrollbar::y_axis(ids.comm_box).auto_hide(true).set(ids.comm_scroll, ui);
+}
+
+fn set_buttonless_canvas_marker(){}
+fn set_buttonless_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&[f64;2],mutm_box_vis:bool,title:bool)
+{
+
+	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
+												
+	widget::Canvas::new().flow_down(&[
+		(ids.body, widget::Canvas::new()
+			.flow_right(&[
+				(ids.map_and_word, widget::Canvas::new().flow_down(&[
+					(ids.mid_label_can, widget::Canvas::new().pad(BORDER)
+															 .color(color::DARK_BLUE.with_luminance(0.1))
+															 .length(if title {30.0}else{0.0})
+					),
+					(ids.middle_column, map_column),
+					(ids.coml_box, coml_box.pad(BORDER)),
+						(ids.mutant_menu, widget::Canvas::new()
+									.flow_right(&[
+										((ids.mut1_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut2_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut3_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut4_box),(mutm_minibox.length_weight(1.0))),
+										((ids.mut5_box),(mutm_minibox.length_weight(1.0))),
+									])
+									.color(BACKGR_COLOUR)
+									.length(mutm_box_l)
+									.pad(BORDER)),
+					(ids.comm_box, comm_box.pad(BORDER)),
+				]).pad(BORDER*2.0)
+				  .length(win_wh[0]-BORDER*2.0)
+				  .h(win_wh[1]-BORDER*2.0)),
+			]),
+		)
+	]).pad(BORDER*2.0).set(ids.master, ui);
+	widget::Scrollbar::y_axis(ids.comm_box).auto_hide(true).set(ids.comm_scroll, ui);
+}
+
+//A function to generate the 4 constant main menu buttons.
+//The aim is to save space.
+fn generate_main_menu_buttons_marker(){}
+fn generate_main_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
+-> (conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked)
+{
+	let main_menu_button = generate_main_menu_button(men_wh,win_wh);
+	
+	//If game is not started, or menu entered voluntarily, activate main menu.
+	let ng_button = main_menu_button.clone().label("New Moose").mid_top_of(ids.far_left_column).set(ids.ng_button,ui);		
+	let lg_button = main_menu_button.clone().label("Load Moose").down_from(ids.ng_button,0.0).set(ids.lg_button,ui);
+	let sg_button = main_menu_button.clone().label("Save Moose").down_from(ids.lg_button,0.0).set(ids.sg_button,ui);
+	let op_button = main_menu_button.label("Options").down_from(ids.sg_button,0.0).set(ids.op_button,ui);
+	
+	(ng_button,lg_button,sg_button,op_button)
+	
+}
+
+//A function to generate the 6 game menu buttons.
+fn generate_play_menu_buttons_marker(){}
+fn generate_play_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
+-> (conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked)
+{
+	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	
+	let travel_button = game_menu_button.clone().label("Travel").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);		
+	let fight_button = game_menu_button.clone().label("Pick a Fight").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
+	let explore_button = game_menu_button.clone().label("Explore").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);			
+	let cast_button = game_menu_button.clone().label("Cast a Spell").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
+	let party_button = game_menu_button.clone().label("Inspect Party").down_from(ids.cast_button,0.0).set(ids.party_button,ui);
+	let gm_button = game_menu_button.clone().label("Main Menu").down_from(ids.party_button,0.0).set(ids.gm_button,ui);
+	
+	(travel_button,fight_button,explore_button,cast_button,party_button,gm_button)
+	
+}
+
+//A function to make the fight menu canvas
+//and create the canvas.
+fn prepare_fight_buttons_and_menu_marker(){}
+fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
+-> (conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked,
+	conrod::widget::button::TimesClicked)
+{
+	
+	widget::Canvas::new()
+			.w_h(SIDE_MENU_W,men_wh[1])
+			//.color(color::DARK_BLUE)
+			.label_color(color::YELLOW)
+			.mid_right_of(ids.fight_menu_canvas)
+			.set(ids.fight_menu,ui);
+		//Fight menu button canvases.
+	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	let fight_buttons = canvas_bord_col(widget::Canvas::new()
+													.mid_top_of(ids.fight_menu)
+													.wh_of(ids.fight_menu_canvas)
+													.pad(BORDER),
+													Some(BORDER),
+													BORDER_COLOUR)
+							.set(ids.fight_menu_buttons, ui);
+	//Fight menu buttons.
+	let attack_button = game_menu_button.clone().label("Attack").mid_top_of(ids.fight_menu).set(ids.at_button,ui);		
+	let defend_button = game_menu_button.clone().label("Defend").down_from(ids.at_button,0.0).set(ids.de_button,ui);
+	let cast_button = game_menu_button.clone().label("Cast a spell").down_from(ids.de_button,0.0).set(ids.ca_button,ui);
+	let wait_button = game_menu_button.clone().label("Wait..").down_from(ids.ca_button,0.0).set(ids.wa_button,ui);
+	let panic_button = game_menu_button.clone().label("Panic!").down_from(ids.wa_button,0.0).set(ids.pa_button,ui);
+	let escape_button = game_menu_button.clone().label("Escape!").down_from(ids.pa_button,0.0).set(ids.es_button,ui);
+	
+	(attack_button,defend_button,cast_button,wait_button,panic_button,escape_button)
+	
+}
+
+fn set_battle_spell_menu_wrapper_marker(){}
+fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
+								 bkg_colour: color::Colour,
+								 men_wh:&[f64;2], 
+								 win_wh:&[f64;2],
+								 comm_text: &mut String,
+								 spl: &Vec<Spell>,
+								 party: &mut Vec<(Lifeform,usize)>,
+								 to_cast: &mut String,
+								 battle_ifast: usize)
+{	
+	let but_h:f64 = men_wh[1]/10.0;
+	let short_l:f64 = men_wh[1]-but_h*6.0-BORDER*7.0;
+	
+	let mut battle_spell_menu = widget::Canvas::new().scroll_kids_vertically()
+								  .w_of(ids.es_button)
+								  .x(ui.xy_of(ids.es_button).unwrap()[0])
+								  .h(short_l)
+								  .down_from(ids.es_button,0.0);
+										 
+	//set the battle spell canvas...
+	battle_spell_menu.border(BORDER)
+			 .border_color(color::BLUE.with_luminance(0.66))
+			 .set(ids.spells_can,ui);
+			 
+	//...and enter the battle spell menu function.
+	set_battle_spell_menu(ui,ids,comm_text,
+						  spl,party,
+						  to_cast,
+						  battle_ifast);	
+}
+
+
+//generate a single main menu button. Template
+fn generate_main_menu_button_marker(){}
+fn generate_main_menu_button<'a>(men_wh:&[f64;2], win_wh:&'a [f64;2])
+-> conrod::widget::Button<'a, widget::button::Flat> {
+	
+	let but_h:f64 = men_wh[1]/10.0;
+	
+	widget::Button::new().color(color::DARK_RED)
+						 .w_h(men_wh[0]-BORDER*2.0,but_h)
+						 .label_font_size(font_size_chooser_button_b(win_wh[0]))
+	
+}
+
+//Generates the three canvases which are then set.
+fn generate_three_canvases_marker(){}
+fn generate_three_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&'a[f64;2])
+->(conrod::widget::Canvas<'a>,conrod::widget::Canvas<'a>,conrod::widget::Canvas<'a>)
+{
+	let mut comm_box = canvas_bord_col(widget::Canvas::new()
+											  .color(color::BLACK)
+											  .scroll_kids_vertically()
+											  .length_weight(0.5),
+									   Some(BORDER),
+									   BORDER_COLOUR);
+									
+	let mut map_column = canvas_bord_col(widget::Canvas::new()
+												.color(bkg_colour)
+												.scroll_kids_vertically()
+												.length_weight(1.5)
+												.pad(BORDER),
+												Some(BORDER),
+												BORDER_COLOUR);
+												
+	let mut right_menus_canvas = widget::Canvas::new()
+										.length(SIDE_MENU_W)
+										.h(win_wh[1]-6.0)
+										.pad(BORDER);
+	(comm_box,map_column,right_menus_canvas)
+}
+
+//Generates mutm_related canvases
+fn generate_mutm_canvases_marker(){}
+fn generate_mutm_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&'a [f64;2],mutm_box_vis:bool)
+->(conrod::widget::Canvas<'a>,conrod::widget::Canvas<'a>,f64)
+{
+	let mut coml_box = widget::Canvas::new()
+									.color(BACKGR_COLOUR)
+									.scroll_kids_vertically()
+									.pad(BORDER)
+									.border(BORDER)
+									.border_color(BORDER_COLOUR)
+									.length(if !mutm_box_vis {0.0}else{36.0});
+
+									
+	let mutm_box_l:f64 = if mutm_box_vis {50.0}else{0.0};
+	let mut mutm_minibox = widget::Canvas::new().color(BACKGR_COLOUR).length(mutm_box_l);
+	(coml_box,mutm_minibox,mutm_box_l)
+}
+
+//To be used on occasion.
+fn set_text_input(ui: &mut conrod::UiCell, ids: &mut Ids,player_input:&mut String)-> Option<std::string::String>{
+	
+	widget::TextEdit::new(player_input)
+		.color(color::DARK_RED)
+		.font_size(24)
+		.top_left_of(ids.coml_box)
+		.padded_w_of(ids.coml_box,5.0)
+		.line_spacing(5.0)
+		.restrict_to_height(false)
+		.set(ids.comm_link, ui)
+}

@@ -16,6 +16,33 @@
 /// CastInferno(SpellBoxInferno)
 /// AttacK(SpriteBox)
 ///
+///GUIBox: Currently experimental and unimplemented. Meant to cover every major UI state uniquely.
+///Substates (ie mutm_box states) should be covered under.
+///(Not sure how it will be controlled.
+///GUIBox {
+///	Uninitiated,
+/// Main
+/// MainNew,
+/// MainSave,
+/// MainLoad,
+/// MainOptions,
+/// MainQuit,
+/// GameTravel,
+/// GameFight,
+/// GameFightAttack,
+/// GameFightDefend,
+/// GameFightCast,
+/// GameFightWait,
+/// GameFightPanic,
+///	GameFightEscape,
+/// GameExplore,
+///	GameCast,
+/// GameInspectParty,
+/// GameInsepctPartySpells,
+/// gameInspectPartyUp,
+/// GameInspectPartySpellsUp,
+///}
+///
 /// NB flow control structures for story elements are kept in smoose
 ///
 ///~Alek Zholobenko
@@ -24,7 +51,8 @@
 extern crate conrod;
 extern crate std;
 
-use lmoose::{Lifeform};
+use lmoose::{Lifeform,Spell};
+use smoose::{Sage};
 use gmoose;
 
 //A vector-like structure for carrying image ids for landscape features.
@@ -375,7 +403,7 @@ impl SpellBoxInferno {
 			paths.push(vec![positions[a_i]]);
 		}
 		
-		let timing:usize = (gmoose::FPS as f32*1.0*100.0/caster.0.BM_shade) as usize;
+		let timing:usize = (gmoose::FPS as f32*1.5) as usize;
 			
 		SpellBoxInferno {
 			caster_indx: a_i,
@@ -384,7 +412,7 @@ impl SpellBoxInferno {
 			turns_after: timing,
 			turns_after2: timing,
 			stage_four: 0,
-			turns_init: (gmoose::FPS as f64*1.0*100.0/caster.0.BM_shade as f64),
+			turns_init: gmoose::FPS as f64*1.5,
 			tracks: tracks, //for balls
 			paths:paths,	//for lines
 			damage: damage.clone(),
@@ -525,4 +553,32 @@ pub struct FlowCBat {
 	pub black: bool,
 	pub white: bool,
 }
-		 
+
+#[derive(Clone)]		 
+pub enum GUIBox<'a> {
+	Uninitiated,
+	Main(bool),
+	MainNew((usize,bool)),
+	MainLoad((usize,bool)),
+	MainOptions(bool),
+	MainQuit(bool),
+	GameTravel,
+	GameFight(bool),
+	GameExplore,
+	GameCastPre,
+	GameCastCast(Spell),
+	GameCastSage(Sage<'a>),
+	GameInspectParty(bool),
+}
+
+impl <'a>GUIBox<'a> {
+	pub fn is_fight(&self)->bool {
+		match self {
+			GUIBox::GameFight(x) => true,
+			_				     => false,
+		}
+	}
+	
+	
+	
+}

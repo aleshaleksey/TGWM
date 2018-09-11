@@ -96,12 +96,12 @@ mod shared_moose;
 //Imports
 use shared_moose::*;
 use smoose::{MyStories,Story,Sage};
-#[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets,names_of,map_sq_col_img};
+#[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets_rework,names_of,map_sq_col_img};
 #[allow(unused_imports)] use omoose::{parse_music_config,isekai_deguchi,isekai_urusai,isekai_index};
 #[allow(unused_imports)] use conrod::UiCell;
 #[allow(unused_imports)] use conrod::widget::button::Interaction;
 #[allow(unused_imports)] use imoose::permit_a;
-#[allow(unused_imports)] use cmoose::{Landscapes,FlowCWin,GraphicsBox,SpriteBox,SpellBoxL};
+#[allow(unused_imports)] use cmoose::{Landscapes,FlowCWin,GraphicsBox,SpriteBox,SpellBoxL,GUIBox};
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,
 									 cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 									 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -166,20 +166,12 @@ pub fn main() {
 	//Initiate new option controller.
 	// (silence, update backgrounds, brightness, and music paths.)
 	let mut wo = FlowCWin::new();
+	let mut gui_box = GUIBox::Uninitiated;
 	let mut ipath:Option<(usize,String)> = None;
 
 	//Variable to determine if extra buttons for character creation are visible or not.
 	let mut mutm_box_vis = false;
 	let mut new_game_init = false; //Is a game in progress.
-	// WAENING! Now a little broken (has 6 thingies, will eventually have more).
-	let mut n_s_l_q_f: [bool;7] = [false;7];  //main menu functionality
-	// [0] = In process of starting new game
-	// [1] = Save game.
-	// [2] = Load menu on.
-	// [3] = Quit activated (display quit display)
-	// [4] = Fight: Activate fight related code.
-	// [5] = Main Menu- activate main menu in once game is started
-	// [6] = Open the options dialog. (NOT IMPLEMENTED)
 	
 	//WARNING!! tecil is now a little broken. tt_e_c_i_ll[7] controls spell inspector in player menu.
 	let mut tt_e_c_i_ll: [bool;8] = [false;8];   //main menu adventure functionality
@@ -284,7 +276,7 @@ pub fn main() {
 	
 	// Load images for monsters. NB must be loaded into the vector of images in the order of monster ids (see lmoose)
 	// NB currently not generic over monster numbers. Perhaps do after world tree. 
-	let mut mons_faces: Vec<[conrod::image::Id;3]> = Vec::with_capacity(27);
+	let mut mons_faces: Vec<[conrod::image::Id;3]> = Vec::with_capacity(27);	
 	let mut mons_facesz: Vec<[conrod::Scalar;2]> = Vec::with_capacity(27);
 	let img_path = assets.join("faces");
 	
@@ -329,7 +321,6 @@ pub fn main() {
 	let world:Vec<[Place;19]> = world();
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
-	let mut sages:Vec<Sage> = Vec::new(); //Currently a placeholder.
 	let mut stories:Vec<Story> = Vec::new(); //Currently placeholder.
 	let mut my_stories:MyStories = MyStories::new();
 	let mut diff:i32 = 0;
@@ -337,6 +328,7 @@ pub fn main() {
 	let mut p_names:Vec<String> = Vec::with_capacity(5);
 	let mut party:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
 	let mut p_loc:Place = world[8][6].clone();
+	let mut sages:Vec<Sage> = Vec::new();
 	let mut pl:(usize,usize) = (13,5);
 	let mut provisional_loc:(usize,usize) = pl.clone();
 	let mut truly_quit:bool = false;
@@ -344,6 +336,8 @@ pub fn main() {
 	let mut scenery_index:usize = 0;
 	let mut centre_w:f64 = 0.0;
 	let mut centre_h:f64 = 0.0;
+	let mut gui_box = GUIBox::Uninitiated;
+	let mut gui_box_previous = GUIBox::Uninitiated;
 	
 	//Initiate Q-ft-M battle variables:
 	let mut dream_time:bool = false;
@@ -540,7 +534,7 @@ pub fn main() {
 							..
 						},
 						..
-					} => {n_s_l_q_f[3] = true},
+					} => {gui_box = GUIBox::MainQuit(false);},
 					
 					//TEST: Adjusts srgb_linear correction.
 					glium::glutin::WindowEvent::KeyboardInput {
@@ -591,16 +585,23 @@ pub fn main() {
 							..
 						},
 						..
-					} => {if tt_e_c_i_ll[0] & !n_s_l_q_f[4] {
-							gmoose::travel_down(&mut pl,&mut p_loc,
-												&world,&mut coords,
-												timer,&mut freeze_timer,
-												&mut comm_text,
-												&mut n_s_l_q_f,
-												&mut party, &mut enemies, &mut encounter,
-												&mons,&mut dream_time);
-										 };
-						 },
+					} =>  {
+						match gui_box.clone() {
+							GUIBox::GameTravel => {
+								let (a,b) = gmoose::travel_down(&mut pl,&mut p_loc,
+													&world,&mut coords,
+													timer,&mut freeze_timer,
+													&mut comm_text,
+													gui_box,
+													gui_box_previous,
+													&mut party, &mut enemies, &mut encounter,
+													&mons);
+								gui_box = a;
+								gui_box_previous = b;
+							},
+							_ => {},
+						};
+					},
 					//travel up if needed.
 					glium::glutin::WindowEvent::KeyboardInput {
 						input: glium::glutin::KeyboardInput {
@@ -608,16 +609,23 @@ pub fn main() {
 							..
 						},
 						..
-					} => {if tt_e_c_i_ll[0] & !n_s_l_q_f[4] {
-							gmoose::travel_up(&mut pl,&mut p_loc,
-												&world,&mut coords,
-												timer,&mut freeze_timer,
-												&mut comm_text,
-												&mut n_s_l_q_f,
-												&mut party, &mut enemies, &mut encounter,
-												&mons,&mut dream_time);
-										 };
-						 },
+					} => {
+						match gui_box.clone() {
+							GUIBox::GameTravel => {
+								let (a,b) = gmoose::travel_up(&mut pl,&mut p_loc,
+													&world,&mut coords,
+													timer,&mut freeze_timer,
+													&mut comm_text,
+													gui_box,
+													gui_box_previous,
+													&mut party, &mut enemies, &mut encounter,
+													&mons);
+								gui_box = a;
+								gui_box_previous = b;
+							},
+							_ => {},
+						};
+					},
 					//travel left if needed. 
 					glium::glutin::WindowEvent::KeyboardInput {
 						input: glium::glutin::KeyboardInput {
@@ -625,16 +633,23 @@ pub fn main() {
 							..
 						},
 						..
-					} => {if tt_e_c_i_ll[0] & !n_s_l_q_f[4] {
-							gmoose::travel_left(&mut pl,&mut p_loc,
-												&world,&mut coords,
-												timer,&mut freeze_timer,
-												&mut comm_text,
-												&mut n_s_l_q_f,
-												&mut party, &mut enemies, &mut encounter,
-												&mons,&mut dream_time);
-										 };
-						 },
+					} =>  {
+						match gui_box.clone() {
+							GUIBox::GameTravel => {
+								let (a,b) = gmoose::travel_left(&mut pl,&mut p_loc,
+													&world,&mut coords,
+													timer,&mut freeze_timer,
+													&mut comm_text,
+													gui_box,
+													gui_box_previous,
+													&mut party, &mut enemies, &mut encounter,
+													&mons);
+								gui_box = a;
+								gui_box_previous = b;
+							},
+							_ => {},
+						};
+					},
 					//travel right if needed. 
 					glium::glutin::WindowEvent::KeyboardInput {
 						input: glium::glutin::KeyboardInput {
@@ -642,16 +657,23 @@ pub fn main() {
 							..
 						},
 						..
-					} => {if tt_e_c_i_ll[0] & !n_s_l_q_f[4] {
-							gmoose::travel_right(&mut pl,&mut p_loc,
-												&world,&mut coords,
-												timer,&mut freeze_timer,
-												&mut comm_text,
-												&mut n_s_l_q_f,
-												&mut party, &mut enemies, &mut encounter,
-												&mons,&mut dream_time);
-										 };
-						 },
+					} => {
+						match gui_box.clone() {
+							GUIBox::GameTravel => {
+								let (a,b) = gmoose::travel_right(&mut pl,&mut p_loc,
+													&world,&mut coords,
+													timer,&mut freeze_timer,
+													&mut comm_text,
+													gui_box,
+													gui_box_previous,
+													&mut party, &mut enemies, &mut encounter,
+													&mons);
+								gui_box = a;
+								gui_box_previous = b;
+							},
+							_ => {},
+						};
+					},
 					//if pause = true, continue to next turn stage, if enter is pressed.
 					glium::glutin::WindowEvent::KeyboardInput {
 						input: glium::glutin::KeyboardInput {
@@ -661,14 +683,14 @@ pub fn main() {
 						..
 					} => {	if pause & (freeze_timer+1<timer) {
 								pause = false;
-								if n_s_l_q_f[4] {
+								if gui_box.is_fight() {
 									if (encounter[battle_ifast].1!=0) & (encounter[battle_ifast].0.HP_shade>0.0) {
 										comm_text = format!("{} ponders their next move...",encounter[battle_ifast].0.name);
 									};
 								};
 							}else if idungeon.is_some() & (freeze_timer+2<timer)  {
 								if dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
-									dungeon_pointer+= 1;
+									gui_box = GUIBox::GameTravel;
 								};
 							};
 							freeze_timer = timer;
@@ -678,40 +700,35 @@ pub fn main() {
 				_ => (),
 			}
 		}
-		
-		//if n_s_l_q_f[4] {println!("got here Z2");};
-		
-		if (n_s_l_q_f[3]) & truly_quit {
-			break 'main;
-		};		
+			
 		
 		//last minute comm_text corrections.
 		gmoose::correct_comm_text(&mut comm_text,
 								  pause,
-								  &mut n_s_l_q_f);
+								  &mut gui_box);
 								  
 		//if n_s_l_q_f[4] {println!("got here Z3");};
 		//println!("Before set widgets");
 		// Instantiate all widgets in the GUI.
 		// This is getting insane.
 		// Getting the impression that a closure would be nicer.
-		let loop_tuple = set_widgets(ui.set_widgets(), ids,
-					&mons_faces,&mons_facesz,
-					comm_text,
+		let loop_tuple = set_widgets_rework(ui.set_widgets(), ids,
+					gui_box,
+					gui_box_previous,
+					&mons_faces,
+					&mons_facesz,
+					&mut comm_text,
 					&mut player_input,
-					mutm_box_vis,
-					new_game_init,
-					"","","","",true,true,true,
-					n_s_l_q_f,
+					&mut mutm_box_vis,
 					&mut tt_e_c_i_ll,
+					&mut yt_adcwpe_bw,
 					&mut provisional_loc,
-					battled,
-					action,
+					&mut battled,
+					&mut action,
 					&world,
 					&world_map_id,
 					&sp_list,
 					&mons,
-					diff,
 					&mut p_names_m,
 					&mut p_names,
 					&mut party,
@@ -727,12 +744,9 @@ pub fn main() {
 					&mut ltxt,
 					&mut rlb,
 					&mut coords,
-					stage,
 					&mut to_load,
-					&mut dream_time,
 					timer,
 					&mut freeze_timer,
-					&mut yt_adcwpe_bw,
 					&mut sel_targets,
 					&mut to_cast,
 					battle_ifast,
@@ -758,7 +772,7 @@ pub fn main() {
 					&mut sprite_pos,
 					&mut my_stories,
 					&stories,
-					&sages);
+					sages);
 		
 		//reload backgrounds if graphical settings have been changed.			
 		if wo.update_bgc {		
@@ -779,14 +793,9 @@ pub fn main() {
 			wo.update_bgc = false;
 		};
 		
-		mutm_box_vis = loop_tuple.0;
-		comm_text = loop_tuple.1;
-		new_game_init = loop_tuple.2;
-		n_s_l_q_f = loop_tuple.3;
-		battled = loop_tuple.4;
-		action = loop_tuple.5;
-		diff = loop_tuple.6;
-		stage = loop_tuple.7;
+		gui_box = loop_tuple.0;
+		gui_box_previous = loop_tuple.1;
+		sages = loop_tuple.2;
 		//println!("after loop tuple");
 		
 		//if n_s_l_q_f[4] {println!("got here Z4");};
@@ -802,287 +811,292 @@ pub fn main() {
 		target.finish().unwrap();
 		
 		//AI generation
-		if dream_time & n_s_l_q_f[4] {
-			dream_time = false;
-			
-			//define song which is to be played.
-			to_play = isekai_index(&party,&encounter,&dungeons,&p_loc,dungeon_pointer,&idungeon);
-			
-			//send signal to player to start playing.
-			b_muse_sender.try_send((true,to_play));
-			
-			//println!("The moose must dream.");
-			let cpu_n = num_cpus::get();
-			let sow:usize = cpu_n;
-			//println!("start of AI dreaming on {} threads.",sow);
-			let s = PreciseTime::now();
-			
-			let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
-			let mut battle_threads = Vec::new();
-			for _ in 0..sow{
-				let lim = wo.ai_mem;
-				let mut d_cycle1:usize=0;
-				let mut ll_c1 = if (dungeon_pointer<2) | idungeon.is_none(){
-					mons.clone()
-				}else{
-					//dungeon updater now moved to set_widgets function.
-					dungeons[idungeon.unwrap()].denizens.clone()
-				};
-				let s_c1 = sp_list.clone();
-				let field = p_loc.clone();
-				let enc_c = encounter.clone();
-				let encna_c = names_of(&encounter);
-				let mut n_o_d1:usize = 0;
-				let mut discards:usize = 0;
-				let mut tpm:usize = TURNS_PER_MON;
-				let mut bytes_in_record:usize = 0;
-
-				let battle_thr=thread::spawn(move||{
-					let t0=PreciseTime::now();
-					let s_c1= s_c1.clone();
-					let field= field.clone();
-					let encna_cc=encna_c.clone();
-					let mut battle_rec = Vec::with_capacity(250000);
-					let dreams_per_thread = 5000*encna_cc.len();
-					'dream_looper: loop {
-						d_cycle1+= 1;
-						let enc_cc = enc_c.clone();
-						let cms = enc_cc.len();
-						let mut encna_cc = encna_c.clone();
-						let bl = bmoose::battle_rand(enc_cc,
-										&s_c1,
-										&field,
-										&encna_cc,
-										n_o_d1);
-						
-						if d_cycle1%1000==0	{
-							if discards<2*n_o_d1 {tpm-=1}else{tpm+=1};
+		match gui_box.clone() {
+			GUIBox::GameFight(x) => {
+				if x {	
+					gui_box = GUIBox::GameFight(false);
+					
+					//define song which is to be played.
+					to_play = isekai_index(&party,&encounter,&dungeons,&p_loc,dungeon_pointer,&idungeon);
+					
+					//send signal to player to start playing.
+					b_muse_sender.try_send((true,to_play));
+					
+					//println!("The moose must dream.");
+					let cpu_n = num_cpus::get();
+					let sow:usize = cpu_n;
+					//println!("start of AI dreaming on {} threads.",sow);
+					let s = PreciseTime::now();
+					
+					let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
+					let mut battle_threads = Vec::new();
+					for _ in 0..sow{
+						let lim = wo.ai_mem;
+						let mut d_cycle1:usize=0;
+						let mut ll_c1 = if (dungeon_pointer<2) | idungeon.is_none(){
+							mons.clone()
+						}else{
+							//dungeon updater now moved to set_widgets function.
+							dungeons[idungeon.unwrap()].denizens.clone()
 						};
-						if d_cycle1%20000==0{
-							println!("D-cycle={}",d_cycle1);
-							if bytes_in_record*cpu_n>lim {
-								println!("Sizeof battle_rec fragment: {}\nNOD = {}",bytes_in_record,n_o_d1);
-								break 'dream_looper;
+						let s_c1 = sp_list.clone();
+						let field = p_loc.clone();
+						let enc_c = encounter.clone();
+						let encna_c = names_of(&encounter);
+						let mut n_o_d1:usize = 0;
+						let mut discards:usize = 0;
+						let mut tpm:usize = TURNS_PER_MON;
+						let mut bytes_in_record:usize = 0;
+
+						let battle_thr=thread::spawn(move||{
+							let t0=PreciseTime::now();
+							let s_c1= s_c1.clone();
+							let field= field.clone();
+							let encna_cc=encna_c.clone();
+							let mut battle_rec = Vec::with_capacity(250000);
+							let dreams_per_thread = 5000*encna_cc.len();
+							'dream_looper: loop {
+								d_cycle1+= 1;
+								let enc_cc = enc_c.clone();
+								let cms = enc_cc.len();
+								let mut encna_cc = encna_c.clone();
+								let bl = bmoose::battle_rand(enc_cc,
+												&s_c1,
+												&field,
+												&encna_cc,
+												n_o_d1);
+								
+								if d_cycle1%1000==0	{
+									if discards<2*n_o_d1 {tpm-=1}else{tpm+=1};
+								};
+								if d_cycle1%20000==0{
+									println!("D-cycle={}",d_cycle1);
+									if bytes_in_record*cpu_n>lim {
+										println!("Sizeof battle_rec fragment: {}\nNOD = {}",bytes_in_record,n_o_d1);
+										break 'dream_looper;
+									};
+								};
+								
+								if bl.len()<(cms*TURNS_PER_MON){
+									bytes_in_record+= bl.len()*28*3;
+									battle_rec.push(bl);
+									n_o_d1+=1;
+								}else{
+									discards+= 1;
+								};
+								let t1=PreciseTime::now();
+								if t0.to(t1)>time::Duration::seconds(10){
+									println!("Size of battle_rec fragment: {}",bytes_in_record);
+									break 'dream_looper;
+								};
+							};
+							println!("\nNo. of dreams: {}\n",d_cycle1);
+							println!("Number of records: {}", battle_rec.len());
+							println!("Number of discarded dreams: {}",discards);
+							battle_rec
+						});
+						battle_threads.push(battle_thr);
+					};
+					
+					for _ in 0..battle_threads.len(){
+						let x = battle_threads.pop().expect("Oh pop").join().expect("Oh join!");
+						lore.extend(x);
+					};
+					
+					//Send the base encounter information to the brain.
+					// And allow initiation of battle map.
+					thought_sender_to_brain2.send((lore,encounter.clone()));
+					lore_empty = false;
+
+					let e=PreciseTime::now();
+					println!("Total time: {}",s.to(e));
+					
+					//Set/Reset battle variables.
+					for i in 0..party.len() {
+						exp_players[i] = exp_calc(&encounter,i);
+					};
+					println!("Exp on victory: {:?}",exp_players);
+					battle_gold_pot = 0;
+					cms=encounter.len();
+					for x in encounter.iter() {battle_gold_pot+= x.0.Gold};
+
+					in_battle_record = vec!([0;28],[255;28],[255;28]);
+					
+					for (i,x) in encounter.iter().enumerate() {
+						in_battle_record[1][6+i] = x.0.id as u8;
+						in_battle_record[2][6+i] = x.1 as u8
+					};
+
+					battle_timer = vec!(0.0;cms);
+					to_hit = vec![(false,false);cms];
+					
+					//create timer and initiate first turn.
+					for (nth,x) in encounter.iter().enumerate(){
+						let mut tvar:f32 = 0.0;
+						tvar+= (rand::thread_rng().gen_range(-10,11)-rand::thread_rng().gen_range(-10,11)) as f32;
+						let time = x.0.Speed_shade.clone()+tvar;
+						battle_timer[nth] = 1.0/time
+					};
+					battle_fast = vnmin(battle_timer.clone());
+					battle_ifast = vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
+					println!("{} from group {} is the first to take action!",beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
+					println!("battle_ifast = {}, encounter.len() = {}",battle_ifast,encounter.len());
+					
+					enc_names = Vec::with_capacity(25);
+					
+					for x in encounter.iter() {enc_names.push(x.0.name.to_owned());};
+					for (i,x) in p_names.iter().enumerate() {
+						enc_names[i] = x.to_owned();
+					};
+					println!("Encounter names: {:?}",enc_names);
+					//main battle loop.
+					battle_ttakes = vec![0;cms];
+					battle_tturns = 0;
+					battle_orders = Vec::with_capacity(2000);
+					println!("Dungeon pointer == {}",dungeon_pointer);
+					
+					//send another signal to player to start playing,
+					//just in case.
+					b_muse_sender.try_send((true,to_play));
+				
+				}else if !x {
+			
+					//Increment shaking timer. Switch off shaking if timer elapsed.
+					if shaking_timer+SHAKE_DURATION < timer {
+						shaking_dam = [false;25];
+					};
+					let mut fight = true;
+					//Take turn if game is not paused.
+					if !pause & sprite_boxer.is_none() {	
+						//if in battle, and time has elapsed, check for end game.	
+						//println!("Got to game over");
+						bmoose::game_over  (&mut encounter,
+											&mut enemies,
+											&mut party,
+											&mut dungeons,
+											&mut fight,
+											&mut tt_e_c_i_ll,
+											&mut exp_players,
+											&mut battle_gold_pot,
+											&mut comm_text,
+											timer,
+											&mut freeze_timer,
+											&mut battle_tturns,
+											&mut idungeon,
+											&mut dungeon_pointer,
+											escaped);
+						//println!("got past game over");
+
+						if !fight {
+							
+							println!("Ending battle");
+							//music player controlled to off.
+							b_muse_sender.try_send((false,to_play));
+							//Tell the brain that the battle is over.
+							thought_sender_to_brain.send((0,0,[0;28],0,Vec::new(),false));
+							//if game_over functions determines end of battle, reset battle variables, level party and end battle.
+							encounter = Vec::with_capacity(25);
+							enemies = Vec::with_capacity(20);
+							to_hit = Vec::with_capacity(25);
+							sel_targets = Vec::with_capacity(25);
+							targets = Vec::with_capacity(25);
+							battle_timer = Vec::with_capacity(25);
+							bmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
+							yt_adcwpe_bw = [false;9];
+							shaking_timer = 0;
+							shaking_dam = [false;25];
+							ai_turn_started = false;
+							ai_started_thinking = false;
+							sprite_boxer = GraphicsBox::None;
+							sprite_pos = [[0.0;2];25];
+							escaped = false;
+							gui_box = gui_box_previous.clone();
+							
+							//set p_scape as needed.
+							if idungeon.is_none() {
+								p_scape = p_loc.scape;
+							}else if (dungeon_pointer<2) | (dungeon_pointer>dungeons[idungeon.unwrap()].scenes.len()+1) {
+								p_scape = p_loc.scape;
+							}else{
+								p_scape = dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2].scape;
+							};
+							
+							scenery_index = gmoose::scenery_setter(&scapes,p_scape,&mut centre_w,&mut centre_h);
+							
+							continue 'main;
+						}else{
+							if (encounter[battle_ifast].1!=0) & !pause {	
+								//Computer turn.
+								bmoose::ai_battle_turn(&mut encounter,&mut enc_names,
+												if (dungeon_pointer<2) | idungeon.is_none() {
+													&mut p_loc
+												}else{
+													&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
+												},
+												&sp_list,cms,
+												&mut battle_fast,
+												&mut battle_ifast,
+												&mut battle_ttakes,
+												&mut battle_tturns,
+												&mut battle_orders,
+												&mut battle_timer,
+												&mut in_battle_record,
+												timer,
+												&mut freeze_timer,
+												&mut comm_text,
+												&mut pause,
+												&mut shaking_timer,
+												&mut shaking_dam,
+												&mut ai_turn_started,
+												&mut ai_started_thinking,
+												&mut thought_sender_to_brain,
+												&mut thought_receiver_to_body,
+												&mut sprite_boxer,
+												&mut sprite_pos,
+												&mut targets);
+								//println!("D");
+							}else if !pause & (encounter[battle_ifast].1==0) {
+								//Player tuen
+								bmoose::player_battle_turn(&mut encounter,&enc_names,
+												if (dungeon_pointer<2) | idungeon.is_none() {
+													&mut p_loc
+												}else{
+													&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
+												},
+												&sp_list,
+												cms,
+												&mut battle_fast,
+												&mut battle_ifast,
+												&mut battle_ttakes,
+												&mut battle_tturns,
+												&mut battle_orders,
+												&mut battle_timer,
+												&mut in_battle_record,
+												timer,
+												&mut freeze_timer,
+												&mut yt_adcwpe_bw,
+												&mut recl,
+												&mut comm_text,
+												&mut sel_targets,
+												&mut to_cast,
+												&mut to_hit,
+												&mut pause,
+												&mut escaped,
+												&mut shaking_timer,
+												&mut shaking_dam,
+												&mut sprite_boxer,
+												&mut sprite_pos,
+												&mut targets);
+								//if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
+								//println!("E");
 							};
 						};
-						
-						if bl.len()<(cms*TURNS_PER_MON){
-							bytes_in_record+= bl.len()*28*3;
-							battle_rec.push(bl);
-							n_o_d1+=1;
-						}else{
-							discards+= 1;
-						};
-						let t1=PreciseTime::now();
-						if t0.to(t1)>time::Duration::seconds(10){
-							println!("Size of battle_rec fragment: {}",bytes_in_record);
-							break 'dream_looper;
-						};
-					};
-					println!("\nNo. of dreams: {}\n",d_cycle1);
-					println!("Number of records: {}", battle_rec.len());
-					println!("Number of discarded dreams: {}",discards);
-					battle_rec
-				});
-				battle_threads.push(battle_thr);
-			};
-			
-			for _ in 0..battle_threads.len(){
-				let x = battle_threads.pop().expect("Oh pop").join().expect("Oh join!");
-				lore.extend(x);
-			};
-			
-			//Send the base encounter information to the brain.
-			// And allow initiation of battle map.
-			thought_sender_to_brain2.send((lore,encounter.clone()));
-			lore_empty = false;
-
-			let e=PreciseTime::now();
-			println!("Total time: {}",s.to(e));
-			
-			//Set/Reset battle variables.
-			for i in 0..party.len() {
-				exp_players[i] = exp_calc(&encounter,i);
-			};
-			println!("Exp on victory: {:?}",exp_players);
-			battle_gold_pot = 0;
-			cms=encounter.len();
-			for x in encounter.iter() {battle_gold_pot+= x.0.Gold};
-
-			in_battle_record = vec!([0;28],[255;28],[255;28]);
-			
-			for (i,x) in encounter.iter().enumerate() {
-				in_battle_record[1][6+i] = x.0.id as u8;
-				in_battle_record[2][6+i] = x.1 as u8
-			};
-
-			battle_timer = vec!(0.0;cms);
-			to_hit = vec![(false,false);cms];
-			
-			//create timer and initiate first turn.
-			for (nth,x) in encounter.iter().enumerate(){
-				let mut tvar:f32 = 0.0;
-				tvar+= (rand::thread_rng().gen_range(-10,11)-rand::thread_rng().gen_range(-10,11)) as f32;
-				let time = x.0.Speed_shade.clone()+tvar;
-				battle_timer[nth] = 1.0/time
-			};
-			battle_fast = vnmin(battle_timer.clone());
-			battle_ifast = vwhich(&battle_timer,battle_fast).unwrap_or(battle_ifast);
-			println!("{} from group {} is the first to take action!",beast_name(&encounter,battle_ifast,&p_names), &encounter[battle_ifast].1);
-			println!("battle_ifast = {}, encounter.len() = {}",battle_ifast,encounter.len());
-			
-			enc_names = Vec::with_capacity(25);
-			
-			for x in encounter.iter() {enc_names.push(x.0.name.to_owned());};
-			for (i,x) in p_names.iter().enumerate() {
-				enc_names[i] = x.to_owned();
-			};
-			println!("Encounter names: {:?}",enc_names);
-			//main battle loop.
-			battle_ttakes = vec![0;cms];
-			battle_tturns = 0;
-			battle_orders = Vec::with_capacity(2000);
-			println!("Dungeon pointer == {}",dungeon_pointer);
-			
-			//send another signal to player to start playing,
-			//just in case.
-			b_muse_sender.try_send((true,to_play));
-			
-		}else if n_s_l_q_f[4] {
-			
-			//Increment shaking timer. Switch off shaking if timer elapsed.
-			if shaking_timer+SHAKE_DURATION < timer {
-				shaking_dam = [false;25];
-			};
-			
-			//Take turn if game is not paused.
-			if !pause & sprite_boxer.is_none() {	
-				//if in battle, and time has elapsed, check for end game.	
-				//println!("Got to game over");
-				bmoose::game_over  (&mut encounter,
-									&mut enemies,
-									&mut party,
-									&mut dungeons,
-									&mut n_s_l_q_f,
-									&mut tt_e_c_i_ll,
-									&mut exp_players,
-									&mut battle_gold_pot,
-									&mut comm_text,
-									timer,
-									&mut freeze_timer,
-									&mut battle_tturns,
-									&mut idungeon,
-									&mut dungeon_pointer,
-									escaped);
-				//println!("got past game over");
-
-				if !n_s_l_q_f[4] {
-					
-					println!("Ending battle");
-					//music player controlled to off.
-					b_muse_sender.try_send((false,to_play));
-					//Tell the brain that the battle is over.
-					thought_sender_to_brain.send((0,0,[0;28],0,Vec::new(),false));
-					//if game_over functions determines end of battle, reset battle variables, level party and end battle.
-					encounter = Vec::with_capacity(25);
-					enemies = Vec::with_capacity(20);
-					to_hit = Vec::with_capacity(25);
-					sel_targets = Vec::with_capacity(25);
-					targets = Vec::with_capacity(25);
-					battle_timer = Vec::with_capacity(25);
-					bmoose::lvlq(&party,&p_names,&mut tt_e_c_i_ll);
-					yt_adcwpe_bw = [false;9];
-					shaking_timer = 0;
-					shaking_dam = [false;25];
-					ai_turn_started = false;
-					ai_started_thinking = false;
-					sprite_boxer = GraphicsBox::None;
-					sprite_pos = [[0.0;2];25];
-					escaped = false;
-					
-					//set p_scape as needed.
-					if idungeon.is_none() {
-						p_scape = p_loc.scape;
-					}else if (dungeon_pointer<2) | (dungeon_pointer>dungeons[idungeon.unwrap()].scenes.len()+1) {
-						p_scape = p_loc.scape;
-					}else{
-						p_scape = dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2].scape;
-					};
-					
-					scenery_index = gmoose::scenery_setter(&scapes,p_scape,&mut centre_w,&mut centre_h);
-					
-					continue 'main;
-				}else{
-					if (encounter[battle_ifast].1!=0) & !pause {	
-						//Computer turn.
-						bmoose::ai_battle_turn(&mut encounter,&mut enc_names,
-										if (dungeon_pointer<2) | idungeon.is_none() {
-											&mut p_loc
-										}else{
-											&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
-										},
-										&sp_list,cms,
-										&mut battle_fast,
-										&mut battle_ifast,
-										&mut battle_ttakes,
-										&mut battle_tturns,
-										&mut battle_orders,
-										&mut battle_timer,
-										&mut in_battle_record,
-										timer,
-										&mut freeze_timer,
-										&mut comm_text,
-										&mut pause,
-										&mut shaking_timer,
-										&mut shaking_dam,
-										&mut ai_turn_started,
-										&mut ai_started_thinking,
-										&mut thought_sender_to_brain,
-										&mut thought_receiver_to_body,
-										&mut sprite_boxer,
-										&mut sprite_pos,
-										&mut targets);
-						//println!("D");
-					}else if !pause & (encounter[battle_ifast].1==0) {
-						//Player tuen
-						bmoose::player_battle_turn(&mut encounter,&enc_names,
-										if (dungeon_pointer<2) | idungeon.is_none() {
-											&mut p_loc
-										}else{
-											&mut dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2]
-										},
-										&sp_list,
-										cms,
-										&mut battle_fast,
-										&mut battle_ifast,
-										&mut battle_ttakes,
-										&mut battle_tturns,
-										&mut battle_orders,
-										&mut battle_timer,
-										&mut in_battle_record,
-										timer,
-										&mut freeze_timer,
-										&mut yt_adcwpe_bw,
-										&mut n_s_l_q_f,
-										&mut recl,
-										&mut comm_text,
-										&mut sel_targets,
-										&mut to_cast,
-										&mut to_hit,
-										&mut pause,
-										&mut escaped,
-										&mut shaking_timer,
-										&mut shaking_dam,
-										&mut sprite_boxer,
-										&mut sprite_pos,
-										&mut targets);
-						if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
-						//println!("E");
 					};
 				};
-			};
+			},
+			GUIBox::MainQuit(x) => {if x {break 'main;};},
+			_ => {},
 		};
-		//println!("After dungeon pointer statement");
 	}
 }
 	//	End of main main loop.
