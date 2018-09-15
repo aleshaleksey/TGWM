@@ -39,7 +39,8 @@ extern crate time;
 use shared_moose::*;
 use omoose::{parse_music_config,ISEKAIN};
 use smoose::{MyStories,Story,Sage};
-use smoose::sage_generator;
+use smoose::{sage_generator,sage_poller};
+use smoose::*;
 			
 use inflector::Inflector;
 use rand::Rng;
@@ -86,6 +87,7 @@ const SQUARES:[usize;3] = [20,5,2];
 const TRAVEL_DELAY:usize = 15;
 const BORDER:f64 = 3.0;
 const SIDE_MENU_W:f64 = 220.0;
+const SAGE_SIVE:[f64;2] = [100.0,100.0];
 const BORDER_COLOUR:color::Colour = Color::Rgba(237.0/255.0, 212.0/255.0, 0.0, 128.0/255.0);
 const BACKGR_COLOUR:color::Colour = color::BLACK;
 const BUTTON_COLOUR:color::Colour = color::DARK_RED;
@@ -1075,6 +1077,119 @@ fn set_marker_of_go(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 									 .set(ids.marker_shape2,ui);
 }
 
+//A function to set the sage during the sage battle.
+fn set_sage_marker(){}
+fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
+				sage: &Sage<'a>,
+				party: &mut Vec<(Lifeform,usize)>,
+				p_names:&Vec<String>,
+				spl:&Vec<Spell>,
+				mut gui_box: GUIBox<'a>,
+				stage:u8,
+				w:f64,
+				comm_text:&mut String)->GUIBox<'a> {
+	
+	//NB! Middle column must exist!
+	let xy = ui.xy_of(ids.middle_column).unwrap();
+	let wh = ui.wh_of(ids.middle_column).unwrap();
+										 
+	//set the buttons.
+	let xy_sage = [xy[0]+wh[0]/4.0,xy[1]];
+	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
+								 .xy(xy_sage)
+								 .color(BACKGR_COLOUR)
+								 .set(ids.sage_menu,ui);
+								 
+	//set the dialog.
+	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER)/6.0])
+											  .color(BACKGR_COLOUR)
+											  .label_color(color::YELLOW)
+											  .top_left_of(ids.sage_menu);
+	
+	//Decidde which part of the sage to use.										  
+	let strings:[&str;6] = match stage {
+		GREETING => {sage.get_first_q()},
+		MAGIC	 => {sage.get_post_magic()},
+		SAGES	 => {sage.get_post_sage()},
+		WORLD	 => {sage.get_post_world()},
+		TERRAIN	 => {sage.get_post_terrain()},
+		SPELL1	 => {
+			gui_box = set_spell_list_sage(ui,ids,comm_text,
+								   party,
+								   sage,
+								   gui_box,
+								   stage,
+								   spl,
+								   p_names,
+								   w);
+			sage.get_post_spell()
+		},
+		_		 => {sage.get_post_goodbye()},
+	};		
+	
+	let buy_spells = if stage==GREETING {"I want to learn a spell."}else{""};
+	
+	//Initialise buttons.										  
+	let b1 = button.clone().label(strings[0]).set(ids.sage_dialog_but_1,ui);
+	let b2 = button.clone().label(strings[1]).down_from(ids.sage_dialog_but_1,0.0).set(ids.sage_dialog_but_2,ui);
+	let b3 = button.clone().label(strings[2]).down_from(ids.sage_dialog_but_2,0.0).set(ids.sage_dialog_but_3,ui);
+	let b4 = button.clone().label(strings[3]).down_from(ids.sage_dialog_but_3,0.0).set(ids.sage_dialog_but_4,ui);
+	let b5 = button.clone().label(buy_spells).down_from(ids.sage_dialog_but_4,0.0).set(ids.sage_dialog_but_5,ui);
+	let b6 = button.clone().label(strings[4]).down_from(ids.sage_dialog_but_5,0.0).set(ids.sage_dialog_but_6,ui);
+	
+	if stage != GOODBYE {
+		//Set sage's picture.
+		let xy_sage = [xy[0]-wh[0]/4.0,xy[1]];
+		conrod::widget::Image::new(*sage.face).wh(SAGE_SIVE)
+										 .xy(xy_sage)
+										 .set(ids.sage_shadow,ui);
+		
+		if stage != SPELL1 {*comm_text = strings[5].to_owned()};
+	}else{
+		*comm_text = format!("{}\n***Press Enter to Continue***",strings[5]);
+	};
+	
+	//Functionalise buttons.
+	if stage != GOODBYE {
+		for _click in b1 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),MAGIC);
+			}else{
+				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING);
+			};
+		};
+		for _click in b2 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),SAGES);
+			};
+		};
+		for _click in b3 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),WORLD);
+			};
+		};
+		for _click in b4 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),TERRAIN);
+			};
+		};
+		for _click in b6 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),GOODBYE);
+			}else{
+				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING);
+			};
+		};
+		//The interesting magic button.
+		for _click in b5 {
+			if stage==GREETING {
+				gui_box = GUIBox::GameCastSage(sage.clone(),SPELL1);
+			};
+		};
+	};
+	
+	gui_box
+}
 
 //Put the world map where it's meant to be.
 //This method uses a button matrix to represent the world map.
@@ -2133,6 +2248,135 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	};	   
 }
 
+fn set_spell_list_sage_marker(){}
+//A function to learn new spells.
+fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   comm_text:&mut String,
+				   party: &mut Vec<(Lifeform,usize)>,
+				   sage: &Sage<'a>,
+				   mut gui_box: GUIBox<'a>,
+				   stage: u8,
+				   spl: &Vec<Spell>,
+				   p_names:&Vec<String>,
+				   w: f64)->GUIBox<'a> {
+					   
+	//make a list of spells that the player has enough exp to learn.
+	//sage spells and learnable spells should have the same order.
+	let mut learnable_spells:Vec<&str> = Vec::new();
+	
+	for x in spl.iter(){
+		if lhas(&sage.spells,&x.id) {learnable_spells.push(x.name);};
+	 };
+	
+	let mut matrix_rows:usize = 1;
+	let rows:usize = if learnable_spells.len()==0 {
+		1
+	}else if learnable_spells.len()<10 {
+		matrix_rows = learnable_spells.len()+1;
+		learnable_spells.len()+1
+	}else{
+		matrix_rows = 9;
+		learnable_spells.len()+1
+	};				   
+	
+	//make canvas for spell_list.
+	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
+	let mrf64:f64 = 50.0*(matrix_rows as f64);
+	
+	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
+	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
+	
+	//Set canvas, slightly different, depending on spell number.
+	if learnable_spells.len()>9 {
+		widget::Scrollbar::y_axis(ids.spell_list_can).auto_hide(true).set(ids.coml_scroll, ui);
+		widget::Canvas::new()
+		.floating(true)
+		.scroll_kids_vertically()
+		.top_left_of(ids.map_and_word)
+		.wh(wh_m)
+		.pad(10.0)
+		.color(BACKGR_COLOUR)
+		.border(BORDER)
+		.border_color(BORDER_COLOUR)
+		.set(ids.spell_list_can,ui);
+	}else{
+		widget::Canvas::new()
+		.floating(true)
+		.top_left_of(ids.map_and_word)
+		.wh(wh_m)
+		.pad(10.0)
+		.color(BACKGR_COLOUR)
+		.border(BORDER)
+		.border_color(BORDER_COLOUR)
+		.set(ids.spell_list_can,ui);
+	};
+
+	//make matrix containing spell list.	
+	let mut spell_list = widget::Matrix::new(1,rows)
+					   .w(wh_m[0]-BORDER*2.0)
+					   .h(40.0*(rows as f64)-BORDER*2.0)
+					   .mid_top_of(ids.spell_list_can)
+					   .set(ids.spell_list,ui);
+					   
+	//Write spell list if character has spells. Write sorry otherwise.
+	if learnable_spells.len()>0 {
+		while let Some(spell) = spell_list.next(ui) {
+			let snow = spell.row;
+			if snow==0{
+				let title:String = format!("{} the {} can learn:",p_names[0],party[0].0.name);
+				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+			}else{
+				//Cost of spell.
+				let cost:usize = (spl[arcana_index_from_spell_id(spl,sage.spells[snow-1]).unwrap()].MP*100.0) as usize;
+				//Output spell.
+				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()];
+				//Button label.
+				let label:String = format!("{} ({}gp)",learnable_spells[snow-1],cost);
+				
+				let x = widget::Button::new().label(learnable_spells[snow-1])
+											 .label_font_size(font_size_chooser_button_b(w))
+											 .color(colour_of_magic(spell_out_spell.Type));
+											 
+				for _click in spell.set(x,ui) {
+					
+					//determine which character's can learn the sage's spells.
+					let mut both_have = true;
+					let mut haves:Vec<bool> = Vec::new();
+					for (x,_) in party.iter() {
+						//This is a little dangerous. sage.spell should have
+						//the same order. But...
+						let have = lhas(&x.Spellist,&sage.spells[snow-1]);
+						haves.push(have);
+						if !have {both_have = false;};
+					};
+					
+					if both_have {
+						*comm_text = format!("Everyone already knows this spell...");
+					}else if cost > party[0].0.Gold {
+						*comm_text = format!("You cannot afford the Sage's ridiculuous asking price...");
+					}else if party.len()<2 {
+						*comm_text = format!("The sage reaches into your soul and scribes therein the magic glyph!");
+						party[0].0.Spellist.push(spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()].id);
+						party[0].0.Gold-= cost;
+						println!("{:?}",party[0].0.Spellist);
+					};
+				};
+			};
+		};
+	}else{
+		while let Some(spell) = spell_list.next(ui) {
+			let spell_button_label:String = format!("There is no arcana for {} to grasp...",p_names[0]);
+			let x = widget::Button::new().label(&spell_button_label)
+										 .label_font_size(font_size_chooser_button_b(w))
+										 .color(BUTTON_COLOUR);
+			spell.set(x,ui);
+		};	
+	};	
+	
+	gui_box   
+}
+
 fn set_spell_list_learnable_marker(){}
 //A function to learn new spells.
 fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
@@ -2243,8 +2487,7 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				   party: &Vec<(Lifeform,usize)>,
 				   spl: &Vec<Spell>,
 				   p_names:&Vec<String>,
-				   w: f64,
-				   gui_box:&mut GUIBox) { //nb i is "chosen_hero"
+				   w: f64)->Option<usize> { //nb i is "chosen_hero"
 	
 	//set up some variables for canvas size			   
 	let mut matrix_rows:usize = 1;
@@ -2313,7 +2556,7 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				for _click in spell.set(x,ui){
 					*comm_text = format!("{}",spell_out_spell);
 					set_comm_text(&mut comm_text,ui,ids);
-					*gui_box = GUIBox::GameCastCast(spell_out_spell.clone());
+					return Some(snow-1)
 				};
 			};
 		};
@@ -2325,7 +2568,8 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 										 .color(BUTTON_COLOUR);
 			spell.set(x,ui);
 		};	
-	};	  
+	};
+	return None	  
 }
 
 
@@ -2574,6 +2818,7 @@ fn sm_retc(x:&Lifeform,t:usize)->conrod::color::Colour{
 
 
 pub fn correct_comm_text(mut comm_text:&mut String,pause:bool,gui_box:&mut GUIBox){
+
 	if pause & gui_box.is_fight() {
 		if !comm_text.contains("***Press Enter to Continue***") {
 			*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
@@ -2981,9 +3226,6 @@ fn loaded_confirmed(mut party:&mut Vec<(Lifeform,usize)>,
 	println!("{}",&comm_text);
 }
 
-//A function to set sages.
-fn sage_dialog(){}
-
 
 //function that tells the computer to generate a random encounter based on the monster population of the area.
 fn rand_enc(p_loc:&Place)->bool{
@@ -3317,6 +3559,15 @@ widget_ids! {
 						spells_can,
 							spells_can_scroll,
 							spells_mtrx,
+							
+		sage_shadow,
+		sage_menu,
+			sage_dialog_but_1,
+			sage_dialog_but_2,
+			sage_dialog_but_3,
+			sage_dialog_but_4,
+			sage_dialog_but_5,
+			sage_dialog_but_6,
 		quit_canvas,					//quit canvas and pertaining buttons.
 			quit_true_can,
 				quit_true_but,
@@ -3421,7 +3672,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					truly_quit: &mut bool,
 					shaking_dam: &mut [bool;25],
 					shaking_timer: &mut usize,
-					pause:bool,
+					pause:&mut bool,
 					scenery_index: &mut usize,
 					landscapes: &Landscapes,
 					centre_h: &mut f64,
@@ -3435,7 +3686,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					sprite_pos: &mut [[f64;2];25],
 					my_stories:&mut MyStories,
 					stories: &Vec<Story>,
-					mut sage: Vec<Sage<'a>>) 
+					mut sages: Vec<Sage<'a>>) 
 //	->(bool,String,bool,[bool;7],usize,u8,i32,usize,Vec<Sage<'a>>)
 ->(GUIBox<'a>,GUIBox<'a>,Vec<Sage<'a>>)
 {
@@ -3868,7 +4119,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			for _click in cast_button{
 				//Prepare the sages!
 				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				sage = sage_generator(&mon_faces,&p_names);		
+				sages = sage_generator(&mon_faces,&p_names);		
 				gui_box = GUIBox::GameCastPre; 			
 				//Put a function to cast a spell here and then poll sages.
 			};
@@ -4002,6 +4253,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					if pressed.0==5 {
 						*mutm_box_vis = false;
 						gui_box = GUIBox::GameTravel;
+						*dungeon_pointer = 0;
+						println!("in setter dungeon_pointer={}",dungeon_pointer);
 					};
 					//println!("Afterstory should have been set now!");
 				};
@@ -4024,13 +4277,18 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			set_spell_list_global(ui,ids, 
-								  comm_text,
-								  party,
-								  spl,
-								  p_names,
-								  win_wh[0],
-								  &mut gui_box);
+			let maybe_spell:Option<usize> = set_spell_list_global(ui,ids, 
+																  comm_text,
+																  party,
+																  spl,
+																  p_names,
+																  win_wh[0]);
+												  
+			if maybe_spell.is_some() {
+				//Horror show time!
+				gui_box = GUIBox::GameCastCast(
+					spl[arcana_index_from_spell_id(spl,party[0].0.Spellist[maybe_spell.unwrap()]).unwrap()].clone());
+			};
 			
 			let exit = set_mutant_menu_uni(ui,ids,"Better Not...");
 			
@@ -4063,7 +4321,19 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			if exit.0==1 {
 				*comm_text = format!("You cast {}!",x.name);
 				//Placeholder!
-				gui_box = GUIBox::GameCastPre;
+				let sage = sage_poller(&sages,p_loc,&x,party);
+				//sages = sages_b;
+				match sage {
+					Some(s) => {
+						*comm_text = format!("We have a sage! The {}!",sages[s].name);
+						gui_box = GUIBox::GameCastSage(sages[s].clone(),GREETING);
+						*freeze_timer = timer;
+					},
+					None => {
+						*comm_text = format!("No sage!");
+						gui_box = GUIBox::GameCastPre;
+					},
+				};
 			}else if exit.0==5 {
 				*comm_text = format!("You take a deep breath and lower your hands.");
 				gui_box = GUIBox::GameCastPre;
@@ -4071,7 +4341,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			set_comm_text(comm_text,ui,ids);
 		},
 		
-		GUIBox::GameCastSage(x) => {
+		GUIBox::GameCastSage(x,y) => {
 			
 			//not finished.
 			*p_scape = p_loc.scape;
@@ -4085,7 +4355,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				set_timescape(ui,ids,timer);
 			};
 			
+			gui_box = set_sage(ui,ids,&x,party,p_names,spl,gui_box,y,win_wh[0],comm_text);
+			
+			if y==GOODBYE {
+				*pause = true;
+				*freeze_timer = timer;
+			};
 			set_comm_text(comm_text,ui,ids);
+			//if timer-100>*freeze_timer {gui_box = GUIBox::GameCastPre;};
 		},
 		
 		GUIBox::GameInspectParty(bool) => {
@@ -4115,7 +4392,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			for _click in cast_button{
 				//Prepare the sages!
 				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				sage = sage_generator(&mon_faces,&p_names);		
+				sages = sage_generator(&mon_faces,&p_names);		
 				gui_box = GUIBox::GameCastPre; 			
 				//Put a function to cast a spell here and then poll sages.
 			};
@@ -4139,7 +4416,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			//Set label conditionally on whether you'r outsid eor in a dungeon.
 			//Not the most superefficient, but the briefest.
-			if idungeon.is_some() {
+			if idungeon.is_some() & (*dungeon_pointer>1) {
 				set_middle_label(ui,ids,dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name,&win_wh);
 			}else{
 				set_middle_label(ui,ids,p_loc.name,&win_wh);	
@@ -4238,14 +4515,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							sprite_pos,
 							shaking_timer,
 							battle_ifast,
-							pause);
+							*pause);
 			};
 			set_comm_text(comm_text,ui,ids); 			
 		},
 		
 		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
 	};
-	(gui_box,gui_box_previous,sage)
+	(gui_box,gui_box_previous,sages)
 }
 
 //END OF SET WIDGETS V2 FUNCTION;
@@ -4382,6 +4659,7 @@ fn set_buttonless_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: colo
 	]).pad(BORDER*2.0).set(ids.master, ui);
 	widget::Scrollbar::y_axis(ids.comm_box).auto_hide(true).set(ids.comm_scroll, ui);
 }
+
 
 //A function to generate the 4 constant main menu buttons.
 //The aim is to save space.

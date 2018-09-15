@@ -691,7 +691,11 @@ pub fn main() {
 							}else if idungeon.is_some() & (freeze_timer+2<timer)  {
 								if dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
 									gui_box = GUIBox::GameTravel;
+									dungeon_pointer = 0;
+									println!("Dungeon pointer = {}",dungeon_pointer);
 								};
+							}else if gui_box.is_sage_sage() {
+									gui_box = GUIBox::GameCastPre;
 							};
 							freeze_timer = timer;
 						 },
@@ -702,12 +706,15 @@ pub fn main() {
 		}
 			
 		
+		
+								  
+		//if n_s_l_q_f[4] {println!("got here Z3");};
+				
 		//last minute comm_text corrections.
 		gmoose::correct_comm_text(&mut comm_text,
 								  pause,
 								  &mut gui_box);
 								  
-		//if n_s_l_q_f[4] {println!("got here Z3");};
 		//println!("Before set widgets");
 		// Instantiate all widgets in the GUI.
 		// This is getting insane.
@@ -758,7 +765,7 @@ pub fn main() {
 					&mut truly_quit,
 					&mut shaking_dam,
 					&mut shaking_timer,
-					pause,
+					&mut pause,
 					&mut scenery_index,
 					&scapes,
 					&mut centre_h,
@@ -773,7 +780,7 @@ pub fn main() {
 					&mut my_stories,
 					&stories,
 					sages);
-		
+								  
 		//reload backgrounds if graphical settings have been changed.			
 		if wo.update_bgc {		
 			//Nothing implements copy... Nothing implements clone...

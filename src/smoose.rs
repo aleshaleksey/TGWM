@@ -73,11 +73,24 @@ extern crate conrod;
 			 S_SLOW,S_HASTE,S_APOCALYPSE,S_GENESIS,S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING,S_TIMESTOP,
 			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};
 
+
+//Sage dialog stage constants.
+pub const GREETING:u8 = 90;
+pub const MAGIC:u8 = 87;
+pub const SAGES:u8 = 84;
+pub const WORLD:u8 = 81;
+pub const TERRAIN:u8 = 78;
+pub const GOODBYE:u8 = 75;
+pub const SPELL1:u8 = 72;
+pub const SPELL2:u8 = 69;
+pub const SPELL3:u8 = 66;
+
 //A structure to contain spells, prices therefore
 //and fixed answers to questions.
 //this structure will change with time		
 #[derive(Clone,Debug)] 
 pub struct Sage<'a> {
+	pub name: String,
 	pub exp_min: f32,
 	pub face: &'a conrod::image::Id,
 	pub trigger: Vec<Trigger>,
@@ -88,6 +101,71 @@ pub struct Sage<'a> {
 	pub dialog_world:[String;2],
 	pub dialog_terrain:[String;2],
 	pub dialog_goodbye:[String;2],
+}
+
+impl <'a>Sage<'a> {
+	pub fn get_first_q(&self)->[&str;6] {
+		[&self.dialog_magic[0],
+		 &self.dialog_sages[0],
+		 &self.dialog_world[0],
+		 &self.dialog_terrain[0],
+		 &self.dialog_goodbye[0],
+		 &self.dialog_greeting[1]]
+	}
+	
+	pub fn get_post_magic(&self)->[&str;6] {
+		["Maybe not..",
+		 "",
+		 "",
+		 "",
+		 "",
+		 &self.dialog_magic[1]]
+	}
+	
+	pub fn get_post_sage(&self)->[&str;6] {
+		["I want to ask something else.",
+		 "",
+		 "",
+		 "",
+		 "...",
+		 &self.dialog_sages[1]]
+	}
+	
+	pub fn get_post_world(&self)->[&str;6] {
+		["I want to ask something else.",
+		 "",
+		 "",
+		 "",
+		 "...",
+		 &self.dialog_world[1]]
+	}
+	
+	pub fn get_post_terrain(&self)->[&str;6] {
+		["I want to ask something else.",
+		 "",
+		 "",
+		 "",
+		 "...",
+		 &self.dialog_terrain[1]]
+	}
+	
+	pub fn get_post_goodbye(&self)->[&str;6] {
+		["I want to ask something else.",
+		 "",
+		 "",
+		 "",
+		 "...",
+		 &self.dialog_goodbye[1]]
+	}
+	
+	pub fn get_post_spell(&self)->[&str;6] {
+		["Hmm... Maybe not...",
+		 "",
+		 "",
+		 "",
+		 "...",
+		 &self.dialog_greeting[1]]
+	}
 }
 
 
@@ -178,58 +256,61 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 }
 
 //A function to poll sages vs conditions. If triggers are met, sage is summoned.
-pub fn sage_poller<'a,'b,'c,'d>(sages: &'a Vec<Sage>,p_loc:&'b Place,spell:&'c Spell,party:&'d Vec<(Lifeform,usize)>)->Option<&'a Sage<'a>> {
+pub fn sage_poller<'a,'b,'c,'d,'e>(sages: &'e Vec<Sage<'a>>,p_loc:&'b Place,spell:&'c Spell,party:&'d Vec<(Lifeform,usize)>)->Option<usize> {
 	//Initiate summoned sage.
-	let mut summoned_sage:Option<&Sage> = None;
+	let mut summoned_sage:Option<usize> = None;
 	//iterate over the sages.
-	for x in sages.iter() {
+	for (i,x) in sages.iter().enumerate() {
+		
+		let mut summon = true;
 		for y in x.trigger.iter() {
 			
 			//NB, not all triggers are relevent for sages.
 			//The main ones are locus and spell cast.
 			match y {
 				Trigger::LocusXY(tr) => {
-					if p_loc.xy==*tr {summoned_sage = Some(x);};
+					if p_loc.xy != *tr {summon = false;};
 				},
 				Trigger::LocusType(tr) => {
-					if p_loc.affinity==*tr {summoned_sage = Some(x);};
+					if p_loc.affinity != *tr {summon = false;};
 				},
 				Trigger::CastSpell(tr) => {
-					if spell.id==*tr {summoned_sage = Some(x);};
+					if spell.id != *tr {summon = false;};
 				},
 				Trigger::HasSpell(tr) => {
 					for z in party[0].0.Spellist.iter() {
-						if z==tr {summoned_sage = Some(x);};
+						if z != tr {summon = false;};
 					};
 				},
 				Trigger::CastSpellType(tr) => {
-					if spell.Type==*tr {summoned_sage = Some(x);};
+					if spell.Type != *tr {summon = false;};
 				},
 				Trigger::HasItem(tr) => {
 					for z in party[0].0.Inventory.iter() {
-						if z==tr {summoned_sage = Some(x);};
+						if z != tr {summon = false;};
 					};
 				},
 				Trigger::LFType(tr) => {
-					if party[0].0.Type==*tr {summoned_sage = Some(x);};
+					if party[0].0.Type != *tr {summon = false;};
 				},
 				Trigger::LFSubType(tr) => {
-					if party[0].0.SubType==*tr {summoned_sage = Some(x);};
+					if party[0].0.SubType != *tr {summon = false;};
 				},
 				Trigger::Exp(tr) => {
-					if party[0].0.ExpUsed>=*tr {summoned_sage = Some(x);};
+					if party[0].0.ExpUsed>=*tr {summon = false;};
 				},
 				Trigger::Locus(tr) => {
-					if p_loc==tr {summoned_sage = Some(x);};
+					if p_loc != tr {summon = false;};
 				},
 				_				   => {},
 			};
-		}
+		};
+		if summon {summoned_sage = Some(i);};
 	}
 	
 	//last check to check if summon is valid.
 	if summoned_sage.is_some() {
-		if summoned_sage.unwrap().exp_min>party[0].0.ExpUsed {
+		if sages[summoned_sage.unwrap()].exp_min>party[0].0.ExpUsed {
 			summoned_sage = None
 		};
 	};
@@ -237,12 +318,29 @@ pub fn sage_poller<'a,'b,'c,'d>(sages: &'a Vec<Sage>,p_loc:&'b Place,spell:&'c S
 	summoned_sage
 }
 
+pub fn sage_dialog(){}
+
+pub fn sage_generator<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Vec<Sage<'a>> {
+	
+	vec![
+		sage_fire(mon_faces,p_names),
+		sage_ice(mon_faces,p_names),
+		sage_lightning(&mon_faces,&p_names),
+		sage_darkness(&mon_faces,&p_names),
+		sage_light(&mon_faces,&p_names),
+		sage_death(&mon_faces,&p_names),
+		sage_life(&mon_faces,&p_names),
+		sage_albion(&mon_faces,&p_names),
+		sage_malachia(&mon_faces,&p_names)
+	]
+}
 
 pub fn sage_fire<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Fire".to_owned(),
 		exp_min: 10.0,
 		face: &mon_faces[22][1],
-		trigger: vec![Trigger::CastSpell(S_EMBER),Trigger::LocusType(DESERT)],
+		trigger: vec![Trigger::CastSpell(S_EMBER),Trigger::LocusType(FIRE)],
 		spells: vec![S_EMBER,S_FIRE,S_FIREBALL,S_INFERNO],
 		dialog_greeting:["You light a fire in the desert night and realise \
 that you are not alone. The form of a nomad sits by the fire, adoring it \
@@ -272,9 +370,10 @@ you are left alone in the desert again.\n".to_owned()],
 
 pub fn sage_lightning<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Lightning".to_owned(),
 		exp_min: 50.0,
 		face: &mon_faces[19][0],
-		trigger: vec![Trigger::CastSpell(S_SPARK),Trigger::LocusType(DESERT)],
+		trigger: vec![Trigger::CastSpell(S_SPARK),Trigger::LocusType(LIGHTNING)],
 		spells: vec![S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING],
 		dialog_greeting:["A single spark in the stony labyrinth...\n...Calls down lightning from a clear sky. \
 The flash momentarily blinds you and you realise that this lightning is something else. \
@@ -304,6 +403,7 @@ Jovian Lightning is the greatest lightning magic. It is the spear of burning gol
 
 pub fn sage_ice<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Ice".to_owned(),
 		exp_min: 50.0,
 		face: &mon_faces[25][0],
 		trigger: vec![Trigger::CastSpell(S_LESSER_CRYSTALLISE),Trigger::LocusType(ICE)],
@@ -336,9 +436,10 @@ We have become inseperate from the sacred laws that have created the world.\n".t
 
 pub fn sage_light<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Light".to_owned(),
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
-		trigger: vec![Trigger::CastSpell(S_LIGHT),Trigger::LocusType(HOLY),Trigger::LocusType(RADIANT)],
+		trigger: vec![Trigger::CastSpell(S_LIGHT),Trigger::LocusType(HOLY)],
 		spells: vec![S_LIGHT,S_SACRED_LIGHT,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM],
 		dialog_greeting:["As you cast your spell, a shining figure approaches you from the mists. \
 Serene, it walks over the water. As it approaches your ship, it says: \
@@ -370,6 +471,7 @@ When projected as a spell, white magic preserves and restores things to the way 
 
 pub fn sage_darkness<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Darkness".to_owned(),
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
 		trigger: vec![Trigger::CastSpell(S_DARKNESS),Trigger::LocusXY([-100,-10])],
@@ -404,6 +506,7 @@ You can see all that is wrong with yourself if you look for long enough into thi
 
 pub fn sage_life<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Life".to_owned(),
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
 		trigger: vec![Trigger::CastSpell(S_LESSER_CURE),Trigger::LocusXY([-100,60])],
@@ -438,6 +541,7 @@ remember whether an old man or a young child stood before you...".to_owned()
 
 pub fn sage_death<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Death".to_owned(),
 		exp_min: 200.0,
 		face: &mon_faces[13][2],
 		trigger: vec![Trigger::CastSpell(S_EXORCISM),Trigger::LocusXY([-40,-30])],
@@ -474,6 +578,7 @@ just as they should have to start of with...".to_owned()
 
 pub fn sage_albion<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Albion".to_owned(),
 		exp_min: 200.0,
 		face: &mon_faces[26][0],
 		trigger: vec![Trigger::CastSpell(S_LIGHT),Trigger::LocusXY([-160,20])],
@@ -509,6 +614,7 @@ It can change the course of history...
 
 pub fn sage_malachia<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Sage<'a> {
 	Sage {
+		name: "Sage of Malachia".to_owned(),
 		exp_min: 1000.0,
 		face: &mon_faces[20][1],
 		trigger: vec![Trigger::CastSpell(S_SUMMON_REAPER),Trigger::LocusXY([60,30])],
@@ -544,17 +650,3 @@ Perhaps next time it will not end like this.\n".to_owned()
 	}
 }
 
-pub fn sage_generator<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String>)->Vec<Sage<'a>> {
-	
-	vec![
-		sage_fire(mon_faces,p_names),
-		sage_ice(mon_faces,p_names),
-		sage_lightning(&mon_faces,&p_names),
-		sage_darkness(&mon_faces,&p_names),
-		sage_light(&mon_faces,&p_names),
-		sage_death(&mon_faces,&p_names),
-		sage_life(&mon_faces,&p_names),
-		sage_albion(&mon_faces,&p_names),
-		sage_malachia(&mon_faces,&p_names)
-	]
-}

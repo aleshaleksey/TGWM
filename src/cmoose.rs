@@ -567,7 +567,7 @@ pub enum GUIBox<'a> {
 	GameExplore,
 	GameCastPre,
 	GameCastCast(Spell),
-	GameCastSage(Sage<'a>),
+	GameCastSage(Sage<'a>,u8),
 	GameInspectParty(bool),
 }
 
@@ -579,6 +579,11 @@ impl <'a>GUIBox<'a> {
 		}
 	}
 	
-	
+	pub fn is_sage_sage(&self)->bool {
+		match self {
+			GUIBox::GameCastSage(_,_) => true,
+			_				    	=> false,
+		}
+	}
 	
 }
