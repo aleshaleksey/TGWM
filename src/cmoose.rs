@@ -599,20 +599,23 @@ impl <'a>GUIBox<'a> {
 									 timer:usize) {
 										 
 		if self.is_travel() & (timer%20==0) {
+			//println!("Polling stories");
 			//Poll stories for whether triggers for start/end dialog are tipped.
 			let maybe_story:Option<(usize,u16)> = story_poller(stories,my_stories,p_loc,party);
 			
 			if maybe_story.is_some() {
+					println!("We have a story.ID={}",maybe_story.unwrap().0);
 				//if trigger is tipped load story into gui box.
 				*self = GUIBox::GameStory(
 					stories[maybe_story.unwrap().0].clone(),
-					maybe_story.unwrap().1,
+					maybe_story.unwrap().1, //This could go wrong on the way into the function.
 					if maybe_story.unwrap().1!=0{true}else{false}
 				);
 				
 				//if my stories does not contain it, add entry to my stories.
-				if !my_stories.poll_ids_only(maybe_story.unwrap().0 as u32) {
-					my_stories.push((stories[maybe_story.unwrap().0].id,maybe_story.unwrap().1,0));
+				if !my_stories.poll_ids_only(stories[maybe_story.unwrap().0].id) {
+					println!("Adding story to my story");
+					my_stories.push((stories[maybe_story.unwrap().0].id,0,0));
 				};
 				
 				//Set scenery if needed.

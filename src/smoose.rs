@@ -232,6 +232,18 @@ impl MyStories {
 		}
 		false
 	}
+	
+	//Inserts exit code from content stage. NB, this can go horrifically wrong.
+	// IE: You can insert a non existent exit code or fail to found a story.
+	pub fn insert_exit_code(&mut self,id:u32,code:u16,conclusion:bool) {
+		for x in self.ids.iter_mut() {
+			if x.0==id {
+				if !conclusion {x.1 = code}else{x.2 = code};
+				return;
+			};
+		}
+	}
+	
 	//polls inly for this story if finished.
 	fn poll_finished(&self,id:u32)-> bool {
 		for x in self.ids.iter() {
@@ -247,12 +259,28 @@ impl MyStories {
 		false
 	}
 	
+	//polls only for this story if finished with a particular end.
+	fn poll_started_with(&self,id:u32,starting_code:u16)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.1==starting_code) { return true;};
+		}
+		false
+	}
+	
 	fn get_stage_by_id(&self,id:u32)-> Option<u16> {
 		for x in self.ids.iter() {
 			if x.0==id {return Some(x.1);};
 		}
 		None
 	}
+	
+	fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
+		for x in self.ids.iter() {
+			if x.0==id {return Some(x);};
+		}
+		None
+	}
+	
 	pub fn poll_ids_only(&self,id:u32)-> bool {
 		for x in self.ids.iter() {
 			if x.0==id { return true;};
@@ -286,6 +314,13 @@ impl <'a>Story<'a> {
 			if self.completion[i].0==node {return &self.completion[i].2};
 		};
 		&self.trigger
+	}
+	
+	pub fn try_get_completion_cont(&self,node:u16)->&Content {
+		for i in 0..self.completion.len() {
+			if self.completion[i].0==node {return &self.completion[i].1};
+		};
+		&self.content
 	}
 }
 
@@ -352,7 +387,7 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 	for (i,x) in stories.iter().enumerate() {
 		
 		let mut get = true;
-		let stage:Option<u16> = my_stories.get_stage_by_id(x.id);
+		let stage:Option<&(u32,u16,u16)> = my_stories.get_by_id(x.id);
 		match stage {
 			None => {
 			//if my stories does not include this story,
@@ -360,6 +395,7 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 				for y in x.trigger.iter() {
 					match y {
 						Trigger::LocusXY(tr) => {
+							println!("xy = {:?}",tr);
 							if p_loc.xy != *tr {get = false;};
 						},
 						Trigger::LocusType(tr) => {
@@ -385,7 +421,7 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 							if party[0].0.SubType != *tr {get = false;};
 						},
 						Trigger::Exp(tr) => {
-							if party[0].0.ExpUsed>=*tr {get = false;};
+							if party[0].0.ExpUsed<*tr {get = false;};
 						},
 						Trigger::StartedStory(x) => {
 							get = my_stories.poll_started(*x);
@@ -401,12 +437,14 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 				};
 				if get {return Some((i,0))}; //here the zero has the opposite meaning to normal AKA not started.
 			},
-			Some(z) => {
-				if z==0 {
+			Some((_,z,z2)) => {
+				if *z2 != 0 {
+					get = false;
+				}else if *z==0 {
 					get = false;
 				}else{
 				//Poll triggers for completion of story. If not returned.
-					for y in x.try_get_completion(z).iter() {
+					for y in x.try_get_completion(*z).iter() {
 						match y {
 							Trigger::LocusXY(tr) => {
 								if p_loc.xy != *tr {get = false;};
@@ -445,7 +483,7 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 							_				   => {},
 						};
 					};
-					if get {return Some((i,z));};
+					if get {return Some((i,*z));};
 				};
 			},
 		};

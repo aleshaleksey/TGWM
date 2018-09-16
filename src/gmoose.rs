@@ -1203,15 +1203,22 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 
 //Function for setting the story. This reuses a lot of sage variables,
 //because why not? THe screens should be mutually exclusive.
+/// pub struct Content<'a> {
+/// 	pub actors: Vec<(&'a conrod::image::Id,String)>,
+/// 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>,
+/// 	pub entry_node: u16,
+/// 	pub exit_nodes: Vec<u16>,
+/// }
 fn set_story_marker(){}
 fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
-				story: &Sage<'a>,
+				story: &Story<'a>,
 				party: &mut Vec<(Lifeform,usize)>,
+				my_stories:&mut MyStories,
+				stage_in:u16,	//stage at entry level
+				conclusion:bool,  //steg at exit level.
 				p_names:&Vec<String>,
 				spl:&Vec<Spell>,
 				mut gui_box: GUIBox<'a>,
-				stage:usize,	//NB: this must not be greater than the length of q_a.
-				conclusion:bool,
 				w:f64,
 				pause:&mut bool,
 				timer:usize,
@@ -1223,28 +1230,96 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	let wh = ui.wh_of(ids.middle_column).unwrap();
 	
 	//Put all the ids in one box.
-	let shadows_indeces = vec![ids.sage_shadow,    //not necessarily a sage per se.
+	//working off the assumption that sage screen and story
+	//screen will never be seen together.
+	let xy_sage = [xy[0]-wh[0]/4.0,xy[1]];
+	let shadows_indices = vec![ids.sage_shadow,    //not necessarily a sage per se.
 							   ids.story_shadowa1,
 							   ids.story_shadowa2,
 							   ids.story_shadow3,
 							   ids.story_shadow4,
 							   ids.story_shadow5];
-							   
 	
-	//set the buttons.
+	let content = if !conclusion {
+		&story.content
+	}else {
+		story.try_get_completion_cont(stage_in)
+	};
+						   
+	//get number of actors:
+	let mut offset:f64 = (content.actors.len()-1) as f64*50.0;
+	for (i,x) in content.actors.iter().enumerate() {
+		if i<5 {
+			conrod::widget::Image::new(*content.actors[i].0).wh(SAGE_SIVE)
+											 .xy([xy_sage[0]-offset,xy_sage[1]])
+											 .set(shadows_indices[i],ui);
+			offset-= 100.0;
+		};
+	};
+	
+	
+	
+	//set the button canvas.
 	let xy_answers = [xy[0]+wh[0]/4.0,xy[1]];
 	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
 								 .xy(xy_answers)
 								 .color(BACKGR_COLOUR)
 								 .set(ids.sage_menu,ui);
 								 
-	//set the dialog.
-	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
+	//create button. Needs ids.sage_menu to be set.
+	let xy_button = ui.xy_of(ids.sage_menu).unwrap();
+	let wh_button = [wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0];
+	let mut offset:f64 = wh_button[0]/6.0;
+	let button = conrod::widget::Button::new().wh(wh_button)
 											  .color(BACKGR_COLOUR)
-											  .label_color(color::YELLOW)
-											  .top_left_of(ids.sage_menu);
+											  .label_color(color::YELLOW);
 	
-	let b1 = button.clone().label("").set(ids.sage_dialog_but_1,ui);
+	//set comm_text
+	*comm_text = content.phrases_by_key.get(&stage_in).unwrap().1.to_owned();
+	
+	//get the codes for the button dialogs.
+	let next_gen:&Vec<u16> = &content.phrases_by_key.get(&stage_in).unwrap().0;
+	
+	//create button id list.
+	let button_indices = vec![ids.sage_dialog_but_1,
+							  ids.sage_dialog_but_2,
+							  ids.sage_dialog_but_3,
+							  ids.sage_dialog_but_4,
+							  ids.sage_dialog_but_5,
+							  ids.sage_dialog_but_6];
+	
+	//set buttons.						  
+	for (i,x) in next_gen.iter().enumerate() {
+		if i<6 {
+			for _click in button.clone().label(&content.phrases_by_key.get(x).unwrap().1)
+									    .xy([xy_button[0],xy_button[1]+offset])
+									    .set(button_indices[i],ui){
+				
+				//On click get the next part of the dialog.							
+				println!("Button {} is pressed",i);
+				let next_x = content.phrases_by_key.get(x).unwrap().0[0];
+				if lhas(&content.exit_nodes,&next_x) {
+					println!("We're getting to an exit node: MyStories = {:?}",my_stories);
+					
+					my_stories.insert_exit_code(story.id,next_x,conclusion);
+					*freeze_timer = timer;
+					*pause = true;
+					println!("We're getting to an exit node: MyStories = {:?}",my_stories);
+				};
+				gui_box = GUIBox::GameStory(story.clone(),next_x,conclusion);
+			};
+			offset-= wh_button[1];
+		};
+	};
+	
+	//This is a hack and probably not very efficient.	
+	if !*pause & lhas(&content.exit_nodes,&stage_in) {
+		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
+		my_stories.insert_exit_code(story.id,stage_in,conclusion);
+		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
+		*pause = true;
+	};
+	
 	gui_box		
 }
 
@@ -2875,8 +2950,18 @@ fn sm_retc(x:&Lifeform,t:usize)->conrod::color::Colour{
 
 
 pub fn correct_comm_text(mut comm_text:&mut String,pause:bool,gui_box:&mut GUIBox){
-
+	
 	if pause & gui_box.is_fight() {
+		if !comm_text.contains("***Press Enter to Continue***") {
+			*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
+		};
+	};
+}
+
+pub fn correct_comm_text_simple(mut comm_text:&mut String,pause:bool){
+
+	//There is no reason for writing this.
+	if pause {
 		if !comm_text.contains("***Press Enter to Continue***") {
 			*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
 		};
@@ -4466,7 +4551,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);	
 			set_comm_text(comm_text,ui,ids);
 		},
-		GUIBox::GameStory(index,b,stage) => {
+		GUIBox::GameStory(story,stage_in,stage_out) => {
 			//not finished.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
@@ -4479,8 +4564,22 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				set_timescape(ui,ids,timer);
 			};
 			
-			*comm_text = "Entered Story plot for a bit".to_owned();
+			gui_box = set_story(ui,ids,
+						 &story,
+						 party,
+						 my_stories,
+						 stage_in,
+						 stage_out,
+						 p_names,
+						 spl,
+						 gui_box,
+						 win_wh[0],
+						 pause,
+						 timer,
+						 freeze_timer,
+						 comm_text);
 			
+			correct_comm_text_simple(comm_text,*pause);
 			set_comm_text(comm_text,ui,ids);
 		},
 		

@@ -325,6 +325,7 @@ pub fn main() {
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
 	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces)]; //Currently placeholder.
+	println!("number of stories: {}",stories.len());
 	let mut my_stories:MyStories = MyStories::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
@@ -335,7 +336,7 @@ pub fn main() {
 	let mut pl:(usize,usize) = (13,5);
 	let mut provisional_loc:(usize,usize) = pl.clone();
 	let mut truly_quit:bool = false;
-	let mut pause = true;
+	let mut pause = false;
 	let mut scenery_index:usize = 0;
 	let mut centre_w:f64 = 0.0;
 	let mut centre_h:f64 = 0.0;
@@ -698,6 +699,9 @@ pub fn main() {
 										}else if x==GOODBYE {
 											gui_box = GUIBox::GameCastPre;
 										};
+									},
+									GUIBox::GameStory(_,_,_) => {
+										gui_box = GUIBox::GameTravel;
 									},
 									_ => {},
 								};

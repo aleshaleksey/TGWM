@@ -59,7 +59,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	entry_map.insert(994,(vec![991,993,700],"Then... At the least... take me to the Black Tower".to_owned()));
 	
 	entry_map.insert(993,(vec![900],"No".to_owned()));
-	entry_map.insert(994,(vec![996,994,800],"Then... At the least... take me to the Void Bridge".to_owned()));
+	entry_map.insert(900,(vec![996,997,800],"Then... At the least... take me to the Void Bridge".to_owned()));
 	
 	entry_map.insert(3,(vec![997,996],"I wish... To rest in darkness... For all eternity..\n \
 ...And the darkest darkness... is.. the Void".to_owned()));	
