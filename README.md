@@ -96,11 +96,12 @@ it is under the GPL 3.0 licence.
 
 Gameplay
 --------
-(To be expanded later) In short currently it "sucks".
+The game play is classical turn based party on party, player vs computer fantasy battler. The main feature is the player does not know the exact numerical value of their stats (nor does the main AI layer). There is one player party, theoretically containing up to 5 creatures (but currently only up to two) and four enemy parties (which do not have a condition of allied victory, but often consider you a high priority target).
+The player travels the world, "explores" (currently about a dozen) dungeons and completes "quests" (currently none really).
 
 Story Related Elements
 ----------------------
-(To be expanded later) In short post-high-fantasy but not implemented.
+As of the 16th of September 2018, the storyline engine has been written, but the story line has not (a simple demo quest triggered when the player has spent 10 Exp points has been written).
 
 Comment
 -------
