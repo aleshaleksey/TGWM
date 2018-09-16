@@ -67,7 +67,7 @@
 ///		cargo build --release --features="winit glium libc"
 ///		cargo run --features="winit glium"
 /// Try try compile for windows:
-///		cargo rustc --bin q-moose --release --features="winit glium" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C link-args="-Wl,--subsystem,windows"
+///		cargo rustc --bin q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C link-args="-Wl,--subsystem,windows"
 /// For clean compile use additional arguments (no terminal window): -C link-args="-Wl,--subsystem,windows"
 
 
@@ -92,10 +92,13 @@ mod cmoose;
 mod xmoose;
 mod bmoose;
 mod shared_moose;
+mod tales_of_the_great_white_moose;
 
 //Imports
 use shared_moose::*;
 use smoose::{MyStories,Story,Sage};
+use smoose::*;
+use tales_of_the_great_white_moose::*;
 #[allow(unused_imports)] use gmoose::{set_comm_text,set_widgets_rework,names_of,map_sq_col_img};
 #[allow(unused_imports)] use omoose::{parse_music_config,isekai_deguchi,isekai_urusai,isekai_index};
 #[allow(unused_imports)] use conrod::UiCell;
@@ -321,7 +324,7 @@ pub fn main() {
 	let world:Vec<[Place;19]> = world();
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
-	let mut stories:Vec<Story> = Vec::new(); //Currently placeholder.
+	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces)]; //Currently placeholder.
 	let mut my_stories:MyStories = MyStories::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
@@ -683,21 +686,28 @@ pub fn main() {
 						..
 					} => {	if pause & (freeze_timer+1<timer) {
 								pause = false;
-								if gui_box.is_fight() {
-									if (encounter[battle_ifast].1!=0) & (encounter[battle_ifast].0.HP_shade>0.0) {
-										comm_text = format!("{} ponders their next move...",encounter[battle_ifast].0.name);
-									};
+								match gui_box.clone() {
+									GUIBox::GameFight(_) => {
+										if (encounter[battle_ifast].1!=0) & (encounter[battle_ifast].0.HP_shade>0.0) {
+											comm_text = format!("{} ponders their next move...",encounter[battle_ifast].0.name);
+										};
+									},
+									GUIBox::GameCastSage(y,x) => {
+										if x==GREETING1 {
+											gui_box = GUIBox::GameCastSage(y,GREETING2);
+										}else if x==GOODBYE {
+											gui_box = GUIBox::GameCastPre;
+										};
+									},
+									_ => {},
 								};
-							}else if idungeon.is_some() & (freeze_timer+2<timer)  {
+							}else if idungeon.is_some() & (freeze_timer+2<timer) {
 								if dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
 									gui_box = GUIBox::GameTravel;
 									dungeon_pointer = 0;
 									println!("Dungeon pointer = {}",dungeon_pointer);
 								};
-							}else if gui_box.is_sage_sage() {
-									gui_box = GUIBox::GameCastPre;
 							};
-							freeze_timer = timer;
 						 },
 					_ => {},
 				},
@@ -714,7 +724,14 @@ pub fn main() {
 		gmoose::correct_comm_text(&mut comm_text,
 								  pause,
 								  &mut gui_box);
-								  
+		gui_box.check_for_story(&stories,&mut my_stories,
+										 &scapes,
+										 &p_loc,
+										 &party,
+										 &mut centre_w,
+										 &mut centre_h,
+										 &mut scenery_index,
+										 timer);
 		//println!("Before set widgets");
 		// Instantiate all widgets in the GUI.
 		// This is getting insane.

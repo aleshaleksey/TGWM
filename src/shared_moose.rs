@@ -298,8 +298,8 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 			println!("There is a plot");
 			let mut rplot:Vec<u8> = Vec::with_capacity(500);
 			fp.read_to_end(&mut rplot);
-			let plot_len = rplot.len()/5; //Assumes vec<(u32,bool)>, hence 5 bytes,
-			let plot_pointer = unsafe {transmute::<*mut u8,*mut (u32,bool)>(rplot.as_mut_ptr())};
+			let plot_len = rplot.len()/8; //Assumes vec<(u32,u16,u16)>, hence 6 bytes,
+			let plot_pointer = unsafe {transmute::<*mut u8,*mut (u32,u16,u16)>(rplot.as_mut_ptr())};
 			forget(rplot);
 			let rplottrans = unsafe {
 				Vec::from_raw_parts(
@@ -489,9 +489,9 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 	let mut splot = File::create(&fs).unwrap();
 	
 	if s.len()>0 {
-		let finlen = s.len()*5;
+		let finlen = s.len()*8;  //8 bytes per entry.
 		let mut sids = s.get_ids();
-		let ids_pointer = unsafe {transmute::<*mut (u32,bool),*mut u8>(sids.as_mut_ptr())};
+		let ids_pointer = unsafe {transmute::<*mut (u32,u16,u16),*mut u8>(sids.as_mut_ptr())};
 		forget(sids);
 		let sids = unsafe {
 			 Vec::from_raw_parts(

@@ -20,27 +20,20 @@
 ///Substates (ie mutm_box states) should be covered under.
 ///(Not sure how it will be controlled.
 ///GUIBox {
-///	Uninitiated,
-/// Main
-/// MainNew,
-/// MainSave,
-/// MainLoad,
-/// MainOptions,
-/// MainQuit,
+/// Uninitiated,
+/// Main(bool),
+/// MainNew((usize,bool)),
+/// MainLoad((usize,bool)),
+/// MainOptions(bool),
+/// MainQuit(bool),
 /// GameTravel,
-/// GameFight,
-/// GameFightAttack,
-/// GameFightDefend,
-/// GameFightCast,
-/// GameFightWait,
-/// GameFightPanic,
-///	GameFightEscape,
+/// GameFight(bool),
 /// GameExplore,
-///	GameCast,
-/// GameInspectParty,
-/// GameInsepctPartySpells,
-/// gameInspectPartyUp,
-/// GameInspectPartySpellsUp,
+/// GameCastPre,
+/// GameCastCast(Spell),
+/// GameCastSage(Sage<'a>,u8),
+/// GameStory(Story<'a>,bool,u8),
+/// GameInspectParty(bool),
 ///}
 ///
 /// NB flow control structures for story elements are kept in smoose
@@ -51,8 +44,8 @@
 extern crate conrod;
 extern crate std;
 
-use lmoose::{Lifeform,Spell};
-use smoose::{Sage};
+use lmoose::{Lifeform,Spell,Place,VOID,TIME};
+use smoose::{Sage,MyStories,Story,story_poller};
 use gmoose;
 
 //A vector-like structure for carrying image ids for landscape features.
@@ -568,6 +561,7 @@ pub enum GUIBox<'a> {
 	GameCastPre,
 	GameCastCast(Spell),
 	GameCastSage(Sage<'a>,u8),
+	GameStory(Story<'a>,u16,bool), //u16 is entry node. GS.2==true means we go to conclusion.
 	GameInspectParty(bool),
 }
 
@@ -579,11 +573,54 @@ impl <'a>GUIBox<'a> {
 		}
 	}
 	
+	pub fn is_travel(&self)->bool {
+		match self {
+			GUIBox::GameTravel	 => true,
+			_				     => false,
+		}
+	}
+	
 	pub fn is_sage_sage(&self)->bool {
 		match self {
 			GUIBox::GameCastSage(_,_) => true,
 			_				    	=> false,
 		}
+	}
+	
+	//A heavy function to poll stories if travelling.
+	pub fn check_for_story(&mut self,stories:&Vec<Story<'a>>,
+									 my_stories:&mut MyStories,
+									 landscapes: &Landscapes,
+									 p_loc:&Place,
+									 party:&Vec<(Lifeform,usize)>,
+									 centre_w:&mut f64,
+									 centre_h:&mut f64,
+									 scenery_index:&mut usize,
+									 timer:usize) {
+										 
+		if self.is_travel() & (timer%20==0) {
+			//Poll stories for whether triggers for start/end dialog are tipped.
+			let maybe_story:Option<(usize,u16)> = story_poller(stories,my_stories,p_loc,party);
+			
+			if maybe_story.is_some() {
+				//if trigger is tipped load story into gui box.
+				*self = GUIBox::GameStory(
+					stories[maybe_story.unwrap().0].clone(),
+					maybe_story.unwrap().1,
+					if maybe_story.unwrap().1!=0{true}else{false}
+				);
+				
+				//if my stories does not contain it, add entry to my stories.
+				if !my_stories.poll_ids_only(maybe_story.unwrap().0 as u32) {
+					my_stories.push((stories[maybe_story.unwrap().0].id,maybe_story.unwrap().1,0));
+				};
+				
+				//Set scenery if needed.
+				if (p_loc.scape != VOID) & (p_loc.scape != TIME) {
+					*scenery_index = gmoose::scenery_setter(&landscapes,p_loc.scape,centre_w,centre_h);
+				};
+			};
+		};
 	}
 	
 }

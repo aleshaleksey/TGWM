@@ -1087,6 +1087,9 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				mut gui_box: GUIBox<'a>,
 				stage:u8,
 				w:f64,
+				pause:&mut bool,
+				timer:usize,
+				freeze_timer:&mut usize,
 				comm_text:&mut String)->GUIBox<'a> {
 	
 	//NB! Middle column must exist!
@@ -1101,14 +1104,15 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 								 .set(ids.sage_menu,ui);
 								 
 	//set the dialog.
-	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER)/6.0])
+	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW)
 											  .top_left_of(ids.sage_menu);
 	
 	//Decidde which part of the sage to use.										  
 	let strings:[&str;6] = match stage {
-		GREETING => {sage.get_first_q()},
+		GREETING1 => {sage.get_first_q1()},
+		GREETING2 => {sage.get_first_q2()},
 		MAGIC	 => {sage.get_post_magic()},
 		SAGES	 => {sage.get_post_sage()},
 		WORLD	 => {sage.get_post_world()},
@@ -1127,7 +1131,7 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		_		 => {sage.get_post_goodbye()},
 	};		
 	
-	let buy_spells = if stage==GREETING {"I want to learn a spell."}else{""};
+	let buy_spells = if (stage==GREETING2) | (stage==GREETING1) {"I want to learn a spell."}else{""};
 	
 	//Initialise buttons.										  
 	let b1 = button.clone().label(strings[0]).set(ids.sage_dialog_but_1,ui);
@@ -1144,7 +1148,11 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 										 .xy(xy_sage)
 										 .set(ids.sage_shadow,ui);
 		
-		if stage != SPELL1 {*comm_text = strings[5].to_owned()};
+		if (stage != SPELL1) & (stage != GREETING1) {
+			*comm_text = strings[5].to_owned()
+		}else if stage==GREETING1 {
+			*comm_text = format!("{}\n***Press Enter to Continue***",strings[5]);
+		};
 	}else{
 		*comm_text = format!("{}\n***Press Enter to Continue***",strings[5]);
 	};
@@ -1152,43 +1160,92 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	//Functionalise buttons.
 	if stage != GOODBYE {
 		for _click in b1 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),MAGIC);
 			}else{
-				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING);
+				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING2);
 			};
 		};
 		for _click in b2 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),SAGES);
 			};
 		};
 		for _click in b3 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),WORLD);
 			};
 		};
 		for _click in b4 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),TERRAIN);
 			};
 		};
 		for _click in b6 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),GOODBYE);
+				*pause = true;
+				*freeze_timer = timer;
 			}else{
-				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING);
+				gui_box = GUIBox::GameCastSage(sage.clone(),GREETING2);
 			};
 		};
 		//The interesting magic button.
 		for _click in b5 {
-			if stage==GREETING {
+			if stage==GREETING2 {
 				gui_box = GUIBox::GameCastSage(sage.clone(),SPELL1);
 			};
 		};
 	};
 	
 	gui_box
+}
+
+//Function for setting the story. This reuses a lot of sage variables,
+//because why not? THe screens should be mutually exclusive.
+fn set_story_marker(){}
+fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
+				story: &Sage<'a>,
+				party: &mut Vec<(Lifeform,usize)>,
+				p_names:&Vec<String>,
+				spl:&Vec<Spell>,
+				mut gui_box: GUIBox<'a>,
+				stage:usize,	//NB: this must not be greater than the length of q_a.
+				conclusion:bool,
+				w:f64,
+				pause:&mut bool,
+				timer:usize,
+				freeze_timer:&mut usize,
+				comm_text:&mut String)->GUIBox<'a> {
+					
+	//NB! Middle column must exist!
+	let xy = ui.xy_of(ids.middle_column).unwrap();
+	let wh = ui.wh_of(ids.middle_column).unwrap();
+	
+	//Put all the ids in one box.
+	let shadows_indeces = vec![ids.sage_shadow,    //not necessarily a sage per se.
+							   ids.story_shadowa1,
+							   ids.story_shadowa2,
+							   ids.story_shadow3,
+							   ids.story_shadow4,
+							   ids.story_shadow5];
+							   
+	
+	//set the buttons.
+	let xy_answers = [xy[0]+wh[0]/4.0,xy[1]];
+	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
+								 .xy(xy_answers)
+								 .color(BACKGR_COLOUR)
+								 .set(ids.sage_menu,ui);
+								 
+	//set the dialog.
+	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
+											  .color(BACKGR_COLOUR)
+											  .label_color(color::YELLOW)
+											  .top_left_of(ids.sage_menu);
+	
+	let b1 = button.clone().label("").set(ids.sage_dialog_but_1,ui);
+	gui_box		
 }
 
 //Put the world map where it's meant to be.
@@ -3561,6 +3618,11 @@ widget_ids! {
 							spells_mtrx,
 							
 		sage_shadow,
+		story_shadowa1,
+		story_shadowa2,
+		story_shadow3,
+		story_shadow4,
+		story_shadow5,
 		sage_menu,
 			sage_dialog_but_1,
 			sage_dialog_but_2,
@@ -4326,8 +4388,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				match sage {
 					Some(s) => {
 						*comm_text = format!("We have a sage! The {}!",sages[s].name);
-						gui_box = GUIBox::GameCastSage(sages[s].clone(),GREETING);
+						gui_box = GUIBox::GameCastSage(sages[s].clone(),GREETING1);
 						*freeze_timer = timer;
+						*pause = true;
+						println!("got to greeting1");
 					},
 					None => {
 						*comm_text = format!("No sage!");
@@ -4355,14 +4419,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				set_timescape(ui,ids,timer);
 			};
 			
-			gui_box = set_sage(ui,ids,&x,party,p_names,spl,gui_box,y,win_wh[0],comm_text);
+			gui_box = set_sage(ui,ids,&x,party,p_names,spl,gui_box,y,win_wh[0],pause,timer,freeze_timer,comm_text);
 			
-			if y==GOODBYE {
-				*pause = true;
-				*freeze_timer = timer;
-			};
 			set_comm_text(comm_text,ui,ids);
-			//if timer-100>*freeze_timer {gui_box = GUIBox::GameCastPre;};
 		},
 		
 		GUIBox::GameInspectParty(bool) => {
@@ -4405,6 +4464,23 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box = GUIBox::Main(true);
 			};
 			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);	
+			set_comm_text(comm_text,ui,ids);
+		},
+		GUIBox::GameStory(index,b,stage) => {
+			//not finished.
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			if (*p_scape != VOID) & (*p_scape != TIME) {
+				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
+			}else if *p_scape==TIME {
+				set_timescape(ui,ids,timer);
+			};
+			
+			*comm_text = "Entered Story plot for a bit".to_owned();
+			
 			set_comm_text(comm_text,ui,ids);
 		},
 		
@@ -4521,6 +4597,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 		},
 		
 		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
+		_					=> {},
 	};
 	(gui_box,gui_box_previous,sages)
 }

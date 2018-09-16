@@ -27,6 +27,7 @@
 ///game plot-line progress in a simple manner- thus a story can be not-started,
 ///started or finished. There can be no degree of completion. Actual plotlines
 ///with several stories can be build only by chaining Stories together.
+///NB: Stories themselves are to be stored elsewhere. Or this module will be too big.
 ///
 ///About MyStories.
 ///
@@ -52,6 +53,7 @@
 //mod lmoose;
 
 extern crate conrod;
+use std::collections::BTreeMap;
 
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -75,7 +77,8 @@ extern crate conrod;
 
 
 //Sage dialog stage constants.
-pub const GREETING:u8 = 90;
+pub const GREETING1:u8 = 93;
+pub const GREETING2:u8 = 90;
 pub const MAGIC:u8 = 87;
 pub const SAGES:u8 = 84;
 pub const WORLD:u8 = 81;
@@ -104,7 +107,16 @@ pub struct Sage<'a> {
 }
 
 impl <'a>Sage<'a> {
-	pub fn get_first_q(&self)->[&str;6] {
+	pub fn get_first_q1(&self)->[&str;6] {
+		[&self.dialog_magic[0],
+		 &self.dialog_sages[0],
+		 &self.dialog_world[0],
+		 &self.dialog_terrain[0],
+		 &self.dialog_goodbye[0],
+		 &self.dialog_greeting[0]]
+	 }
+	
+	pub fn get_first_q2(&self)->[&str;6] {
 		[&self.dialog_magic[0],
 		 &self.dialog_sages[0],
 		 &self.dialog_world[0],
@@ -171,25 +183,81 @@ impl <'a>Sage<'a> {
 
 //A structure that stores a vector of story ids that have been
 //started by the party and their status (finished or not).
+//x.0 is the unique story id.
+//x.1 is the exit node for the entry content.
+//x.2 is the exit node for the completion sequence.
 #[derive(Debug)]
 pub struct MyStories {
-	ids:Vec<(u32,bool)>,
+	ids:Vec<(u32,u16,u16)>, 
 }
 
 impl MyStories {
 	pub fn new()-> MyStories {
 		MyStories {ids: Vec::with_capacity(20)}
 	}
-	pub fn make_ids(&mut self,ids:Vec<(u32,bool)>) {
+	pub fn make_ids(&mut self,ids:Vec<(u32,u16,u16)>) {
 		self.ids = ids;
 	}
 	
-	pub fn get_ids(&self) -> Vec<(u32,bool)> {
+	pub fn get_ids(&self) -> Vec<(u32,u16,u16)> {
 		self.ids.clone()
 	}
 	 
+	pub fn push(&mut self,entry:(u32,u16,u16)) {
+		self.ids.push(entry);
+	} 
+	
 	pub fn len(&self)->usize {
 		self.ids.len()
+	}
+	//poll by completed and incompleted.
+	//false means incomplete, true means complete
+	fn poll_ids(&self,id:u32,done:bool)-> bool {
+		if done {
+			for x in self.ids.iter() {
+				if (x.0==id) & (x.1==0) { return true;};
+			}
+		}else{
+			for x in self.ids.iter() {
+				if (x.0==id) & (x.1!=0) { return true;};
+			}
+		}
+		false
+	}
+	
+	//Polls only for this story if started.
+	fn poll_started(&self,id:u32)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.1!=0) { return true;};
+		}
+		false
+	}
+	//polls inly for this story if finished.
+	fn poll_finished(&self,id:u32)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.2!=0) { return true;};
+		}
+		false
+	}
+	//polls only for this story if finished with a particular end.
+	fn poll_finished_with(&self,id:u32,finish_code:u16)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.2==finish_code) { return true;};
+		}
+		false
+	}
+	
+	fn get_stage_by_id(&self,id:u32)-> Option<u16> {
+		for x in self.ids.iter() {
+			if x.0==id {return Some(x.1);};
+		}
+		None
+	}
+	pub fn poll_ids_only(&self,id:u32)-> bool {
+		for x in self.ids.iter() {
+			if x.0==id { return true;};
+		}
+		false
 	}
 }
 
@@ -197,19 +265,39 @@ impl MyStories {
 // This includes the triggers for its start and end,
 // conclusion sentence, id and "content".
 // NB id is u32 to allow easy shifting between platforms (broken elsewhere).
-#[derive(Debug)]
-pub struct Story {
-	pub trigger: Vec<Trigger>,
-	pub completion: Vec<Trigger>,
-	pub content: Content,
-	pub conclusion: Content,
+// So the flow is, when a trigger is initially triggered,
+// you enter at node 0 (ENTRY node). Go through nodes in content until you
+// exit at an exit node. The exit node is saved in my_stories. When the
+// completion trigger for this exit node is tripped, you enter the completion
+// dialog. At the moment my_stories does not record exit triggers of conclusion. 
+#[derive(Debug,Clone)]
+pub struct Story<'a> {
+	pub trigger: Vec<Trigger>,	
+	//if your story has more than 255 branches, you have a problem.
+	//Likewise it MUST have a completion, else we have a problem.
+	pub completion: Vec<(u16,Content<'a>,Vec<Trigger>)>,
+	pub content: Content<'a>,
 	pub id:u32,
 }
 
+impl <'a>Story<'a> {
+	pub fn try_get_completion(&self,node:u16)->&Vec<Trigger> {
+		for i in 0..self.completion.len() {
+			if self.completion[i].0==node {return &self.completion[i].2};
+		};
+		&self.trigger
+	}
+}
+
 //I have not decided what content should be stored as.
-#[derive(Debug)]
-pub struct Content {
-	
+//Some care must be taken to avoid out of index content.
+//Give it thought.
+#[derive(Debug,Clone)]
+pub struct Content<'a> {
+	pub actors: Vec<(&'a conrod::image::Id,String)>,
+	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
+	pub entry_node: u16,
+	pub exit_nodes: Vec<u16>,
 }
 
 //Trigger for the start of  story dialog can be any of the below,
@@ -226,8 +314,9 @@ pub enum Trigger {
 	Exp(f32),
 	StartedStory(u32),
 	FinishedStory(u32),
-	FinishedDungeon(usize),
-	Other(usize),
+	FinishedStoryWith(u32,u16),
+	FinishedDungeon(usize), //This is a paceholder.
+	Other(usize), //This is a placeholder.
 	Locus(Place),
 	LocusType(u8),
 	LocusXY([i32;2]),
@@ -253,6 +342,115 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 		}
 	};
 	shopping
+}
+
+// A function to poll stories vs start and finish triggers.
+// If conditions are met a story index is given into the story box.
+pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
+	//Initiate story.
+	//iterate over stories.
+	for (i,x) in stories.iter().enumerate() {
+		
+		let mut get = true;
+		let stage:Option<u16> = my_stories.get_stage_by_id(x.id);
+		match stage {
+			None => {
+			//if my stories does not include this story,
+			//then poll its triggers.
+				for y in x.trigger.iter() {
+					match y {
+						Trigger::LocusXY(tr) => {
+							if p_loc.xy != *tr {get = false;};
+						},
+						Trigger::LocusType(tr) => {
+							if p_loc.affinity != *tr {get = false;};
+						},
+						Trigger::Locus(tr) => {
+							if p_loc != tr {get = false;};
+						},
+						Trigger::HasSpell(tr) => {
+							for z in party[0].0.Spellist.iter() {
+								if z != tr {get = false;};
+							};
+						},
+						Trigger::HasItem(tr) => {
+							for z in party[0].0.Inventory.iter() {
+								if z != tr {get = false;};
+							};
+						},
+						Trigger::LFType(tr) => {
+							if party[0].0.Type != *tr {get = false;};
+						},
+						Trigger::LFSubType(tr) => {
+							if party[0].0.SubType != *tr {get = false;};
+						},
+						Trigger::Exp(tr) => {
+							if party[0].0.ExpUsed>=*tr {get = false;};
+						},
+						Trigger::StartedStory(x) => {
+							get = my_stories.poll_started(*x);
+						},
+						Trigger::FinishedStory(x) => {
+							get = my_stories.poll_finished(*x);
+						},
+						Trigger::FinishedStoryWith(x,y) => {
+							get = my_stories.poll_finished_with(*x,*y);
+						},
+						_				   => {},
+					};
+				};
+				if get {return Some((i,0))}; //here the zero has the opposite meaning to normal AKA not started.
+			},
+			Some(z) => {
+				if z==0 {
+					get = false;
+				}else{
+				//Poll triggers for completion of story. If not returned.
+					for y in x.try_get_completion(z).iter() {
+						match y {
+							Trigger::LocusXY(tr) => {
+								if p_loc.xy != *tr {get = false;};
+							},
+							Trigger::LocusType(tr) => {
+								if p_loc.affinity != *tr {get = false;};
+							},
+							Trigger::Locus(tr) => {
+								if p_loc != tr {get = false;};
+							},
+							Trigger::HasSpell(tr) => {
+								for z in party[0].0.Spellist.iter() {
+									if z != tr {get = false;};
+								};
+							},
+							Trigger::HasItem(tr) => {
+								for z in party[0].0.Inventory.iter() {
+									if z != tr {get = false;};
+								};
+							},
+							Trigger::LFType(tr) => {
+								if party[0].0.Type != *tr {get = false;};
+							},
+							Trigger::LFSubType(tr) => {
+								if party[0].0.SubType != *tr {get = false;};
+							},
+							Trigger::Exp(tr) => {
+								if party[0].0.ExpUsed>=*tr {get = false;};
+							},
+							Trigger::StartedStory(x) => {
+								get = my_stories.poll_ids(*x,false);
+							},
+							Trigger::FinishedStory(x) => {
+								get = my_stories.poll_ids(*x,true);
+							},
+							_				   => {},
+						};
+					};
+					if get {return Some((i,z));};
+				};
+			},
+		};
+	};
+	None
 }
 
 //A function to poll sages vs conditions. If triggers are met, sage is summoned.
