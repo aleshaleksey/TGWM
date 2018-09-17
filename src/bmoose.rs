@@ -1089,22 +1089,30 @@ fn attack(encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 		*comm_text = format!("\n{}...But {} from group {} stands in their path!",comm_text, &ns[p_t],encounter[p_t].1);
 	};		
 		
-	
 	//calculate if attack hits & whatnot.	  
-	let aa=if encounter[ifast].0.Attack_shade <=2.0 {2} else {encounter[ifast].0.Attack_shade as isize};
+	let aa=if encounter[ifast].0.Attack_shade <=2.0 {2} else {encounter[ifast].0.Attack_shade as i32};
 	let ab=if encounter[ifast].0.Attack_shade <=0.0 {0.0} else {encounter[ifast].0.Attack_shade};
-	let dd=if encounter[p_t].0.Defence_shade <=2.0 {2} else {encounter[p_t].0.Defence_shade as isize};
-	let a=rand::thread_rng().gen_range(-2,aa)+rand::thread_rng().gen_range(-2,aa)+rand::thread_rng().gen_range(-2,aa);
-	let b=rand::thread_rng().gen_range(-2,dd)+rand::thread_rng().gen_range(-2,dd);
+	let dd=if encounter[p_t].0.Defence_shade <=2.0 {2} else {encounter[p_t].0.Defence_shade as i32};
+	let a=rand::thread_rng().gen_range(-2,aa)
+		 +rand::thread_rng().gen_range(-2,encounter[ifast].0.Speed_shade as i32)
+		 +rand::thread_rng().gen_range(-2,aa)
+		 +rand::thread_rng().gen_range(-2,aa);
+	let b=rand::thread_rng().gen_range(-2,dd)
+		 +rand::thread_rng().gen_range(-2,dd)
+		 +rand::thread_rng().gen_range(-2,encounter[p_t].0.Speed_shade as i32);
 	let mut HP_loss:f32 = 0.0;
+	//if attack is a lower power than defence (hitting yourself always works)
 	if (a<b) & (p_t != ifast) {
 		*comm_text = format!("{}\n...and misses.",comm_text);
 	}else{
 		*comm_text = format!("{}\n...and the attack finds its mark.",comm_text);
-		let att_pow:f32 = 1.5*ab*(1.0+encounter[ifast].0.Exp/1000.0);
-				HP_loss = (rand::thread_rng().gen_range(-10,11)+rand::thread_rng().gen_range(-8,9)) as f32;
+		//damage is attack, multiplied by A*hp+B*bm+C*xp
+		//minus random factor (dep on defence and attack),
+		//minus defence/2 - wm/4.
+		let att_pow:f32 = ab*(encounter[ifast].0.HP/400.0+encounter[ifast].0.BM_shade/200.0+encounter[ifast].0.Exp/1000.0);
+				HP_loss = (rand::thread_rng().gen_range(-2,aa/4)+rand::thread_rng().gen_range(-dd/4,2)) as f32;
 				HP_loss+= att_pow-encounter[p_t].0.Defence_shade/2.0;
-				if p_t != ifast {HP_loss-= encounter[p_t].0.WM_shade/2.0;};
+				if p_t != ifast {HP_loss-= encounter[p_t].0.WM_shade/4.0;};
 				HP_loss = if HP_loss<0.0 {
 					println!("The strike is ineffective!");
 					0.0
@@ -1139,16 +1147,22 @@ fn attack_r(encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 	};		  
 	
 	//calculate if attack hits & whatnot.
-	let aa:isize = if encounter[ifast].0.Attack_shade <=2.0 {2} else {encounter[ifast].0.Attack_shade as isize};
-	let ab:f32 = if encounter[ifast].0.Attack_shade <=0.0 {0.0} else {encounter[ifast].0.Attack_shade};
-	let dd:isize = if encounter[p_t].0.Defence_shade <=2.0 {2} else {encounter[p_t].0.Defence_shade as isize};
-	let a:isize = rand::thread_rng().gen_range(-2,aa)+rand::thread_rng().gen_range(-2,aa)+rand::thread_rng().gen_range(-2,aa);
-	let b:isize = rand::thread_rng().gen_range(-2,dd)+rand::thread_rng().gen_range(-2,dd);
+	let aa=if encounter[ifast].0.Attack_shade <=2.0 {2} else {encounter[ifast].0.Attack_shade as i32};
+	let ab=if encounter[ifast].0.Attack_shade <=0.0 {0.0} else {encounter[ifast].0.Attack_shade};
+	let dd=if encounter[p_t].0.Defence_shade <=2.0 {2} else {encounter[p_t].0.Defence_shade as i32};
+	let a=rand::thread_rng().gen_range(-2,aa)
+		 +rand::thread_rng().gen_range(-2,encounter[ifast].0.Speed_shade as i32)
+		 +rand::thread_rng().gen_range(-2,aa)
+		 +rand::thread_rng().gen_range(-2,aa);
+	let b=rand::thread_rng().gen_range(-2,dd)
+		 +rand::thread_rng().gen_range(-2,dd)
+		 +rand::thread_rng().gen_range(-2,encounter[p_t].0.Speed_shade as i32);
 	let mut HP_loss:f32 = 0.0;
-	if a>=b {
-		let att_pow:f32 = 1.5*ab*(1.0+encounter[ifast].0.Exp/1000.0);
-				HP_loss = (rand::thread_rng().gen_range(-10,11)+rand::thread_rng().gen_range(-8,9)) as f32;
-				HP_loss+= att_pow-encounter[p_t].0.Defence_shade/2.0-encounter[p_t].0.WM_shade/2.0;
+	if (a>=b) | (p_t == ifast) {
+		let att_pow:f32 = ab*(encounter[ifast].0.HP/400.0+encounter[ifast].0.BM_shade/200.0+encounter[ifast].0.Exp/1000.0);
+				HP_loss = (rand::thread_rng().gen_range(-2,aa/4)+rand::thread_rng().gen_range(-dd/4,2)) as f32;
+				HP_loss+= att_pow-encounter[p_t].0.Defence_shade/2.0;
+				if p_t != ifast {HP_loss-= encounter[p_t].0.WM_shade/4.0;};
 				HP_loss = if HP_loss<0.0 {0.0}else{HP_loss};
 	};
 	(HP_loss,p_t)	
@@ -1223,25 +1237,26 @@ fn magic(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,ns:
 		return (shades,0)
 	}else{};
 	
-	let caff=if (xx[ifast].0.SubType==spell.Type)
-			 || (xx[ifast].0.Affinity==spell.Type){1.8
-			 }else{1.3};
+	let mut caff = if xx[ifast].0.SubType==spell.Type {1.5}else{1.1};
+	if xx[ifast].0.Affinity==spell.Type {caff*= 1.5}else{caff*= 1.1};
 	
-	let CM= if spell.Light==true {
+	let mut CM = if spell.Light==true {
 		(xx[ifast].0.WM_shade+spell.Power-10.0)*caff
 	}else{
 		(xx[ifast].0.BM_shade+spell.Power-10.0)*caff
 	};
-	let BM= xx[ifast].0.BM_shade as i64;
-	let BM=if BM<1 {1}else{BM};
+	if CM<0.0 {CM==0.0;};
+	CM+= rand::thread_rng().gen_range(-1,CM as i32/10) as f32;
 	
-	
+	let mut BM = xx[ifast].0.BM_shade as i32;
+	BM = if BM<1 {1} else {BM};
+		
 	if spell.Death==true{
 		*comm_text = "This forbidden magic summons a reaper...".to_owned();
 	}else{};
 	
 	for i in 0..tll{
-		let WMi=xx[i].0.WM as i64;
+		let WMi=xx[i].0.WM as i32;
 		let WMi=if WMi<1 {1} else {WMi};
 		let mut extra_dam:f32=0.0;
 		if spell.Health>0.0{
@@ -1433,23 +1448,25 @@ fn magic_rand_battle(tl:Vec<(bool,bool)>,xx:&Vec<(Lifeform,usize,[Option<[usize;
 		return (shades,0)
 	}else{};
 	
-	let caff=if (xx[ifast].0.SubType==spell.Type)
-			 || (xx[ifast].0.Affinity==spell.Type){1.8
-			 }else{1.3};
+	let mut caff = if xx[ifast].0.SubType==spell.Type {1.5}else{1.1};
+	if xx[ifast].0.Affinity==spell.Type {caff*= 1.5}else{caff*= 1.1};
 	
-	let CM= if spell.Light==true {
+	let mut CM = if spell.Light==true {
 		(xx[ifast].0.WM_shade+spell.Power-10.0)*caff
 	}else{
 		(xx[ifast].0.BM_shade+spell.Power-10.0)*caff
 	};
-	let BM= xx[ifast].0.BM_shade as i64;
-	let BM=if BM<1 {1} else {BM};
+	if CM<0.0 {CM==0.0;};
+	CM+= rand::thread_rng().gen_range(-1,CM as i32/10) as f32;
+	
+	let mut BM = xx[ifast].0.BM_shade as i32;
+	BM = if BM<1 {1} else {BM};
 	
 	if spell.Death==true{
 	}else{};
 	
 	for i in 0..tll{
-		let WMi=xx[i].0.WM as i64;
+		let WMi=xx[i].0.WM as i32;
 		let WMi=if WMi<1 {1} else {WMi};
 		let mut extra_dam:f32=0.0;
 		if spell.Health>0.0{
@@ -1917,7 +1934,7 @@ fn dumb_choice (idm:usize,
 					}else{
 						pots[ifast].0.BM_shade*caff
 					};
-			let mut BM = pots[ifast].0.BM_shade as i64;
+			let mut BM = pots[ifast].0.BM_shade as i32;
 			BM = if BM<1 {1} else {BM};
 		
 			let mut extra_dam:f32 = CM-pots[ifast].0.WM*0.8;
@@ -1967,10 +1984,11 @@ fn rand_choice(idm:usize ,caster:&Lifeform,c_name:&String, pots: &Vec<(Lifeform,
 	choice
 }
 
+//Determine spell power for black magic
 fn spow(power:f32, CM:f32, t:&Lifeform,spell:&Spell)->f32{ 
 	
-	let taff = if (t.SubType==spell.Type)
-			   || (t.Affinity==spell.Type){1.5}else{1.0};
+	let mut taff = if t.SubType==spell.Type {1.5}else{0.8};
+	if t.Affinity==spell.Type {taff*= 1.5}else{taff*= 0.8};
 			 
 	let mut pd = CM-t.WM_shade*taff;
 	pd = if pd<0.0 {0.0}else{pd};
@@ -1979,14 +1997,15 @@ fn spow(power:f32, CM:f32, t:&Lifeform,spell:&Spell)->f32{
 	damage
 }
 
+//Determine spell power for white magic.
 fn spowl(power:f32, CM:f32, t:&Lifeform,spell:&Spell)->f32{ 
 	
-	let taff = if (t.SubType==spell.Type)
-			   || (t.Affinity==spell.Type) {1.5}else{1.0};
+	let mut taff = if t.SubType==spell.Type {1.5}else{0.8};
+	if t.Affinity==spell.Type {taff*= 1.5}else{taff*= 0.8};
 			 
 	let pd = CM*taff;
 	let pd = if pd<0.0 {0.0}else{pd};
-	let heal = (power+10.0)*(power+10.0)/800.0*pd;
+	let heal = (power+10.0)/80.0*pd;
 	
 	heal
 }

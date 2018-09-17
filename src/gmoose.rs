@@ -3909,7 +3909,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				
 				for _click in gm_button{
 					println!("Returning to game. Main menu be gone!.");
-					gui_box = GUIBox::GameExplore;
+					gui_box = GUIBox::GameTravel;
 					wo.song_to_swap = None;
 				};
 				for _click in sg_button{
@@ -3957,6 +3957,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 		
 		GUIBox::MainNew((x,init)) => {
 			//not finished.
+			*mutm_box_vis = true;
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
