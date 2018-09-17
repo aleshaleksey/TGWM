@@ -688,12 +688,13 @@ fn rms_builder_cause_effect(my_ce:&mut Vec<(&[u8],f32)>,
 							ce_mean_hash:&HashMap<&[u8],[f32;23]>,
 							ideal_effect:&[Option<f32>;22]) {
 	
-	for &mut(mut x,mut y) in my_ce.iter_mut() {
-		match ce_mean_hash.get(x) {
+	for y in my_ce.iter_mut() {
+		match ce_mean_hash.get(&y.0) {
 			Some(effects) => {
-				y = rms23_f32_option(ideal_effect,effects);
+				y.1 = rms23_f32_option(ideal_effect,effects);
+				println!("y={}",y.1);
 			},
-			_			  => {continue;},
+			_			  => {},
 		};
 	}
 }
@@ -862,7 +863,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 									  //all_paths_to_rome,
 									  total_victories);
 		
-		if total_victories<50000 { //If there are no victories in normal parameters, make a set of less stringent tables.
+		if total_victories<10*trigs.len() { //If there are no victories in normal parameters, make a set of less stringent tables.
 			
 			if !SWITCH_1 {
 				println!("Survival strategy failed. Herp (all_paths = {})",total_victories);
