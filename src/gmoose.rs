@@ -1212,13 +1212,17 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 fn set_story_marker(){}
 fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				story: &Story<'a>,
+				bestiary: &Vec<Lifeform>,
+				encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+				enemies: &mut Vec<(Lifeform,usize)>,
 				party: &mut Vec<(Lifeform,usize)>,
 				my_stories:&mut MyStories,
 				stage_in:u16,	//stage at entry level
-				conclusion:bool,  //steg at exit level.
+				conclusion:u16,  //steg at exit level.
 				p_names:&Vec<String>,
 				spl:&Vec<Spell>,
 				mut gui_box: GUIBox<'a>,
+				gui_box_previous: &mut GUIBox<'a>,
 				w:f64,
 				pause:&mut bool,
 				timer:usize,
@@ -1240,10 +1244,16 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 							   ids.story_shadow4,
 							   ids.story_shadow5];
 	
-	let content = if !conclusion {
+	//if the exit code for the first part is 0 (no exit recorded)
+	//use content, else use the appropriate conclusion
+	//as determined by the conclusion variable.
+	let conclude:bool;
+	let content = if 0==conclusion {
+		conclude = false;
 		&story.content
 	}else {
-		story.try_get_completion_cont(stage_in)
+		conclude = true;
+		story.try_get_completion_cont(conclusion)
 	};
 						   
 	//get number of actors:
@@ -1298,10 +1308,11 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				//On click get the next part of the dialog.							
 				println!("Button {} is pressed",i);
 				let next_x = content.phrases_by_key.get(x).unwrap().0[0];
+				println!("Button {} is pressed, ext_x = {}",i,next_x);
 				if lhas(&content.exit_nodes,&next_x) {
 					println!("We're getting to an exit node: MyStories = {:?}",my_stories);
 					
-					my_stories.insert_exit_code(story.id,next_x,conclusion);
+					my_stories.insert_exit_code(story.id,next_x,conclude);
 					*freeze_timer = timer;
 					*pause = true;
 					println!("We're getting to an exit node: MyStories = {:?}",my_stories);
@@ -1315,9 +1326,19 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	//This is a hack and probably not very efficient.	
 	if !*pause & lhas(&content.exit_nodes,&stage_in) {
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
-		my_stories.insert_exit_code(story.id,stage_in,conclusion);
+		my_stories.insert_exit_code(story.id,stage_in,conclude);
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
 		*pause = true;
+	};
+	
+	if (stage_in==666) & lhas(&content.exit_nodes,&stage_in) {
+		println!("We're getting to an exit node666: MyStories = {:?}",my_stories);
+		*gui_box_previous = GUIBox::GameTravel;
+		gui_box = GUIBox::GameFight(true);
+		*pause = true;
+		encounter_starter_story(party,enemies,encounter,content,bestiary);
+		my_stories.insert_exit_code(story.id,stage_in,conclude);
+		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
 	};
 	
 	gui_box		
@@ -1986,6 +2007,7 @@ fn set_afterstory(ref mut ui: &mut conrod::UiCell,
 		.set(ids.dungeon_afterstory, ui);
 }
 
+fn encounter_starter_marker(){}
 //standard encounter generator.
 fn encounter_starter(party: &mut Vec<(Lifeform,usize)>,
 					 mut enemies: &mut Vec<(Lifeform,usize)>,
@@ -2005,6 +2027,18 @@ fn encounter_starter_dun(party: &mut Vec<(Lifeform,usize)>,
 					 p_loc: &Place,
 					 mons: &Vec<Lifeform>) {
 	*enemies = engenB(&engenA_dun(p_loc),&p_loc,mons);
+	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
+}
+
+//standard encounter generator.
+fn encounter_starter_story(party: &mut Vec<(Lifeform,usize)>,
+					 mut enemies: &mut Vec<(Lifeform,usize)>,
+					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+					 content: &Content,
+					 mons: &Vec<Lifeform>) {
+	*enemies = engen_story(content,mons);
 	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
@@ -3158,6 +3192,17 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
     enemies
 }
 
+//generates the enemy vector for a scripted story encounter.
+fn engen_story_marker(){}
+pub fn engen_story(content:&Content,bestiary:&Vec<Lifeform>) -> Vec<(Lifeform,usize)> {
+	let mut enemies:Vec<(Lifeform,usize)> = Vec::with_capacity(23);
+	
+	for x in content.actors.iter(){
+		enemies.push((bestiary[vwhich_ln_i(&bestiary,x.1).unwrap_or(0)].clone(),x.2));
+	};
+
+	enemies
+}
 
 //Artefact of the terminal Moosequest.
 fn yeno_to_bool(x: &str)-> bool {
@@ -4566,6 +4611,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			gui_box = set_story(ui,ids,
 						 &story,
+						 mons,
+						 encounter,
+						 enemies,
 						 party,
 						 my_stories,
 						 stage_in,
@@ -4573,6 +4621,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						 p_names,
 						 spl,
 						 gui_box,
+						 &mut gui_box_previous,
 						 win_wh[0],
 						 pause,
 						 timer,

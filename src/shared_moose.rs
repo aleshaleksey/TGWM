@@ -93,6 +93,15 @@ pub fn vvwhich_ln(a:&Vec<Lifeform>, b:&str)->Vec<usize>{
 	ivec
 }
 
+//special vvwhichfor lifeform ids
+pub fn vwhich_ln_i(a:&Vec<Lifeform>, b:usize)->Option<usize>{
+
+	for i in 0..a.len(){
+		if a[i].id==b {return Some(i);};
+	}
+	None
+}
+
 pub fn uniq<T:Copy + PartialOrd>(mvec:&Vec<T>)->Vec<T>{
 	let mut uniq:Vec<T>=Vec::new();
 	for x in mvec.iter(){

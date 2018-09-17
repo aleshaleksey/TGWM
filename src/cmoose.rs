@@ -561,7 +561,9 @@ pub enum GUIBox<'a> {
 	GameCastPre,
 	GameCastCast(Spell),
 	GameCastSage(Sage<'a>,u8),
-	GameStory(Story<'a>,u16,bool), //u16 is entry node. GS.2==true means we go to conclusion.
+	 //u16 first is entry node.u16 2nd is exit node of first part.
+	 //GS.1 can change, GS.2 should stay constant.
+	GameStory(Story<'a>,u16,u16),
 	GameInspectParty(bool),
 }
 
@@ -604,12 +606,13 @@ impl <'a>GUIBox<'a> {
 			let maybe_story:Option<(usize,u16)> = story_poller(stories,my_stories,p_loc,party);
 			
 			if maybe_story.is_some() {
-					println!("We have a story.ID={}",maybe_story.unwrap().0);
+					println!("We have a story");
+					println!("We have a story.ID={}",stories[maybe_story.unwrap().0].id);
 				//if trigger is tipped load story into gui box.
 				*self = GUIBox::GameStory(
 					stories[maybe_story.unwrap().0].clone(),
 					maybe_story.unwrap().1, //This could go wrong on the way into the function.
-					if maybe_story.unwrap().1!=0{true}else{false}
+					maybe_story.unwrap().1 //This should stay constant.
 				);
 				
 				//if my stories does not contain it, add entry to my stories.

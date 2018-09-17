@@ -24,23 +24,11 @@
 ///"game plan" or "design documents" involved, the spec. kept evolving
 ///there are predictably quite a few TODOs (no particular order).
 ///
-///TODO 1: Refactor flow control variables into a couple structures.
-/// I-general GUI and Plot (see below) flow controller.
-/// II-music flow controller
-/// III-Battle flow controller (defacto already done, but ugly)
-/// (On another note, I may leave this as this is)
+///TODO 1: Finish the story engine and write a story.
 ///
-///TODO 2: Refactor main GUI function in order to clean up.
+///TODO 2: Return to the AI engine and continue with the etude.
 ///
-///TODO 3: Implement story engine and "sages"(NPCs). Story driven event
-///engine will also be used for sages.
-///
-///TODO 4: Implement [additional] "visual effects" for in-battle events.
-///(TODO 4 is done).
-///
-///TODO 5: Return to the AI engine and continue with the etude.
-///
-///TODO 6: Make the externs and use sections pretty and stop sweeping
+///TODO 3: Make the externs and use sections pretty and stop sweeping
 ///warnings under the rug.
 ///
 ///Tales of the Great White Moose code is split into several packages, lmoose,imoose,

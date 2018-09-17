@@ -215,7 +215,7 @@ impl MyStories {
 	fn poll_ids(&self,id:u32,done:bool)-> bool {
 		if done {
 			for x in self.ids.iter() {
-				if (x.0==id) & (x.1==0) { return true;};
+				if (x.0==id) & (x.2==0) { return true;};
 			}
 		}else{
 			for x in self.ids.iter() {
@@ -329,7 +329,8 @@ impl <'a>Story<'a> {
 //Give it thought.
 #[derive(Debug,Clone)]
 pub struct Content<'a> {
-	pub actors: Vec<(&'a conrod::image::Id,String)>,
+	//Monster's picture, Monster's id, monster's side if battle is started.
+	pub actors: Vec<(&'a conrod::image::Id,usize,usize)>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
 	pub exit_nodes: Vec<u16>,
@@ -348,6 +349,7 @@ pub enum Trigger {
 	LFSubType(u8),
 	Exp(f32),
 	StartedStory(u32),
+	StartedStoryWith(u32,u16),
 	FinishedStory(u32),
 	FinishedStoryWith(u32,u16),
 	FinishedDungeon(usize), //This is a paceholder.
@@ -475,10 +477,16 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 								if party[0].0.ExpUsed>=*tr {get = false;};
 							},
 							Trigger::StartedStory(x) => {
-								get = my_stories.poll_ids(*x,false);
+								get = my_stories.poll_started(*x);
+							},
+							Trigger::StartedStoryWith(x,y) => {
+								get = my_stories.poll_started_with(*x,*y);
 							},
 							Trigger::FinishedStory(x) => {
-								get = my_stories.poll_ids(*x,true);
+								get = my_stories.poll_finished(*x);
+							},
+							Trigger::FinishedStoryWith(x,y) => {
+								get = my_stories.poll_finished_with(*x,*y);
 							},
 							_				   => {},
 						};
