@@ -44,7 +44,8 @@ In battle sprite shake on damage.
 
 Implemented: The mechanisms for travelling the world, battle, in battle spellcasting,
 exp. and dungeons have been implemented.
-Unimplementd: NPCs, story, certain "special" spells and inventory have not been implemented.
+Mostly implemented: NPCs,story.
+Unimplementd: Teleportation spells and inventory have not been implemented.
 
 ***AI:***
 
