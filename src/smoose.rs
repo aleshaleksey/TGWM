@@ -31,10 +31,15 @@
 ///
 ///About MyStories.
 ///
-///This is a structure with a single field- a vector of (u32,bool), ie, story
-///ids and completion status. Presence of an entry signals a story has been started,
-/// "true" for .1 indicates it has been concluded. It is possible that this needs to be made
-///more complex.
+///This is a structure with a single field- a vector of (u32,u16,u16), ie, story
+///ids and start dialog exit node and end dialog exit node. 0 implies not done. For each stage.
+///
+///About MyDungeons.
+///
+///Analogous to MyStories.
+///This is a structure with a single field- a vector of ([i32,i32],u32,u32),
+///the coords of each dungeon and the number of times tried and completed.
+///sensibly seperate from MyStories for modularity.
 ///
 ///About Triggers.
 ///
@@ -180,6 +185,46 @@ impl <'a>Sage<'a> {
 	}
 }
 
+// A structure for storing dungeons.
+// Contains coords, tries, and successes.
+#[derive(Debug)]
+pub struct MyDungeons {
+	ids:Vec<([i32;2],u32,u32)>,
+}
+
+impl MyDungeons {
+	pub fn new()->MyDungeons {
+		MyDungeons{
+			ids: Vec::with_capacity(100),
+		}
+	}
+	
+	pub fn push(&mut self,coords:[i32;2],tries:u32,done:u32) {
+		self.ids.push((coords,tries,done))
+	}
+	
+	pub fn take_ids(&self)->Vec<([i32;2],u32,u32)> {
+		self.ids.clone()
+	}
+	
+	pub fn replace_ids(&mut self,ids:Vec<([i32;2],u32,u32)>) {
+		self.ids = ids; 
+	}
+	
+	pub fn has(&self,coords:&[i32;2])->bool {
+		for x in self.ids.iter() {
+			if x.0==*coords {return true;};
+		};
+		false
+	}
+	
+	pub fn has_done(&self,coords:&[i32;2])->bool {
+		for x in self.ids.iter() {
+			if (x.0==*coords) & (x.2>0) {return true;};
+		};
+		false
+	}
+}
 
 //A structure that stores a vector of story ids that have been
 //started by the party and their status (finished or not).

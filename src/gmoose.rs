@@ -78,7 +78,7 @@ use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
 			 
 use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
 			door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
-			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace};
+			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace,petrified_shrine};
 			 
 //General constacts.			 
 const VOID_TEXT:&str = "You cannot travel through the void.";
@@ -4114,7 +4114,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 											 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 											 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-											 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
+											 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine()];
 					},
 					_ => {},
 				};
@@ -4165,7 +4165,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 								 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 								 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie()];
+								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine()];
 					println!("Party on! {:?}",&party);
 				}else if answer.0==0 {
 					*comm_text = "Could not load this moose. Try another maybe?".to_owned();
@@ -4348,7 +4348,15 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			
+			
+			
 			if (*p_scape != VOID) & (*p_scape != TIME) {
+				let lsc = scenery_l_checker(landscapes,*p_scape);
+				if lsc<=*scenery_index {
+					println!("Oops! Scenery index is longer than vector, time for a new index...{} vs {}",scenery_index,lsc);
+					*scenery_index = scenery_setter(landscapes,*p_scape,centre_w,centre_h);
+					println!("New index is {} vs {}",scenery_index,lsc);
+				};
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);

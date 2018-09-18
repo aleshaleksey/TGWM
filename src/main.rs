@@ -114,7 +114,7 @@ use tales_of_the_great_white_moose::*;
 									 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY};	
 #[allow(unused_imports)] use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,door_to_darkness,
 									  white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,tower_of_soul,hall_of_stone,
-									  the_path
+									  the_path,petrified_shrine
 									  };
 
 #[allow(unused_imports)] use conrod::color::Colour;
@@ -1038,7 +1038,9 @@ pub fn main() {
 							};
 							
 							scenery_index = gmoose::scenery_setter(&scapes,p_scape,&mut centre_w,&mut centre_h);
+							println!("Scenery index = {}, dungeon_pointer = {}",scenery_index,dungeon_pointer);
 							
+							//
 							continue 'main;
 						}else{
 							if (encounter[battle_ifast].1!=0) & !pause {	

@@ -1269,6 +1269,82 @@ pub fn ice_palace() -> Dungeon {
 }
 
 
+pub fn petrified_shrine() -> Dungeon {
+	
+	Dungeon {
+		name: "Petrified Shrine",
+		xy: [0,-60],
+		diff: 200.0,
+		affinity: RADIANT,
+		scenes: vec![
+			Place { name: "Forgotten Alley",							scape: DESERT,		xy: [0,-60],		affinity: RADIANT,
+					engenG: [4,4,4,4,4,4,4,4,4,4],
+					engenA: [1,1,1,1,1,1,1,1,1,1],
+					popu:vec![("Forgotten Beast",SPIRIT,1000),
+					],
+			},
+			Place { name: "Ancient Meadow",								scape: RUIN,		xy: [0,-60],		affinity: RADIANT,
+					engenG: [3,3,3,3,3,4,4,4,4,4],
+					engenA: [1,1,1,1,1,2,2,2,2,2],
+					popu:vec![("Petrified Fairy",SPIRIT,1000),
+							  ("Wisp of Fire",BEAST,1000),
+					],
+			},
+			Place { name: "The Eldest Hollow",							scape: FOREST,		xy: [0,-60],		affinity: RADIANT,
+					engenG: [1,1,1,1,1,1,1,1,1,1],
+					engenA: [2,2,2,2,2,2,2,2,2,1],
+					popu:vec![("Petrified Elf",SPIRIT,1000),
+							  ("Elven Spirit",BEAST,1000),
+					],
+			},
+			Place { name: "Cave of the Shrine",							scape: RUIN,		xy: [0,-60],		affinity: RADIANT,
+					engenG: [1,1,1,1,1,1,1,1,1,1],
+					engenA: [4,4,4,4,4,4,4,4,4,4],
+					popu:vec![("Primal Green Beast",BEAST,1000),
+							  ("Primal Red Beast",BEAST,1000),
+							  ("Primal Great Beast",BEAST,1000),
+							  ("Primal Serpent",BEAST,1000),
+					],
+			},
+			Place { name: "Shrine of Elvenkind",						scape: TIME,		xy: [0,-60],		affinity: RADIANT,
+					engenG: [1,1,1,1,1,1,1,1,1,1],
+					engenA: [3,3,3,3,3,3,3,3,3,3],
+					popu:vec![("First Elf",SPIRIT,1000),
+							  ("True Elf",BEAST,1000),
+							  ("Last Elf",UNDEAD,1000),
+					],
+			},
+			
+		],	
+		denizens: vec![
+					alien().rename("Forgotten Beast").re_type(BEAST)
+						   .magic_up(100.0).hp_change(2.0).bm_change(1.5).spellist(vec![S_SPARK,S_SLOW,S_DAGGER_OF_FAWN]),
+						   
+					white_queen().rename("Petrified Fairy").spellist(vec![S_LESSER_CRYSTALLISE,S_SLOW]),
+					beast_red().rename("Wisp of Fire").bm_change(2.0).wm_change(2.0).re_type(SPIRIT).spellist(vec![S_FIREBALL,S_FIRE]),
+					
+					warrior().rename("Petrified Elf").re_type(GIANT).speed_change(0.2).diff_lvl(40).spellist(vec![]),
+					sage_forsaken().rename("Elven Spirit").re_type(SPIRIT).speed_change(3.0).hp_change(2.5),
+					
+					beast_great().rename("Primal Great Beast").speed_change(0.3).diff_lvl(30).spellist(vec![S_JOVIAN_LIGHTNING,S_GREATER_EXORCISM,S_SPARK]),
+					beast_red().rename("Primal Red Beast").speed_change(0.2).diff_lvl(40).spellist(vec![S_INFERNO,S_FIREBALL,S_EMBER,S_SACRED_EXORCISM]),
+					beast_green().rename("Primal Green Beast").speed_change(0.2).diff_lvl(50).spellist(vec![S_SACRED_CURE,S_TIMESTOP,S_CURSE]),
+					beast_serpent().rename("Primal Serpent").speed_change(0.4).diff_lvl(20).spellist(vec![S_LIGHTNING,S_LIFESTEALER]),
+					
+					sage_forsaken().rename("First Elf").re_type(SPIRIT).speed_change(1.0).hp_change(5.5).bm_change(2.0).wm_change(4.0).mp_change(2.0)
+								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_SACRED_CURE,S_SACRED_EXORCISM,S_EMBER]),
+					sage_forsaken().rename("True Elf").re_type(SPIRIT).speed_change(2.0).hp_change(3.5).bm_change(3.0).wm_change(3.0).mp_change(2.0)
+								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_GREATER_CURE,S_JOVIAN_LIGHTNING,S_EMBER]),
+					sage_forsaken().rename("Last Elf").re_type(SPIRIT).speed_change(3.0).hp_change(1.5).bm_change(4.0).wm_change(2.0).mp_change(2.0)
+								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_CURE,S_SUMMON_REAPER,S_EMBER]),
+		],
+						
+		afterstory: PETRIFIED,
+	}
+	
+}
+
+
 const CITADEL_OF_SPIRIT:&str = "...It is said that those who wonder up onto the moors with the wish, fixed in their heart, \
 to find another world, may see, before themselves, the gates of the Citadel of Spirit.\
 
@@ -1441,9 +1517,13 @@ It brought with it droughts, rains, snows...
 
 ...But what when the wind is empty?
 ";
- const ICE_PALACE:&str = "...What lies at the end of the world? A desert of snow and ice, \
+const ICE_PALACE:&str = "...What lies at the end of the world? A desert of snow and ice, \
  blanketed by a wall of unending storms...
  
  
  ...It is the winter itself that builds the walls surrounding its palace and weaves the dreams of summer. \
  ";
+ 
+const PETRIFIED:&str = "...It was here that elvenkind willed itself into existence...
+...It was here that elvenkind willed itself out of existence...
+";
