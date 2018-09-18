@@ -185,6 +185,58 @@ impl <'a>Sage<'a> {
 	}
 }
 
+// A structure to record how many monsters you have slain.
+pub struct KillList {
+	kills:Vec<(String,usize)>,
+}
+
+impl KillList {
+	pub fn new() -> KillList {
+		KillList {
+			kills:Vec::with_capacity(50),
+		}
+	}
+	
+	pub fn push(&mut self,name:&str,kills:usize) {
+		self.kills.push((name.to_owned(),kills))
+	}
+	
+	pub fn take_kills(&self)-> Vec<(String,usize)> {
+		self.kills.clone()
+	}
+	
+	pub fn replace_kills(&mut self,kills:Vec<(String,usize)>) {
+		self.kills = kills; 
+	}
+	
+	//returns true if monster is in kill list.
+	pub fn has(&self,name:&str)->bool {
+		for x in self.kills.iter() {
+			if x.0==name {return true;};
+		};
+		false
+	}
+	
+	//returns number of kills of said monster.
+	pub fn poll(&self,name:&str)->usize {
+		for x in self.kills.iter() {
+			if x.0==name {return x.1;};
+		};
+		0
+	}
+	
+	//returns number of kills of said monster.
+	pub fn increment_or(&mut self,name:&str) {
+		for x in self.kills.iter_mut() {
+			if x.0==name {
+				x.1+= 1;
+				return;
+			};
+		};
+		self.push(name,1);
+	}
+}
+
 // A structure for storing dungeons.
 // Contains coords, tries, and successes.
 #[derive(Debug)]
@@ -193,7 +245,7 @@ pub struct MyDungeons {
 }
 
 impl MyDungeons {
-	pub fn new()->MyDungeons {
+	pub fn new()-> MyDungeons {
 		MyDungeons{
 			ids: Vec::with_capacity(100),
 		}
@@ -345,6 +397,7 @@ impl MyStories {
 // dialog. At the moment my_stories does not record exit triggers of conclusion. 
 #[derive(Debug,Clone)]
 pub struct Story<'a> {
+	pub name: &'a str,
 	pub trigger: Vec<Trigger>,	
 	//if your story has more than 255 branches, you have a problem.
 	//Likewise it MUST have a completion, else we have a problem.
@@ -402,6 +455,7 @@ pub enum Trigger {
 	Locus(Place),
 	LocusType(u8),
 	LocusXY([i32;2]),
+	HasKill(String),
 }
 
 

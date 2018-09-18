@@ -1067,6 +1067,17 @@ fn dungeon_navigator_a (victory:bool,
 	//println!("dpoint: {}\nidun: {:?}",dungeon_pointer,idungeon);
 }
 
+// A function that calculates base damage.
+// Allows for limited modulation of damage by
+// HP and BM, without the use of fraction powers or exponent.
+fn michaelis_menten_power(attacker:&Lifeform,ab:f32)->f32{
+	ab*(
+		2.0*attacker.HP/(attacker.HP+400.0) +
+		attacker.BM/(attacker.BM+400.0) +
+		2.0*attacker.Exp/(attacker.Exp+2000.0)
+	)
+}
+
 //Standard attack function.
 fn attack_marker(){}
 fn attack(encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
@@ -1109,7 +1120,7 @@ fn attack(encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 		//damage is attack, multiplied by A*hp+B*bm+C*xp
 		//minus random factor (dep on defence and attack),
 		//minus defence/2 - wm/4.
-		let att_pow:f32 = ab*(encounter[ifast].0.HP/400.0+encounter[ifast].0.BM_shade/200.0+encounter[ifast].0.Exp/1000.0);
+		let att_pow:f32 = michaelis_menten_power(&encounter[ifast].0,ab);
 				HP_loss = (rand::thread_rng().gen_range(-4,aa/4)+rand::thread_rng().gen_range(-dd/4,4)) as f32;
 				HP_loss+= att_pow-encounter[p_t].0.Defence_shade/2.0;
 				if p_t != ifast {HP_loss-= encounter[p_t].0.WM_shade/4.0;};
@@ -1161,7 +1172,7 @@ fn attack_r(encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 		 
 	let mut HP_loss:f32 = 0.0;
 	if (a>=b) | (p_t == ifast) {
-		let att_pow:f32 = ab*(encounter[ifast].0.HP/400.0+encounter[ifast].0.BM_shade/200.0+encounter[ifast].0.Exp/1000.0);
+		let att_pow:f32 = michaelis_menten_power(&encounter[ifast].0,ab);
 				HP_loss = (rand::thread_rng().gen_range(-4,aa/4)+rand::thread_rng().gen_range(-dd/4,4)) as f32;
 				HP_loss+= att_pow-encounter[p_t].0.Defence_shade/2.0;
 				if p_t != ifast {HP_loss-= encounter[p_t].0.WM_shade/4.0;};
