@@ -428,7 +428,7 @@ impl <'a>Story<'a> {
 #[derive(Debug,Clone)]
 pub struct Content<'a> {
 	//Monster's picture, Monster's id, monster's side if battle is started.
-	pub actors: Vec<(&'a conrod::image::Id,usize,usize)>,
+	pub actors: Vec<(&'a conrod::image::Id,Lifeform,usize)>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
 	pub exit_nodes: Vec<u16>,

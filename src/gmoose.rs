@@ -1219,7 +1219,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				my_stories:&mut MyStories,
 				stage_in:u16,	//stage at entry level
 				conclusion:u16,  //steg at exit level.
-				p_names:&Vec<String>,
+				p_names:&mut Vec<String>,
 				spl:&Vec<Spell>,
 				mut gui_box: GUIBox<'a>,
 				gui_box_previous: &mut GUIBox<'a>,
@@ -1270,16 +1270,16 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	
 	
 	//set the button canvas.
-	let xy_answers = [xy[0]+wh[0]/4.0,xy[1]];
+	let xy_answers = [xy[0]+wh[0]/4.0,xy[1]-BORDER];
 	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
 								 .xy(xy_answers)
 								 .color(BACKGR_COLOUR)
 								 .set(ids.sage_menu,ui);
 								 
 	//create button. Needs ids.sage_menu to be set.
-	let xy_button = ui.xy_of(ids.sage_menu).unwrap();
 	let wh_button = [wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0];
-	let mut offset:f64 = wh_button[0]/6.0;
+	let mut offset:f64 = (wh[1]-wh_button[1])/2.0;
+	
 	let button = conrod::widget::Button::new().wh(wh_button)
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW);
@@ -1302,7 +1302,8 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	for (i,x) in next_gen.iter().enumerate() {
 		if i<6 {
 			for _click in button.clone().label(&content.phrases_by_key.get(x).unwrap().1)
-									    .xy([xy_button[0],xy_button[1]+offset])
+										.label_font_size(13)
+									    .xy([xy_answers[0],xy_answers[1]+offset])
 									    .set(button_indices[i],ui){
 				
 				//On click get the next part of the dialog.							
@@ -1339,6 +1340,11 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		encounter_starter_story(party,enemies,encounter,content,bestiary);
 		my_stories.insert_exit_code(story.id,stage_in,conclude);
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
+	} else if (stage_in<100) & lhas(&content.exit_nodes,&stage_in) {
+		//We have a joining storyline,
+		//The monster will join the party.
+		p_names.push(content.actors[0].1.name.to_owned());
+		party.push((content.actors[0].1.clone(),0));
 	};
 	
 	gui_box		
@@ -2038,7 +2044,7 @@ fn encounter_starter_story(party: &mut Vec<(Lifeform,usize)>,
 					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					 content: &Content,
 					 mons: &Vec<Lifeform>) {
-	*enemies = engen_story(content,mons);
+	*enemies = engen_story(content);
 	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
 	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
@@ -3194,11 +3200,11 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
 
 //generates the enemy vector for a scripted story encounter.
 fn engen_story_marker(){}
-pub fn engen_story(content:&Content,bestiary:&Vec<Lifeform>) -> Vec<(Lifeform,usize)> {
+pub fn engen_story(content:&Content) -> Vec<(Lifeform,usize)> {
 	let mut enemies:Vec<(Lifeform,usize)> = Vec::with_capacity(23);
 	
 	for x in content.actors.iter(){
-		enemies.push((bestiary[vwhich_ln_i(&bestiary,x.1).unwrap_or(0)].clone(),x.2));
+		enemies.push((x.1.clone(),x.2));
 	};
 
 	enemies

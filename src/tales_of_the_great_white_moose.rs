@@ -36,8 +36,9 @@
 //Standard entry code.
 const ENTRY:u16 = 0;
 //Special exit codes.
-const FIGHT_EXIT:u16 = 666;
-const JOIN_EXIT:u16 = 333;
+pub const FIGHT_EXIT:u16 = 666;
+pub const JOIN_EXIT:u16 = 100;    //if below this, monster joins.
+pub const LEAVE_EXIT:u16 = 333;  //If between 100-300, monster leaves.
 //Standard exit codes (keep things less confusing)
 //These are special reserved numbers. Keep away.
 const EXIT_1:u16 = 65535;
@@ -48,6 +49,7 @@ const EXIT_5:u16 = 65531;
 
 extern crate conrod;
 use smoose::{Story,Trigger,Content};
+use lmoose::*;
 use std::collections::BTreeMap;
 
 //The test quest, carry yourself to either of these locations.
@@ -85,7 +87,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	entry_map.insert(FIGHT_EXIT,(vec![],"So be it...".to_owned()));
 	
 	let entry_content = Content {
-		actors:vec![(&faces[16][0],16,1)],
+		actors:vec![(&faces[16][0],ghost_an(),1)],
 		phrases_by_key:entry_map,
 		entry_node: ENTRY,
 		exit_nodes: vec![1,2,FIGHT_EXIT],
@@ -96,7 +98,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 \nThe spirit, and flows down into the Void...".to_owned()));
 	
 	let void_bridge_content = Content {
-		actors:vec![(&faces[16][0],16,1)],
+		actors:vec![(&faces[16][0],ghost_an(),1)],
 		phrases_by_key: void_dialog,
 		entry_node: 1,
 		exit_nodes: vec![1],
@@ -107,7 +109,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 \nThe spirit, and merges with the darkness of the tower.".to_owned()));
 		
 	let black_tower_content = Content {
-		actors:vec![(&faces[16][0],16,1)],
+		actors:vec![(&faces[16][0],ghost_an(),1)],
 		phrases_by_key: tower_dialog,
 		entry_node: 2,
 		exit_nodes: vec![2],
@@ -130,7 +132,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	let end_triggers = vec![
 		(1,void_bridge_content,vec![Trigger::LocusXY([20,70])]),
 		(2,black_tower_content,vec![Trigger::LocusXY([-100,-10])]),
-		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(666,666)])
+		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(666,FIGHT_EXIT)])
 	];
 	
 	Story {
@@ -146,7 +148,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 //NB: NOT FINISHED. Will crash on take off.
 pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	//define start_trigger
-	let start_trigger = vec![Trigger::FinishedStoryWith(666,888)];
+	let start_trigger = vec![Trigger::FinishedStory(666)];
 	
 	let mut entry_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
 	
@@ -155,7 +157,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(2,(vec![20],"No.".to_owned()));
 	entry_map.insert(3,(vec![30],"Yes.".to_owned()));
 	entry_map.insert(4,(vec![20],"Yes, and got the better of me.".to_owned()));
-	entry_map.insert(5,(vec![30],"Yes, but I managed to fight it off.".to_owned()));
+	entry_map.insert(5,(vec![20],"Yes, but I managed to fight it off.".to_owned()));
 	entry_map.insert(6,(vec![60],"Oh, I annihilated it, and I'll do the same to you!".to_owned()));
 	
 	entry_map.insert(60,(vec![61,62,63],"We have no quarrel with the living.".to_owned()));
@@ -163,8 +165,35 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(62,(vec![EXIT_1],"Then get lost!".to_owned()));
 	entry_map.insert(63,(vec![FIGHT_EXIT],"Oh, but I do... En-garde!".to_owned()));
 	
+	entry_map.insert(30,(vec![72,31,32,33,6],"Would you tell us where it went?".to_owned()));
+	entry_map.insert(31,(vec![20],"I don't know.".to_owned()));
+	entry_map.insert(32,(vec![35],"I destroyed it.".to_owned()));
+	entry_map.insert(33,(vec![40],"I laid it to rest in darkness.".to_owned()));
 	
-	entry_map.insert(20,(vec![21,80],"Is that so? In that case, may the light be with you".to_owned()));
+	entry_map.insert(35,(vec![36,37,72,81,82],"Is that so? Well met! Maybe you can help us with something...".to_owned()));
+	entry_map.insert(36,(vec![110],"Can I do something to aid you?".to_owned()));
+	entry_map.insert(37,(vec![70],"I'd rather not?".to_owned()));
+	
+	entry_map.insert(200,(vec![72,81,201,202,203],"Do you understand what you have done? All of its sins will go unpunished..".to_owned()));
+	entry_map.insert(201,(vec![10],"Who are you to babble on about sins..".to_owned()));
+	entry_map.insert(202,(vec![60],"If you don't like it, you can try to punish me instead..".to_owned()));
+	entry_map.insert(203,(vec![210],"Yes. And I'll do it all again...".to_owned()));
+	
+	entry_map.insert(210,(vec![211,212,213,214],"Then we regret you that you must be terminated.".to_owned())); //Well, that escalated quickly.
+	entry_map.insert(211,(vec![220],"Wait! Who are you?".to_owned()));
+	entry_map.insert(212,(vec![221],"I'm sorry! I'm sorry! Spare me!".to_owned()));
+	entry_map.insert(213,(vec![221],"Can't we resolve this peacefully?".to_owned()));
+	entry_map.insert(214,(vec![222],"O goody. This is exactly what I was hoping for!".to_owned()));
+	entry_map.insert(215,(vec![223],"Fools! It is you who shall meet your maker!".to_owned()));
+	
+	entry_map.insert(220,(vec![230],"No more question!".to_owned()));
+	entry_map.insert(221,(vec![230],"There is no forgiveness for necromancers and their ilk!".to_owned()));
+	entry_map.insert(222,(vec![230],"...".to_owned()));
+	entry_map.insert(223,(vec![230],"We will see about that.".to_owned()));
+	
+	entry_map.insert(230,(vec![FIGHT_EXIT],"...".to_owned()));
+	
+	entry_map.insert(20,(vec![21,73],"Is that so? In that case, may the light be with you".to_owned()));
 	entry_map.insert(21,(vec![EXIT_3],"Farewell".to_owned()));
 	
 	entry_map.insert(70,(vec![71,72,73],"We understand. In that case, may the light be with you".to_owned()));
@@ -172,28 +201,88 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(72,(vec![60],"Actually I think I do want to check the colour of your blood after all".to_owned()));
 	entry_map.insert(73,(vec![80],"Wait!".to_owned()));
 	
-	entry_map.insert(80,(vec![72,81,82,83,84,85],"Yes?".to_owned()));
+	entry_map.insert(80,(vec![72,81,82,83,84],"Yes?".to_owned()));
 	entry_map.insert(81,(vec![90],"Who are you?".to_owned()));
 	entry_map.insert(82,(vec![100],"What are you doing here?".to_owned()));
 	entry_map.insert(83,(vec![EXIT_3],"Thank you for your concern! All the best!".to_owned()));
 	entry_map.insert(84,(vec![110],"Can I do something to aid you?".to_owned()));
 	
+	entry_map.insert(90,(vec![72,84,62,84,82],"We are the exorcists of the White Temple.".to_owned()));
+	entry_map.insert(10,(vec![84,71,82,11],"We are the exorcists of the White Temple. We hunt the creatures of darkness.".to_owned()));
+	entry_map.insert(11,(vec![40],"Nice to meet you.".to_owned()));
+	
+	entry_map.insert(40,(vec![81,82,83,84],"Well met...".to_owned()));
+	entry_map.insert(100,(vec![81,84,72,113,60,114],"We are hunting an evil spirit that is trying to escape its eternal damnation".to_owned()));
+	entry_map.insert(110,(vec![81,82,72,111,112],"Have you heard the rumours of a necromantic cult at work in Malachia?".to_owned()));
+	entry_map.insert(111,(vec![120],"Yes".to_owned()));
+	entry_map.insert(112,(vec![130],"No".to_owned()));
+	entry_map.insert(113,(vec![30],"Oh, I think I've met this spirit before.".to_owned()));
+	entry_map.insert(114,(vec![20],"Haven't seen one...".to_owned()));
+	
+	entry_map.insert(120,(vec![121,122,123,62,72,124],"Could you look into it for us and cleanse it for us?".to_owned()));
+	entry_map.insert(130,(vec![121,122,123,62,72,124],"Well, there seems to be a necromantic cult in downtown Malachia, could you clense it for us?".to_owned()));
+	entry_map.insert(121,(vec![EXIT_4],"Yes".to_owned()));
+	entry_map.insert(122,(vec![20],"No".to_owned()));
+	entry_map.insert(123,(vec![160],"What's in it for me?".to_owned()));
+	entry_map.insert(124,(vec![150],"What if I am one of thes necromancers?".to_owned()));
+	
+	
+	entry_map.insert(150,(vec![151,152],"What? Is that so!".to_owned()));
+	entry_map.insert(151,(vec![70],"Haha! Sorry no, that was a joke.".to_owned()));
+	entry_map.insert(152,(vec![221],"Aye! In the flesh!".to_owned()));
+	
+	entry_map.insert(160,(vec![161,162],"A place in heaven and favour with the priesthood of the White Temple".to_owned()));
+	entry_map.insert(161,(vec![EXIT_4],"Excellent!".to_owned()));
+	entry_map.insert(162,(vec![70],"Uugh..".to_owned()));
+	
+	entry_map.insert(EXIT_4,(vec![],"Excellent. Please let out headquarters at the White Temple know once you're done.".to_owned()));
 	entry_map.insert(FIGHT_EXIT,(vec![],"So be it..".to_owned())); //Fight exit.
 	entry_map.insert(EXIT_1,(vec![],"May the light be with you..".to_owned())); //Refuse quest exit. 
 	entry_map.insert(EXIT_2,(vec![],"...".to_owned())); //Bad terms exit.
 	entry_map.insert(EXIT_3,(vec![],"Thank you. May the light be with you..".to_owned())); //Good terms exit.
 	
+	//Create entry content.
 	let entry_content = Content {
-		actors:vec![(&faces[21][0],21,1),(&faces[21][0],22,1),(&faces[21][0],22,1)],
+		actors:vec![(&faces[21][0],witch().rename("Exorcist").wm_change(2.0).mp_change(2.0).spellist(vec![S_EXORCISM,S_GREATER_EXORCISM,S_GREATER_CURE,S_SPARK]),1),
+					(&faces[22][0],witch().rename("Escort").diff_lvl(10).speed_change(0.7),1),
+					(&faces[22][0],witch().rename("Escort").diff_lvl(10).speed_change(0.7),1)],
 		phrases_by_key: entry_map,
 		entry_node: ENTRY,
 		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,FIGHT_EXIT],
 	};
-		
-		
-	//Create end vector -NB this will crash hard the way it is. I think.
-	let ends = Vec::new();
 	
+	
+	//FIGHT EXIT conclusion. (You fought the exorcists).
+	//FIGHT EXIT dialog tree.
+	let mut death_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	death_dialog.insert(FIGHT_EXIT,(vec![777],"The battle with the exorcists is lost and won...".to_owned()));
+	death_dialog.insert(777,(vec![EXIT_1],"...".to_owned()));
+	death_dialog.insert(EXIT_1,(vec![],"Well, what's done is done, but you have made some enemies today...".to_owned()));
+		
+	//FIGHT EXIT conclusion content.
+	let death_content = Content {
+		actors:Vec::new(),
+		phrases_by_key: death_dialog,
+		entry_node: FIGHT_EXIT,
+		exit_nodes: vec![EXIT_1],
+		
+	};
+	
+	//EXIT_1 conclusion. (You abused the exorcists and they went away).
+	let mut exit1_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit1_dialog.insert(EXIT_1,(vec![1],"Halt! Villain!".to_owned()));
+	
+	
+	//Create end vector -NB this will crash hard the way it is. I think.
+	let ends = vec![
+		//EXIT_1 bad ending
+		//EXIT_2 bad ending
+		//EXIT_3 ok ending
+		//EXIT_4 good ending
+		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(667,FIGHT_EXIT)])
+	];
+	
+	//The actual story.
 	Story {
 		name: "Ghosthunt: Chapter 1",
 		trigger: start_trigger,	

@@ -1274,7 +1274,7 @@ pub fn petrified_shrine() -> Dungeon {
 	Dungeon {
 		name: "Petrified Shrine",
 		xy: [0,-60],
-		diff: 200.0,
+		diff: 1000.0,
 		affinity: RADIANT,
 		scenes: vec![
 			Place { name: "Forgotten Alley",							scape: DESERT,		xy: [0,-60],		affinity: RADIANT,
