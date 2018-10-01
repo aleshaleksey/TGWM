@@ -68,6 +68,8 @@ use cmoose::{FlowCWin,GraphicsBox,Landscapes,GUIBox};
 									  
 use cmoose::GraphicsBox::Attack;
 
+use tales_of_the_great_white_moose::{MAX_JOIN_EXIT,MAX_LEAVE_EXIT};
+
 use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};	
 			  
 use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
@@ -1332,6 +1334,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		*pause = true;
 	};
 	
+	//Various types of stroy content exits.
 	if (stage_in==666) & lhas(&content.exit_nodes,&stage_in) {
 		println!("We're getting to an exit node666: MyStories = {:?}",my_stories);
 		*gui_box_previous = GUIBox::GameTravel;
@@ -1340,11 +1343,16 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		encounter_starter_story(party,enemies,encounter,content,bestiary);
 		my_stories.insert_exit_code(story.id,stage_in,conclude);
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
-	} else if (stage_in<100) & lhas(&content.exit_nodes,&stage_in) {
+	} else if (stage_in<=MAX_JOIN_EXIT) & lhas(&content.exit_nodes,&stage_in) {
 		//We have a joining storyline,
 		//The monster will join the party.
-		p_names.push(content.actors[0].1.name.to_owned());
-		party.push((content.actors[0].1.clone(),0));
+		content.insert_party_guest(party,p_names);
+		println!("We're getting to a join exit node: MyStories = {:?}",my_stories);
+	}else if (stage_in>MAX_JOIN_EXIT) & (stage_in<=MAX_LEAVE_EXIT) & lhas(&content.exit_nodes,&stage_in){
+		//We have a leaving storyline.
+		//The monster will leave the party.
+		content.remove_party_guest(party,p_names);
+		println!("We're getting to a leave exit node: MyStories = {:?}",my_stories);
 	};
 	
 	gui_box		
@@ -4581,6 +4589,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			for _click in fight_button{
 				println!("Pick a fight button pressed.");
+				gui_box_previous = gui_box.clone();
 				gui_box = GUIBox::GameFight(true);
 				encounter_starter(party, enemies, encounter, p_loc, mons);
 				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};

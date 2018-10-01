@@ -37,8 +37,8 @@
 const ENTRY:u16 = 0;
 //Special exit codes.
 pub const FIGHT_EXIT:u16 = 666;
-pub const JOIN_EXIT:u16 = 100;    //if below this, monster joins.
-pub const LEAVE_EXIT:u16 = 333;  //If between 100-300, monster leaves.
+pub const MAX_JOIN_EXIT:u16 = 100;    //if below this or equal, monster joins.
+pub const MAX_LEAVE_EXIT:u16 = 333;  //If between 100-333, monster leaves.
 //Standard exit codes (keep things less confusing)
 //These are special reserved numbers. Keep away.
 const EXIT_1:u16 = 65535;
@@ -94,25 +94,27 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	};
 	
 	let mut void_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
-	void_dialog.insert(1,(vec![],"\"Thank you... Traveller... May you too... Rest in peace...\" \
-\nThe spirit, and flows down into the Void...".to_owned()));
+	void_dialog.insert(1,(vec![100],"\"Thank you... Traveller... May you too... Rest in peace...\"".to_owned()));
+	void_dialog.insert(100,(vec![111],"...".to_owned()));
+	void_dialog.insert(111,(vec![],"The spirit flows down into the void.".to_owned()));
 	
 	let void_bridge_content = Content {
 		actors:vec![(&faces[16][0],ghost_an(),1)],
 		phrases_by_key: void_dialog,
 		entry_node: 1,
-		exit_nodes: vec![1],
+		exit_nodes: vec![111],
 	};
 	
 	let mut tower_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
-	tower_dialog.insert(2,(vec![],"\"Thank you... Traveller... May you too... Rest in peace...\" \
-\nThe spirit, and merges with the darkness of the tower.".to_owned()));
+	tower_dialog.insert(2,(vec![200],"\"Thank you... Traveller... May you too... Rest in peace...\"".to_owned()));
+	tower_dialog.insert(200,(vec![222],"...".to_owned()));
+	tower_dialog.insert(222,(vec![],"The spirit, and merges with the darkness of the tower.".to_owned()));
 		
 	let black_tower_content = Content {
 		actors:vec![(&faces[16][0],ghost_an(),1)],
 		phrases_by_key: tower_dialog,
 		entry_node: 2,
-		exit_nodes: vec![2],
+		exit_nodes: vec![222],
 		
 	};
 	
