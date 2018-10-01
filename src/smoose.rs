@@ -438,9 +438,21 @@ impl <'a>Content<'a> {
 	
 	//Function to insert guest monsters into a party.
 	//Plan stories carefully so that you can then remove the inserted lifeforms afterwards.
+	//Be really careful with this. NB each inserted lifeform must be "unique" no twins.
 	pub fn insert_party_guest(&self,party:&mut Vec<(Lifeform,usize)>,p_names:&mut Vec<String>) {
-		p_names.push(self.actors[0].1.name.to_owned());
-		party.push((self.actors[0].1.clone(),0));
+		for x in self.actors.iter() {
+			let mut inserted = false;
+			for i in 0..party.len() {
+				if (x.1.id==party[i].0.id) & (x.1.name==&p_names[i]) {
+					inserted = true;
+				};
+			};
+			
+			if !inserted {
+				p_names.push(self.actors[0].1.name.to_owned());
+				party.push((self.actors[0].1.clone(),0));
+			}
+		};
 	}
 	
 	//Function to remove guest monsters from a party.

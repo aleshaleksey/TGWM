@@ -868,7 +868,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let enc_wl = enc_w.len(); let enc_wlf:f64 = enc_wl as f64;
 	//create canvases for all four parties.
 	
-	//println!("Inside set_battle_map A");
+	//println!("Inside set_battle_map A length of enc_c = {}",enc_cl);
 	//set up obligatory matrices and canvases.
 	canvas_border(widget::Canvas::new().middle_of(ids.middle_column)
 						 .wh([bw*enc_clf,bh])
@@ -889,55 +889,57 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	//NB: Party canvas is inlined directly. After all, why not.		
 	while let Some(mut renegade) = enc_c_matrix.next(ui) {
 		let c = renegade.col as usize;
-		//NB CURRENTLY ONLY REL POS. THIS NEEDS FIXED.
-		sprite_pos[enc_c[c].1] = [renegade.rel_x+wh_enc_cm[0],renegade.rel_y+wh_enc_cm[1]];
-		
-		//If attacker is attackingm modify the position.
-		match *sprite_boxer {
-				Attack(ref mut x) => {
-					if x.att_index==enc_c[c].1 {
-						let pos = sprite_approach(&x);
-						renegade.rel_x = pos[0]-wh_enc_cm[0];
-						renegade.rel_y = pos[1]-wh_enc_cm[1];
-					};
-				},
-				_ => {},
-			};
-		
-		let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
-		renegade.rel_x += rel_pos; 
-		
 		if c<enc_c.len(){
+			//NB CURRENTLY ONLY REL POS. THIS NEEDS FIXED.
+			sprite_pos[enc_c[c].1] = [renegade.rel_x+wh_enc_cm[0],renegade.rel_y+wh_enc_cm[1]];
+			
+			//If attacker is attackingm modify the position.
+			match *sprite_boxer {
+					Attack(ref mut x) => {
+						if x.att_index==enc_c[c].1 {
+							let pos = sprite_approach(&x);
+							renegade.rel_x = pos[0]-wh_enc_cm[0];
+							renegade.rel_y = pos[1]-wh_enc_cm[1];
+						};
+					},
+					_ => {},
+				};
+			
+			let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
+			renegade.rel_x += rel_pos; 
+			
+			
 			if enc_c[c].1==battle_ifast {
 				pos_bif.0 = ui.xy_of(ids.partyc_mtrx);
 				pos_bif.1[0] = renegade.rel_x;
 				pos_bif.1[1] = renegade.rel_y;
 			};
-		};
-		
-		let x = format!("\n{}",p_names[c]);
-		let y = &x.x_chr_pl(8);
-		let b = widget::Button::image( if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 {mon_faces[enc_c[c].0.id][0]}else{mon_faces[enc_c[c].0.id][2]} )
-										.label(&y)
-										.hover_image(mon_faces[enc_c[c].0.id][1])
-										.press_image(mon_faces[enc_c[c].0.id][1])
-										.label_color(sm_retc(&enc_c[c].0,timer))
-										.label_font_size(font_size)
-										.label_y(conrod::position::Relative::Scalar(bh/2.0))
-										.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
-		for _click in renegade.set(b,ui) {
-			if !yt_adcwpe_bw[0] {
-				*comm_text = format!("{} is {}.",p_names[c],sm_rets(&enc_c[c].0));
-				set_comm_text(comm_text,ui,ids);
-			}else if yt_adcwpe_bw[1]{
-					*comm_text = format!("You attack {}!",p_names[c]);
+			
+			
+			let x = format!("\n{}",p_names[c]);
+			let y = &x.x_chr_pl(8);
+			let b = widget::Button::image( if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 {mon_faces[enc_c[c].0.id][0]}else{mon_faces[enc_c[c].0.id][2]} )
+											.label(&y)
+											.hover_image(mon_faces[enc_c[c].0.id][1])
+											.press_image(mon_faces[enc_c[c].0.id][1])
+											.label_color(sm_retc(&enc_c[c].0,timer))
+											.label_font_size(font_size)
+											.label_y(conrod::position::Relative::Scalar(bh/2.0))
+											.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
+			for _click in renegade.set(b,ui) {
+				if !yt_adcwpe_bw[0] {
+					*comm_text = format!("{} is {}.",p_names[c],sm_rets(&enc_c[c].0));
 					set_comm_text(comm_text,ui,ids);
+				}else if yt_adcwpe_bw[1]{
+						*comm_text = format!("You attack {}!",p_names[c]);
+						set_comm_text(comm_text,ui,ids);
+						*sel_targets = vec![enc_c[c].1];
+				}else if yt_adcwpe_bw[3] & (!yt_adcwpe_bw[7]|!yt_adcwpe_bw[8]){
+						*sel_targets = vec![enc_c[c].1];
+						//println!("{}",c);
+				}else if yt_adcwpe_bw[2] {
 					*sel_targets = vec![enc_c[c].1];
-			}else if yt_adcwpe_bw[3] & (!yt_adcwpe_bw[7]|!yt_adcwpe_bw[8]){
-					*sel_targets = vec![enc_c[c].1];
-					//println!("{}",c);
-			}else if yt_adcwpe_bw[2] {
-				*sel_targets = vec![enc_c[c].1];
+				};
 			};
 		};
 	};
@@ -4658,9 +4660,11 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 		
 		GUIBox::GameFight(tr) => {
 			//Prepare canvases.
+			//println!("In GUIbox fight");
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_fight_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			//println!("set_fight_canvas completed");
 			
 			//Set label conditionally on whether you'r outsid eor in a dungeon.
 			//Not the most superefficient, but the briefest.
@@ -4669,10 +4673,13 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			}else{
 				set_middle_label(ui,ids,p_loc.name,&win_wh);	
 			};
+			//println!("GameFight label set");
 			
 			//Generate buttons
 			let (attack_button,defend_button,cast_button,
 				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,&men_wh,&win_wh);
+			
+			//println!("GameFight buttons set");
 				 
 			if tr {
 				//println!("gmoose765");
@@ -4735,12 +4742,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					};
 				};
 				
+				//println!("GameFight about to set background");
 				//Background should be set before anything else. Or you will see zilch.
 				if (*p_scape != VOID) & (*p_scape != TIME) {
 					set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 				}else if *p_scape==TIME {
 					set_timescape(ui,ids,timer);
 				};
+				//println!("GameFight background set");
 				
 				//println!("gmoose 1114-entering set_battle_map");
 				set_battle_map(ids,ui,
@@ -4764,6 +4773,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							shaking_timer,
 							battle_ifast,
 							*pause);
+				//println!("GameFight battlemap set");
 			};
 			set_comm_text(comm_text,ui,ids); 			
 		},
