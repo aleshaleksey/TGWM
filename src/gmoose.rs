@@ -68,7 +68,9 @@ use cmoose::{FlowCWin,GraphicsBox,Landscapes,GUIBox};
 									  
 use cmoose::GraphicsBox::Attack;
 
-use tales_of_the_great_white_moose::{MAX_JOIN_EXIT,MAX_LEAVE_EXIT};
+use tales_of_the_great_white_moose::{MAX_JOIN_EXIT,MAX_LEAVE_EXIT,
+									 MAX_GIVE_EXIT,MAX_TAKE_EXIT,
+									 MIN_GIVE_EXIT,MIN_TAKE_EXIT};
 
 use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};	
 			  
@@ -1354,6 +1356,16 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		//We have a leaving storyline.
 		//The monster will leave the party.
 		content.remove_party_guest(party,p_names);
+		println!("We're getting to a leave exit node: MyStories = {:?}",my_stories);
+	}else if (stage_in>MIN_GIVE_EXIT) & (stage_in<=MAX_GIVE_EXIT) & lhas(&content.exit_nodes,&stage_in){
+		//We have a leaving storyline.
+		//The monster will leave the party.
+		content.item_to_party(party);
+		println!("We're getting to a leave exit node: MyStories = {:?}",my_stories);
+	}else if (stage_in>MIN_TAKE_EXIT) & (stage_in<=MAX_TAKE_EXIT) & lhas(&content.exit_nodes,&stage_in){
+		//We have a leaving storyline.
+		//The monster will leave the party.
+		content.item_from_party(party);
 		println!("We're getting to a leave exit node: MyStories = {:?}",my_stories);
 	};
 	

@@ -31,28 +31,29 @@
 ///TODO 3: Make the externs and use sections pretty and stop sweeping
 ///warnings under the rug.
 ///
-///Tales of the Great White Moose code is split into several packages.
+///Tales of the Great White Moose code is split into several packages, lmoose,imoose,
+///dmoose,smoose,gmoose,omoose and the main file.
 ///-bmoose handles the functions governing battle logic (minus AI).
-///-cmoose handles basic flow control structures (some also in smoose).
+///-cmoose handles flow control structures (some also in smoose).
 ///-dmoose is an additional library for dungeon sequences.
-///-gmoose handles the gui and certain elements of the logic.
+///-gmoose handles the gui, graphics and game logic (merged to prevent
+/// dependency hell).
 ///-imoose handles the AI.
 ///-lmoose handles the main types and monster/spell/locale data.
 ///-omoose handles the audio.
-///-smoose handles the sages and the types for story flow elements.
+///-smoose is the unimplemented sage sequence library (also story and
+/// story flow elements.
 ///-xmoose handles effects (such as attacks or spell effects.) Ass well
 /// as certain background functions.
-///-shared moose handles certain shared functions such as saving and loading.
-///-tales_of_the_great_white_moose stores the plotlines.
 ///-The main function handles global flow variables, event loop, combat
 ///loops, and redraw loops.
 ///
 ///
 ///	Alek Zholobenko 2018	
 
-/// To compile for linux (Needs ~rust 1.28.0 or above):
+/// To compile for linux:
 ///		cargo build --release --features="winit glium libc"
-///		cargo run --features="winit glium libc"
+///		cargo run --features="winit glium"
 /// Try try compile for windows:
 ///		cargo rustc --bin q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C link-args="-Wl,--subsystem,windows"
 /// For clean compile use additional arguments (no terminal window): -C link-args="-Wl,--subsystem,windows"
@@ -311,7 +312,8 @@ pub fn main() {
 	let world:Vec<[Place;19]> = world();
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
-	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces)]; //Currently placeholder.
+	 //Currently placeholder.
+	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces),ghosthunt_part_1(&mons_faces)];
 	println!("number of stories: {}",stories.len());
 	let mut my_stories:MyStories = MyStories::new();
 	let mut diff:i32 = 0;
@@ -430,14 +432,14 @@ pub fn main() {
 					
 					//Recode AI variables for speed and sanity.
 					imoose::ai_part_b1(&lore, &mut differences);
-					
+					//println!("past ai_part_b1");	
 					let cause_effect_means = imoose::ai_accelerator_hash(&lore,
 																		&differences,
 																		&mut last_lines,
 																		&mut lore_hash_by_end,
 																		&mut cause_effect,
 																		&mut all_causes);
-					
+					//println!("past ai_accelerator");	
 					//loop within a battle, looking for specific instances to match
 					//by definition, this might as well block.
 					'turns:loop {

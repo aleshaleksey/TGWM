@@ -420,6 +420,8 @@ impl <'a>Story<'a> {
 		};
 		&self.content
 	}
+	
+
 }
 
 //I have not decided what content should be stored as.
@@ -429,6 +431,7 @@ impl <'a>Story<'a> {
 pub struct Content<'a> {
 	//Monster's picture, Monster's id, monster's side if battle is started.
 	pub actors: Vec<(&'a conrod::image::Id,Lifeform,usize)>,
+	pub tokens: Vec<Item>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
 	pub exit_nodes: Vec<u16>,
@@ -467,6 +470,31 @@ impl <'a>Content<'a> {
 			};
 		};
 	}
+	
+	//function to give an item to the party.
+	//NB, at the moment only the party lead has an inventory.
+	pub fn item_to_party(&self,party:&mut Vec<(Lifeform,usize)>){
+		for x in self.tokens.iter() {
+			let mut insert = true;
+			for y in party[0].0.Inventory.iter() {
+				if *y==x.id {insert = false;};
+			}
+			if insert { party[0].0.Inventory.push(x.id);};
+		}
+	}
+	
+	//function to get item from party.
+	pub fn item_from_party(&self,party:&mut Vec<(Lifeform,usize)>){
+		for x in self.tokens.iter() {
+			for i in 0..party[0].0.Inventory.len() {
+				if x.id==party[0].0.Inventory[i] {
+					party[0].0.Inventory.remove(i);
+				};
+			}
+		}
+	}
+	
+	//TODO::GP quest endings...Ermm but I'd rather not.
 }
 
 //Trigger for the start of  story dialog can be any of the below,
@@ -485,12 +513,12 @@ pub enum Trigger {
 	StartedStoryWith(u32,u16),
 	FinishedStory(u32),
 	FinishedStoryWith(u32,u16),
-	FinishedDungeon(usize), //This is a paceholder.
+	FinishedDungeon(u32), //This is a paceholder.
 	Other(usize), //This is a placeholder.
 	Locus(Place),
 	LocusType(u8),
 	LocusXY([i32;2]),
-	HasKill(String),
+	HasKill(String),	//Kill list not implemented yet.
 }
 
 

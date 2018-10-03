@@ -44,8 +44,30 @@ use lmoose::{ADVENT,ALBION,ALIEN,ANGEL,BEAST,BONE,BRIDGE,CITY,
 use rand::Rng;
 
 
+pub const ID_CITADEL_OF_SPIRIT:u32 = 0;
+pub const ID_DOOR_TO_DARKNESS:u32 = 1;
+pub const ID_ELVEN_LAKE_RUINS:u32 = 2;
+pub const ID_HALL_OF_STONE:u32 = 3;
+pub const ID_ICE_PALACE:u32 = 4;
+pub const ID_LOST_LIGHTHOUSE:u32 = 5;
+pub const ID_MALACHIA_PUBCRAWL:u32 = 6;
+pub const ID_MALEK_GROVE:u32 = 7;
+pub const ID_MONSTER_HALL:u32 = 8;
+pub const ID_ON_THE_PRAIRIE:u32 = 9;
+pub const ID_PETRIFIED_SHRINE:u32 = 10;
+pub const ID_STAIRWAY:u32 = 11;
+pub const ID_THE_PATH:u32 = 12;
+pub const ID_TOWER_OF_FLESH:u32 = 13;
+pub const ID_TOWER_OF_BONES:u32 = 14;
+pub const ID_TOWER_OF_SOUL:u32 = 15;
+pub const ID_WAY_DOWN:u32 = 16;
+pub const ID_WHITE_TEMPLE:u32 = 17;
+pub const ID_WILD_HUNT:u32 = 18;
+pub const ID_WITCH_MAZE:u32 = 19;
+
 pub fn malek_grove()-> Dungeon {
 	Dungeon {
+		id: ID_MALEK_GROVE,
 		name: "Malek Grove",
 		xy: [40,50],
 		diff: 30.0,
@@ -101,6 +123,7 @@ pub fn malek_grove()-> Dungeon {
 pub fn monster_hall()-> Dungeon {
 
 	Dungeon {
+		id: ID_MONSTER_HALL,
 		name: "Monster Hall",
 		xy: [140,50],
 		diff: 50.0,
@@ -201,6 +224,7 @@ pub fn citadel_of_spirit(player:Lifeform)-> Dungeon {
 	let player = player.clone();
 
 	Dungeon {
+		id: ID_CITADEL_OF_SPIRIT,
 		name: "the Citadel of Spirit",
 		xy: [0,50],
 		diff: 108.0,
@@ -286,6 +310,7 @@ pub fn citadel_of_spirit(player:Lifeform)-> Dungeon {
 pub fn elven_lake_ruins()-> Dungeon {
 
 	Dungeon {
+		id: ID_ELVEN_LAKE_RUINS,
 		name: "Elven Ruins",
 		xy:[40,-70],
 		diff: 30.0,
@@ -335,6 +360,7 @@ pub fn elven_lake_ruins()-> Dungeon {
 pub fn malachia_pubcrawl()-> Dungeon {
 
 	Dungeon {
+		id: ID_MALACHIA_PUBCRAWL,
 		name: "Downtown Malachia",
 		xy:[60,30],
 		diff: 10.0,
@@ -401,6 +427,7 @@ pub fn malachia_pubcrawl()-> Dungeon {
 pub fn lost_lighthouse()-> Dungeon {
 
 	Dungeon {
+		id: ID_LOST_LIGHTHOUSE,
 		name: "the Lost Lighthouse",
 		xy: [-100,-60],
 		diff: 40.0,
@@ -447,6 +474,7 @@ pub fn door_to_darkness(party:&Vec<(Lifeform,usize)>)-> Dungeon {
 	let doppel_a:Lifeform = party[0].0.clone();
 	let doppel_b:Lifeform = if party.len()>1 {party[0].0.clone()}else{alien().clone()};
 	Dungeon {
+		id: ID_DOOR_TO_DARKNESS,
 		name: "the Black Door",
 		xy: [-100,-10],
 		diff: 80.0,
@@ -515,6 +543,7 @@ pub fn door_to_darkness(party:&Vec<(Lifeform,usize)>)-> Dungeon {
 pub fn white_temple()-> Dungeon {
 
 	Dungeon {
+		id: ID_WHITE_TEMPLE,
 		name: "the White Temple",
 		xy: [-160,20],
 		diff: 60.0,
@@ -577,6 +606,7 @@ pub fn white_temple()-> Dungeon {
 pub fn stairway()-> Dungeon {
 
 	Dungeon {
+		id: ID_STAIRWAY,
 		name: "the Stairway",
 		xy: [80,-70],
 		diff: 120.0,
@@ -651,6 +681,7 @@ pub fn stairway()-> Dungeon {
 pub fn witch_maze()-> Dungeon {
 
 	Dungeon {
+		id: ID_WITCH_MAZE,
 		name: "the Witch's Maze",
 		xy: [-140,10],
 		diff: 40.0,
@@ -725,6 +756,7 @@ pub fn witch_maze()-> Dungeon {
 pub fn way_down()-> Dungeon {
 
 	Dungeon {
+		id: ID_WAY_DOWN,
 		name: "the Way Down",
 		xy: [20,70],
 		diff: 60.0,
@@ -778,6 +810,7 @@ pub fn way_down()-> Dungeon {
 pub fn wild_hunt()-> Dungeon {
 	let hunting:usize = rand::thread_rng().gen_range(1,15);
 	let mut dungeon = Dungeon {
+		id: ID_WILD_HUNT,
 		name: "the Wild Hunt",
 		xy: [-100,60],
 		diff: 100.0,
@@ -817,6 +850,7 @@ pub fn wild_hunt()-> Dungeon {
 pub fn tower_of_bones()-> Dungeon {
 	
 	Dungeon {
+		id: ID_TOWER_OF_BONES,
 		name: "Tower of Bones",
 		xy: [-40,-10],
 		diff: 40.0,
@@ -877,6 +911,7 @@ pub fn tower_of_bones()-> Dungeon {
 pub fn tower_of_flesh()-> Dungeon {
 	
 	Dungeon {
+		id: ID_TOWER_OF_FLESH,
 		name: "Tower of Flesh",
 		xy: [-40,-30],
 		diff: 20.0,
@@ -927,6 +962,7 @@ pub fn tower_of_flesh()-> Dungeon {
 pub fn tower_of_soul(party:&Vec<(Lifeform,usize)>) -> Dungeon {
 
 	Dungeon {
+		id: ID_TOWER_OF_SOUL,
 		name: "Tower of Soul",
 		xy: [-60,-20],
 		diff: 40.0,
@@ -984,6 +1020,7 @@ pub fn tower_of_soul(party:&Vec<(Lifeform,usize)>) -> Dungeon {
 pub fn hall_of_stone() -> Dungeon {
 
 	Dungeon {
+		id: ID_HALL_OF_STONE,
 		name: "Halls of Stone",
 		xy: [180,-60],
 		diff: 70.0,
@@ -1083,6 +1120,7 @@ pub fn hall_of_stone() -> Dungeon {
 pub fn the_path() -> Dungeon {
 
 	Dungeon {
+		id: ID_THE_PATH,
 		name: "The Path to the Holy Peak",
 		xy: [-20,70],
 		diff: 20.0,
@@ -1149,6 +1187,7 @@ pub fn the_path() -> Dungeon {
 pub fn on_the_prairie() -> Dungeon {
 
 	Dungeon {
+		id: ID_ON_THE_PRAIRIE,
 		name: "A House on the Steppe",
 		xy: [-80,10],
 		diff: 20.0,
@@ -1187,6 +1226,7 @@ pub fn on_the_prairie() -> Dungeon {
 pub fn ice_palace() -> Dungeon {
 
 	Dungeon {
+		id: ID_ICE_PALACE,
 		name: "Palace of Ice",
 		xy: [-160,90],
 		diff: 20.0,
@@ -1272,6 +1312,7 @@ pub fn ice_palace() -> Dungeon {
 pub fn petrified_shrine() -> Dungeon {
 	
 	Dungeon {
+		id: ID_PETRIFIED_SHRINE,
 		name: "Petrified Shrine",
 		xy: [0,-60],
 		diff: 1000.0,

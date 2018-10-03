@@ -148,6 +148,7 @@ pub struct Place{
 #[derive(Debug)]
 #[allow(non_snake_case)]
 pub struct Dungeon{
+	pub id: u32,
 	pub name: &'static str,						//Dungeon Name.
 	pub xy: [i32;2],							//Which world coords is it tied to.
 	pub diff: f32,								//Monster power multiplier.

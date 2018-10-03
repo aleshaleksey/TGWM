@@ -36,9 +36,17 @@
 //Standard entry code.
 const ENTRY:u16 = 0;
 //Special exit codes.
-pub const FIGHT_EXIT:u16 = 666;
+pub const FIGHT_EXIT:u16 = 65530;
 pub const MAX_JOIN_EXIT:u16 = 100;    //if below this or equal, monster joins.
 pub const MAX_LEAVE_EXIT:u16 = 333;  //If between 100-333, monster leaves.
+pub const MIN_GIVE_EXIT:u16 = 334;
+pub const MAX_GIVE_EXIT:u16 = 433;
+pub const MIN_TAKE_EXIT:u16 = 434;
+pub const MAX_TAKE_EXIT:u16 = 533;
+pub const MIN_PAY_EXIT:u16 = 534;
+pub const MAX_PAY_EXIT:u16 = 633;
+pub const MIN_FINE_EXIT:u16 = 634;
+pub const MAX_FINE_EXIT:u16 = 733;
 //Standard exit codes (keep things less confusing)
 //These are special reserved numbers. Keep away.
 const EXIT_1:u16 = 65535;
@@ -50,6 +58,13 @@ const EXIT_5:u16 = 65531;
 extern crate conrod;
 use smoose::{Story,Trigger,Content};
 use lmoose::*;
+#[allow(unused_imports)]
+use dmoose::{ID_CITADEL_OF_SPIRIT,ID_DOOR_TO_DARKNESS,ID_ELVEN_LAKE_RUINS,
+			 ID_HALL_OF_STONE,ID_ICE_PALACE,ID_LOST_LIGHTHOUSE,ID_MALACHIA_PUBCRAWL,
+			 ID_MALEK_GROVE,ID_MONSTER_HALL,ID_ON_THE_PRAIRIE,ID_PETRIFIED_SHRINE,
+			 ID_STAIRWAY,ID_THE_PATH,ID_TOWER_OF_FLESH,ID_TOWER_OF_BONES,
+			 ID_TOWER_OF_SOUL,ID_WAY_DOWN,ID_WHITE_TEMPLE,ID_WILD_HUNT,ID_WITCH_MAZE};
+			 
 use std::collections::BTreeMap;
 
 //The test quest, carry yourself to either of these locations.
@@ -88,6 +103,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	
 	let entry_content = Content {
 		actors:vec![(&faces[16][0],ghost_an(),1)],
+		tokens:Vec::new(),
 		phrases_by_key:entry_map,
 		entry_node: ENTRY,
 		exit_nodes: vec![1,2,FIGHT_EXIT],
@@ -100,6 +116,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 	
 	let void_bridge_content = Content {
 		actors:vec![(&faces[16][0],ghost_an(),1)],
+		tokens:Vec::new(),
 		phrases_by_key: void_dialog,
 		entry_node: 1,
 		exit_nodes: vec![111],
@@ -112,6 +129,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		
 	let black_tower_content = Content {
 		actors:vec![(&faces[16][0],ghost_an(),1)],
+		tokens:Vec::new(),
 		phrases_by_key: tower_dialog,
 		entry_node: 2,
 		exit_nodes: vec![222],
@@ -125,6 +143,7 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		
 	let death_content = Content {
 		actors:Vec::new(),
+		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
 		exit_nodes: vec![888],
@@ -245,9 +264,10 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	
 	//Create entry content.
 	let entry_content = Content {
-		actors:vec![(&faces[21][0],witch().rename("Exorcist").wm_change(2.0).mp_change(2.0).spellist(vec![S_EXORCISM,S_GREATER_EXORCISM,S_GREATER_CURE,S_SPARK]),1),
-					(&faces[22][0],witch().rename("Escort").diff_lvl(10).speed_change(0.7),1),
+		actors:vec![(&faces[21][0],witch().rename("The Exorcist").wm_change(2.0).mp_change(2.0).hp_change(2.0).spellist(vec![S_EXORCISM,S_GREATER_EXORCISM,S_GREATER_CURE,S_SPARK]),1),
+					(&faces[20][0],warrior().rename("Paladin").diff_lvl(10).speed_change(0.7),1),
 					(&faces[22][0],witch().rename("Escort").diff_lvl(10).speed_change(0.7),1)],
+		tokens:Vec::new(),
 		phrases_by_key: entry_map,
 		entry_node: ENTRY,
 		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,FIGHT_EXIT],
@@ -264,6 +284,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	//FIGHT EXIT conclusion content.
 	let death_content = Content {
 		actors:Vec::new(),
+		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
 		exit_nodes: vec![EXIT_1],
@@ -271,8 +292,24 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	};
 	
 	//EXIT_1 conclusion. (You abused the exorcists and they went away).
-	let mut exit1_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
-	exit1_dialog.insert(EXIT_1,(vec![1],"Halt! Villain!".to_owned()));
+	let mut exit4_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit4_dialog.insert(EXIT_4,(vec![1],"You stand among the ruins of glory.".to_owned()));
+	exit4_dialog.insert(1,(vec![EXIT_1],"...".to_owned()));
+	exit4_dialog.insert(EXIT_1,(vec![],"So you have come...".to_owned()));
+	
+	//EXIT_4 conclusion. (You ended up helping the exorcists).
+	//And of course when it's finished there will be a fight.
+	let ex4_content = Content {
+		actors:vec![(&faces[20][0],warrior().rename("Paladin").diff_lvl(10).speed_change(0.7).spellist(vec![S_FIRE,S_EXORCISM]),1),
+					(&faces[21][0],witch().rename("The Exorcist").wm_change(2.0).mp_change(2.0).hp_change(2.0).spellist(vec![S_EXORCISM,S_GREATER_EXORCISM,S_GREATER_CURE,S_SPARK]),1),
+					(&faces[20][0],warrior().rename("Paladin").diff_lvl(10).speed_change(0.7).spellist(vec![S_FIRE,S_EXORCISM]),1),
+					(&faces[22][0],witch().rename("Escort").diff_lvl(10).speed_change(0.7),1)],
+		tokens:Vec::new(),
+		phrases_by_key: exit4_dialog,
+		entry_node: EXIT_4,
+		exit_nodes: vec![EXIT_1],
+		
+	};
 	
 	
 	//Create end vector -NB this will crash hard the way it is. I think.
@@ -280,7 +317,11 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		//EXIT_1 bad ending
 		//EXIT_2 bad ending
 		//EXIT_3 ok ending
-		//EXIT_4 good ending
+		(EXIT_4,ex4_content,vec![Trigger::StartedStoryWith(667,EXIT_4),
+								 Trigger::FinishedDungeon(ID_MALACHIA_PUBCRAWL),
+								 Trigger::LocusXY([-160,20])
+			]
+		),
 		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(667,FIGHT_EXIT)])
 	];
 	
