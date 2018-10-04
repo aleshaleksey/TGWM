@@ -8,7 +8,7 @@ use std::env;
 use std::io::{Read,Write};
 use std::mem::{forget,transmute};
 
-use smoose::MyStories;
+use smoose::{MyStories,MyDungeons};
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
 
@@ -281,7 +281,8 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 				mut p_loc:&mut Place,
 				mut pl:&mut (usize,usize),
 				mut coords: &mut [i32;2],
-				my_stories:&mut MyStories){	
+				my_stories:&mut MyStories,
+				my_dungeons:&mut MyDungeons){	
 	println!("filename: {}",file_name);
 	//Initiate raw data constructs.
 	let mut rlb = Vec::with_capacity(8000);
@@ -289,7 +290,8 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	let mut rltxt = String::new();
 	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
 	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrtxt");
-	let to_open_s = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrp");
+	let to_open_s = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrp");
+	let to_open_d = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrd");
 
 	println!("msqrb: {:?}",to_open_a);
 	println!("msqrtxt: {:?}",to_open_b);
@@ -305,7 +307,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	match File::open(to_open_s) {
 		Ok(mut fp) => {
 			println!("There is a plot");
-			let mut rplot:Vec<u8> = Vec::with_capacity(500);
+			let mut rplot:Vec<u8> = Vec::with_capacity(50000);
 			fp.read_to_end(&mut rplot);
 			let plot_len = rplot.len()/8; //Assumes vec<(u32,u16,u16)>, hence 6 bytes,
 			let plot_pointer = unsafe {transmute::<*mut u8,*mut (u32,u16,u16)>(rplot.as_mut_ptr())};
@@ -320,6 +322,28 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 			my_stories.make_ids(rplottrans);
 		},
 		_		=> {println!("There is no plot.");},
+	};
+	
+	//NB old files will not have a plot file initially, so for compat.
+	//this is written to taken that into account.
+	match File::open(to_open_d) {
+		Ok(mut fp) => {
+			println!("There are dungeons");
+			let mut packed_dungeons:Vec<u8> = Vec::with_capacity(2000);
+			fp.read_to_end(&mut packed_dungeons);
+			let dungeons_len = packed_dungeons.len()/16; //Assumes vec<[u32;4]>, hence 4*4=16 bytes,
+			let dungeons_pointer = unsafe {transmute::<*mut u8,*mut [u32;4]>(packed_dungeons.as_mut_ptr())};
+			forget(packed_dungeons);
+			let dungeon_ids = unsafe {
+				Vec::from_raw_parts(
+					dungeons_pointer,
+					dungeons_len,
+					dungeons_len,
+				)
+			};
+			my_dungeons.replace_ids(dungeon_ids);
+		},
+		_		=> {println!("There are no dungeons.");},
 	};
 	println!("Got here");
 	
@@ -483,20 +507,24 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		nx:&Vec<String>,
 		spl:&Vec<Spell>,
 		p:&Place,
-		s:&MyStories){
+		s:&MyStories,
+		d:&mut MyDungeons){
 	
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");
 	let mut f1 = dir.join(s_name.clone()+".msqrtxt");
 	let mut f2 = dir.join(s_name.clone()+".msqrb");
-	let mut fs = dir.join(s_name+".msqrp");
+	let mut fs = dir.join(s_name.clone()+".msqrp");
+	let mut fd = dir.join(s_name+".msqrd");
 	
 	
 	//Need to "safetify" this.		
 	let mut stxt = File::create(&f1).unwrap();
 	let mut sfile = File::create(&f2).unwrap();
 	let mut splot = File::create(&fs).unwrap();
+	let mut sdung = File::create(&fd).unwrap();
 	
+	//Write plot completion file.
 	if s.len()>0 {
 		let finlen = s.len()*8;  //8 bytes per entry.
 		let mut sids = s.get_ids();
@@ -511,6 +539,23 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		};
 	
 		splot.write_all(&sids).expect("Tried to save plot, but lost it.");
+	};	
+	
+	//Write dungeon completion file.
+	if d.len()>0 {
+		let finlen = d.len()*16;  //[u32;4]=4*4=16 bytes per entry.
+		let mut dids = d.get_ids();
+		let ids_pointer = unsafe {transmute::<*mut [u32;4],*mut u8>(dids.as_mut_ptr())};
+		forget(dids);
+		let dids = unsafe {
+			 Vec::from_raw_parts(
+				ids_pointer,
+				finlen,
+				finlen,
+			)
+		};
+	
+		splot.write_all(&dids).expect("Tried to save dungeons, but couldn't get out.");
 	};				
 
 	let n_party:u8=xx.len() as u8;

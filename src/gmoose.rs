@@ -3905,6 +3905,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					sprite_boxer: &mut GraphicsBox,
 					sprite_pos: &mut [[f64;2];25],
 					my_stories:&mut MyStories,
+					my_dungeons:&mut MyDungeons,
 					stories: &Vec<Story>,
 					mut sages: Vec<Sage<'a>>) 
 //	->(bool,String,bool,[bool;7],usize,u8,i32,usize,Vec<Sage<'a>>)
@@ -3943,7 +3944,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);							
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
 				};			
@@ -4170,7 +4171,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			if init & (answer.0==1){
 				gui_box = GUIBox::MainLoad((0,false));
-				save(&party,&p_names,spl,&p_loc,my_stories);
+				save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);
 				*comm_text = "Backup complete... Choose a moose to load:".to_owned();
 			}else if !init & (answer.0!=5){
 				if to_load.0.is_some() & (answer.0==42) {
@@ -4183,7 +4184,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						p_loc,
 						pl,
 						coords,
-						my_stories);
+						my_stories,
+						my_dungeons);
 					loaded_confirmed(party,p_names,comm_text,ui,ids);
 					
 					*to_load = (None,1);
@@ -4233,7 +4235,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);							
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
 				};			
@@ -4443,7 +4445,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						gui_box_previous = gui_box.clone();
 						gui_box = GUIBox::GameFight(true);
 						
-						dungeon_updater(dungeons,party,idungeon.unwrap()); 
+						dungeon_updater(dungeons,party,idungeon.unwrap());
+						my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
+						
 						encounter_starter_dun(party, enemies, encounter,
 									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
 									&dungeons[idungeon.unwrap()].denizens);
@@ -4453,6 +4457,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					*freeze_timer = timer;
 					gui_box_previous = gui_box.clone();
 					gui_box = GUIBox::GameFight(true);
+					
+					my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
 						
 					encounter_starter_dun(party, enemies, encounter,
 									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
@@ -4482,6 +4488,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					if pressed.0==5 {
 						*mutm_box_vis = false;
 						gui_box = GUIBox::GameTravel;
+						my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
+						
 						*dungeon_pointer = 0;
 						println!("in setter dungeon_pointer={}",dungeon_pointer);
 					};

@@ -60,7 +60,7 @@
 extern crate conrod;
 use std::collections::BTreeMap;
 
-#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
+#[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
 			 sum_reaper,teleport,teleportG,light,lightH,darkness,darknessH,slow,haste,lifestealer,curse,
 			 apocalypse,timestop,world,goblin_dem,goblin_sco,goblin_witch,bandit,bandit_lord,dark_apprentice,
@@ -238,43 +238,79 @@ impl KillList {
 }
 
 // A structure for storing dungeons.
-// Contains coords, tries, and successes.
+// Contains ids, tries, successes, and last stage.
 #[derive(Debug)]
 pub struct MyDungeons {
-	ids:Vec<([i32;2],u32,u32)>,
+	ids:BTreeMap<u32,[u32;3]>,
 }
 
 impl MyDungeons {
 	pub fn new()-> MyDungeons {
 		MyDungeons{
-			ids: Vec::with_capacity(100),
+			ids: BTreeMap::new(),
 		}
 	}
 	
-	pub fn push(&mut self,coords:[i32;2],tries:u32,done:u32) {
-		self.ids.push((coords,tries,done))
+	pub fn len(&self)->usize {
+		self.ids.len()
 	}
 	
-	pub fn take_ids(&self)->Vec<([i32;2],u32,u32)> {
-		self.ids.clone()
+	//Tries to add a new dungeon.
+	pub fn try_push(&mut self,id:u32,tries:u32,done:u32,last:u32) {
+		self.ids.insert(id,[tries,done,last]);
 	}
 	
-	pub fn replace_ids(&mut self,ids:Vec<([i32;2],u32,u32)>) {
-		self.ids = ids; 
+	//A function for extracting the numbers. Used when saving.
+	pub fn get_ids(&self)->Vec<[u32;4]> {
+		let mut output_vec = Vec::with_capacity(self.ids.len());
+		for (x,[a,b,c]) in self.ids.iter() {
+			output_vec.push([*x,*a,*b,*c])
+		}
+		output_vec
 	}
 	
-	pub fn has(&self,coords:&[i32;2])->bool {
-		for x in self.ids.iter() {
-			if x.0==*coords {return true;};
+	//A function for placing the numbers. Used when loading.
+	pub fn replace_ids(&mut self,ids:Vec<[u32;4]>) {
+		for [x,a,b,c] in ids.iter() {
+			self.ids.insert(*x,[*a,*b,*c]);
+		}; 
+	}
+	
+	//Check if you've tried this dungeon.
+	pub fn has(&self,id:u32)->bool {
+		if self.ids.get(&id).is_some() {true}else{false}
+	}
+	
+	//check if you've finished this dungeon.
+	pub fn has_done(&self,id:u32)->bool {
+		match self.ids.get(&id) {
+			Some([_,a,_]) => if *a>0 {true}else{false},
+			_			  => {false},
+		}
+	}
+	
+	//Update the status of a dungeon entry.
+	//Should only be called when entering the dungeon
+	//Or changing scene. Or the world will end.
+	pub fn update_status(&mut self,dungeon:&Dungeon,pointer:usize) {
+		if self.ids.get(&dungeon.id).is_some() {
+			//get entry and current scene.
+			let mut entry = self.ids.get_mut(&dungeon.id).unwrap();
+			let scene = if pointer>1 {pointer-2}else{0};
+			//decide what to do with it. NB entry==[attempts,successes,deepest_stage]
+			if scene==0 {
+				entry[0]+= 1;
+			}else if (scene<dungeon.scenes.len()) & (scene as u32>entry[2]) {
+				entry[2] = scene as u32;
+			}else{
+				entry[1]+= 1;
+			};
+		}else{
+			//no need to check anything here, as this
+			//should only be called if there is no entry,
+			//and hence no progress to start off with.
+			self.ids.insert(dungeon.id,[1,0,0]);
 		};
-		false
-	}
-	
-	pub fn has_done(&self,coords:&[i32;2])->bool {
-		for x in self.ids.iter() {
-			if (x.0==*coords) & (x.2>0) {return true;};
-		};
-		false
 	}
 }
 
@@ -545,7 +581,7 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 
 // A function to poll stories vs start and finish triggers.
 // If conditions are met a story index is given into the story box.
-pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
+pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
 	//Initiate story.
 	//iterate over stories.
 	for (i,x) in stories.iter().enumerate() {
@@ -588,13 +624,16 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,p_loc:&Place,
 							if party[0].0.ExpUsed<*tr {get = false;};
 						},
 						Trigger::StartedStory(x) => {
-							get = my_stories.poll_started(*x);
+							if !my_stories.poll_started(*x) {get = false;};
 						},
 						Trigger::FinishedStory(x) => {
-							get = my_stories.poll_finished(*x);
+							if !my_stories.poll_finished(*x) {get = false;};
 						},
 						Trigger::FinishedStoryWith(x,y) => {
-							get = my_stories.poll_finished_with(*x,*y);
+							if !my_stories.poll_finished_with(*x,*y) {get = false;};
+						},
+						Trigger::FinishedDungeon(x) => {
+							if !my_dungeons.has_done(*x) {get = false;};
 						},
 						_				   => {},
 					};

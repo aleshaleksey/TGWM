@@ -45,7 +45,7 @@ extern crate conrod;
 extern crate std;
 
 use lmoose::{Lifeform,Spell,Place,VOID,TIME};
-use smoose::{Sage,MyStories,Story,story_poller};
+use smoose::{Sage,MyStories,MyDungeons,Story,story_poller};
 use gmoose;
 
 //A vector-like structure for carrying image ids for landscape features.
@@ -592,6 +592,7 @@ impl <'a>GUIBox<'a> {
 	//A heavy function to poll stories if travelling.
 	pub fn check_for_story(&mut self,stories:&Vec<Story<'a>>,
 									 my_stories:&mut MyStories,
+									 my_dungeons:&mut MyDungeons,
 									 landscapes: &Landscapes,
 									 p_loc:&Place,
 									 party:&Vec<(Lifeform,usize)>,
@@ -603,7 +604,7 @@ impl <'a>GUIBox<'a> {
 		if self.is_travel() & (timer%20==0) {
 			//println!("Polling stories");
 			//Poll stories for whether triggers for start/end dialog are tipped.
-			let maybe_story:Option<(usize,u16)> = story_poller(stories,my_stories,p_loc,party);
+			let maybe_story:Option<(usize,u16)> = story_poller(stories,my_stories,my_dungeons,p_loc,party);
 			
 			if maybe_story.is_some() {
 					println!("We have a story");

@@ -122,7 +122,6 @@ use tales_of_the_great_white_moose::*;
 #[allow(unused_imports)] use glium::Surface;
 #[allow(unused_imports)] use image::GenericImage;
 #[allow(unused_imports)] use rand::Rng;
-#[allow(unused_imports)] use time::PreciseTime;
 #[allow(unused_imports)] use time::PreciseTime as PT; //laziness at its best.
 
 #[allow(unused_imports)] use std::sync::mpsc::{sync_channel,SyncSender,Receiver,TryRecvError};
@@ -316,6 +315,7 @@ pub fn main() {
 	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces),ghosthunt_part_1(&mons_faces)];
 	println!("number of stories: {}",stories.len());
 	let mut my_stories:MyStories = MyStories::new();
+	let mut my_dungeons:MyDungeons = MyDungeons::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
 	let mut p_names:Vec<String> = Vec::with_capacity(5);
@@ -718,6 +718,7 @@ pub fn main() {
 								  pause,
 								  &mut gui_box);
 		gui_box.check_for_story(&stories,&mut my_stories,
+										 &mut my_dungeons,
 										 &scapes,
 										 &p_loc,
 										 &party,
@@ -788,6 +789,7 @@ pub fn main() {
 					&mut sprite_boxer,
 					&mut sprite_pos,
 					&mut my_stories,
+					&mut my_dungeons,
 					&stories,
 					sages);
 								  
@@ -843,7 +845,7 @@ pub fn main() {
 					let cpu_n = num_cpus::get();
 					let sow:usize = cpu_n;
 					//println!("start of AI dreaming on {} threads.",sow);
-					let s = PreciseTime::now();
+					let s = PT::now();
 					
 					let mut lore:Vec<Vec<[u8;28]>> = Vec::with_capacity(500000);
 					let mut battle_threads = Vec::new();
@@ -866,7 +868,7 @@ pub fn main() {
 						let mut bytes_in_record:usize = 0;
 
 						let battle_thr=thread::spawn(move||{
-							let t0=PreciseTime::now();
+							let t0=PT::now();
 							let s_c1= s_c1.clone();
 							let field= field.clone();
 							let encna_cc=encna_c.clone();
@@ -901,7 +903,7 @@ pub fn main() {
 								}else{
 									discards+= 1;
 								};
-								let t1=PreciseTime::now();
+								let t1=PT::now();
 								if t0.to(t1)>time::Duration::seconds(10){
 									println!("Size of battle_rec fragment: {}",bytes_in_record);
 									break 'dream_looper;
@@ -925,7 +927,7 @@ pub fn main() {
 					thought_sender_to_brain2.send((lore,encounter.clone()));
 					lore_empty = false;
 
-					let e=PreciseTime::now();
+					let e=PT::now();
 					println!("Total time: {}",s.to(e));
 					
 					//Set/Reset battle variables.
@@ -1242,7 +1244,7 @@ fn generate_world_map(world:&Vec<[Place;19]>,
 					  size:&[usize;2],		//[h,w] ->h%19==0, w%19==0 if not the world ends.
 					  display:&glium::Display)->  glium::texture::SrgbTexture2d{
 
-	let a = PreciseTime::now();					  
+	let a = PT::now();					  
 	//Create vector of pixels and correct image size.
 	let mut size:[usize;2] = [size[0],size[1]]; //[h,w]
 	let world_len:usize = world.len();
@@ -1289,7 +1291,7 @@ fn generate_world_map(world:&Vec<[Place;19]>,
 	//This is important for the final conversion.
 	let raw_image = glium::texture::RawImage2d::from_raw_rgba(pix_rgba, (size[1] as u32,size[0] as u32));
 	let texture = glium::texture::SrgbTexture2d::new(display, raw_image).unwrap();
-	let b = PreciseTime::now();
+	let b = PT::now();
 	println!("TIme to generate map: {}",a.to(b));
 	texture
 }
