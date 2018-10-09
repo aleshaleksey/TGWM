@@ -58,7 +58,10 @@
 //mod lmoose;
 
 extern crate conrod;
+
 use std::collections::BTreeMap;
+use std::collections::btree_map;
+use std::slice;
 
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -255,6 +258,10 @@ impl MyDungeons {
 		self.ids.len()
 	}
 	
+	pub fn iter(&self)->btree_map::Iter<u32,[u32;3]> {
+		self.ids.iter()
+	}
+	
 	//Tries to add a new dungeon.
 	pub fn try_push(&mut self,id:u32,tries:u32,done:u32,last:u32) {
 		self.ids.insert(id,[tries,done,last]);
@@ -343,6 +350,11 @@ impl MyStories {
 	pub fn len(&self)->usize {
 		self.ids.len()
 	}
+	
+	pub fn iter(&self)-> slice::Iter<(u32,u16,u16)> {
+		self.ids.iter()	
+	}
+	
 	//poll by completed and incompleted.
 	//false means incomplete, true means complete
 	fn poll_ids(&self,id:u32,done:bool)-> bool {

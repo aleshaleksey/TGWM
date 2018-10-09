@@ -3,6 +3,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_must_use)]
+#![allow(unused_assignments)] 
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![recursion_limit="512"]

@@ -76,9 +76,7 @@ use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};
 			  
 use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
 		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MOORLAND,RADIANT,RUIN,
-		     STEPPE,SPIRIT,TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,
-			 
-			 S_CURE,S_EMBER,S_EXORCISM,S_LIGHT,S_DARKNESS,S_SLOW,S_HASTE,S_SPARK};			 
+		     STEPPE,SPIRIT,TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH};			 
 			 
 use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
 			door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
@@ -2035,99 +2033,6 @@ fn set_afterstory(ref mut ui: &mut conrod::UiCell,
 		.set(ids.dungeon_afterstory, ui);
 }
 
-fn encounter_starter_marker(){}
-//standard encounter generator.
-fn encounter_starter(party: &mut Vec<(Lifeform,usize)>,
-					 mut enemies: &mut Vec<(Lifeform,usize)>,
-					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-					 p_loc: &Place,
-					 mons: &Vec<Lifeform>) {
-	*enemies = engenB(&engenA(),&p_loc,mons);
-	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
-}
-
-//Dungeon encounter generator.
-fn encounter_starter_dun(party: &mut Vec<(Lifeform,usize)>,
-					 mut enemies: &mut Vec<(Lifeform,usize)>,
-					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-					 p_loc: &Place,
-					 mons: &Vec<Lifeform>) {
-	*enemies = engenB(&engenA_dun(p_loc),&p_loc,mons);
-	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
-}
-
-//standard encounter generator.
-fn encounter_starter_story(party: &mut Vec<(Lifeform,usize)>,
-					 mut enemies: &mut Vec<(Lifeform,usize)>,
-					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-					 content: &Content,
-					 mons: &Vec<Lifeform>) {
-	*enemies = engen_story(content);
-	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
-	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
-}
-
-fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
-	let dlb = dl as f32;
-	character.Attack-= character.Attack/25.0*dlb;
-	character.Defence+= character.Defence/25.0*dlb;
-	character.WM+= character.WM/25.0*dlb;
-	character.BM-= character.BM/25.0*dlb;
-	character.Attack_shade= character.Attack;
-	character.Defence_shade= character.Defence;
-	character.WM_shade= character.WM;
-	character.BM_shade= character.BM;
-	println!("Self Attack:{}",character.Attack);
-	if dlb<0.0{
-		character.Spellist = match character.name {
-			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
-			"Warrior"=>vec![S_DARKNESS],
-			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
-			_=>vec![],
-		};	
-	}else{
-		character.Spellist = match character.name {
-			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
-			"Warrior"=>vec![S_LIGHT],
-			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
-			_=>vec![],
-		};
-	};
-}
-
-fn sidekick_maker(mut party: &mut Vec<(Lifeform,usize)>, mut p_names: &mut Vec<String>) {
-	let dlb = rand::thread_rng().gen_range(-12,13) as f32;
-	party[1].0.Attack-= party[1].0.Attack/25.0*dlb;
-	party[1].0.Defence+= party[1].0.Defence/25.0*dlb;
-	party[1].0.WM+= party[1].0.WM/25.0*dlb;
-	party[1].0.BM-= party[1].0.BM/25.0*dlb;
-	party[1].0.Attack_shade= party[1].0.Attack;
-	party[1].0.Defence_shade= party[1].0.Defence;
-	party[1].0.WM_shade= party[1].0.WM;
-	party[1].0.BM_shade= party[1].0.BM;
-	println!("Self Attack:{}",party[1].0.Attack);
-	if dlb<0.0{
-		party[1].0.Spellist = match party[1].0.name{
-			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
-			"Warrior"=>vec![S_DARKNESS],
-			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
-			_=>vec![],
-		};
-	}else{
-		party[1].0.Spellist = match party[1].0.name{
-			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
-			"Warrior"=>vec![S_LIGHT],
-			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
-			_=>vec![],
-		};
-	};
-	p_names.push(sidekick_namer(party));
-}
 
 //display party stats.
 fn marker_of_party_stats(){}
@@ -2766,6 +2671,109 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 	return None	  
 }
 
+//A function to set the matrix of the quest diary.
+//As a matrix. Upon click display quest detail in sep-win.
+fn set_quest_diary_marker(){}
+
+fn get_story_by_id<'a>(stories:&'a Vec<Story<'a>>,id:u32)-> Option<&'a Story<'a>> {
+	for x in stories.iter() {
+		if x.id==id {return Some(x)};
+	};
+	None
+}
+
+
+fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   my_stories:&MyStories,
+				   all_stories:&Vec<Story>,
+				   men_wh:&[f64;2]){
+	
+	let width:f64 = ui.w_of(ids.middle_column).unwrap()-BORDER*2.0;
+	let s_l = my_stories.len();
+	
+	//Iterator from my_stories, for easy setting.
+	let mut story_iter = my_stories.iter();
+	
+	//Set the diary matrix.
+	let mut story_matrix = widget::Matrix::new(1,s_l)
+			.w(width)
+			.h(men_wh[1]/10.0*(s_l as f64))
+			.mid_top_of(ids.middle_column)
+			.set(ids.quest_diary_matrix, ui);
+	
+		
+	let button = widget::Button::new().color(BUTTON_COLOUR)
+						.h(men_wh[1]/10.0)
+						.label_font_size(font_size_chooser_button_b(width));
+	
+	//NB, double/triple redundancy of Options.		
+	while let Some(questlet) = story_matrix.next(ui) {
+		if let Some(q_id) = story_iter.next() {
+			let story = get_story_by_id(&all_stories,q_id.0);
+			let label = if story.is_some() {
+				story.unwrap().name
+			}else{
+				"Nothing quest on this page."
+			};
+			
+			for _click in questlet.set(button.clone().label(label),ui) {
+				println!("Story retrieved: {}.",label);
+			};
+		};
+	};
+}
+
+//A function to set the list of encountered dungeons as a matrix.
+//On click display entry.
+//nb get_dungeon_name_by_id does not belong here. It belongs elsewhere.
+fn get_dungeon_by_id(dungeons:&Vec<Dungeon>,id:u32)-> Option<&Dungeon> {
+	for x in dungeons.iter() {
+		if x.id==id {return Some(x)};
+	};
+	None
+}
+
+fn set_dungeon_diary_marker(){}
+fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   my_dung:&MyDungeons,
+				   all_dung:&Vec<Dungeon>,
+				   men_wh:&[f64;2]){
+	
+	let width:f64 = ui.w_of(ids.middle_column).unwrap()-BORDER*2.0;
+	let d_l = my_dung.len();
+	
+	//Iterator over dungeons in my_dungeons.
+	let mut dung_iter = my_dung.iter();
+	
+	//Make dungeon matrix.
+	let mut dung_matrix = widget::Matrix::new(1,d_l)
+			.w(width)
+			.h(men_wh[1]/10.0*(d_l as f64))
+			.mid_top_of(ids.middle_column)
+			.set(ids.quest_diary_matrix, ui);
+			
+	let button = widget::Button::new().color(BUTTON_COLOUR)
+								.h(men_wh[1]/10.0)
+								.label_font_size(font_size_chooser_button_b(width));
+			
+	//Make dungeon name button.		
+	while let Some(dunglet) = dung_matrix.next(ui) {
+		if let Some(dung) = dung_iter.next() {
+			let maybe_dungeon = get_dungeon_by_id(all_dung,*dung.0);
+			let label = if maybe_dungeon.is_some() {
+				maybe_dungeon.unwrap().name
+			}else{
+				"No entry here."
+			};
+			
+			for _click in dunglet.set(button.clone().label(label),ui) {
+				println!("Dungeon retrieved: {}.",label);
+			};
+		};
+	}
+}
 
 //set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,comm_text:String)
 
@@ -3127,163 +3135,6 @@ fn start_game_pressed_a(ref mut ui: conrod::UiCell,
 
 
 //START GAME FUNCTION OVER.
-
-
-
-//This fucntion is for picking sidekick's name from a thematic list.
-fn sidekick_namer(x:&Vec<(Lifeform,usize)>)-> String{
-	let mut names:Vec<&str>=Vec::new();
-	if x[1].0.name=="Witch"{
-		names.extend(["Madoka","Walpurgis","Yaga","Maud","Cassandra","Circe","Morgan","Hecate","Medea","Agamede","Ariadne"].iter());
-	}else if x[1].0.name=="Warrior"{
-		names.extend(["Andromachos","Hector","Achilles","Bruce","Jackie","Musashi","Ilya","Alexander","Gengis","Julius"].iter());
-	}else{
-		names.extend(["Kino","Odysseos","Scott","Piri","Amsund","Marco","Yuri","Neil","Orpheus","Jason","Mallory","Messner","Kirk"].iter());
-	};
-    let picker=rand::thread_rng().gen_range(0,names.len());
-    let nome=names[picker].to_string();
-    println!("\nYour sidekick happens to be {} the {}.", &nome, x[1].0.name);
-    //Class and name setter. OVER.
-    nome
-}
-
-//engenA (generates battle variable y).
-fn engenA()->Vec<usize> {
-	
-	println!("Entering engenA");
-    let ngroups=rand::thread_rng().gen_range(0,10);
-    let ngroups=[1,1,1,2,2,2,3,3,3,4][ngroups];
-    let mut gsizes: Vec<usize>=vec!(0;ngroups);
-    for i in 0..ngroups{
-		let ggen=rand::thread_rng().gen_range(0,10);
-        gsizes[i]=[1,1,1,2,2,2,3,3,4,4][ggen]
-    };
-	println!("Exiting engenA");
-    gsizes
-}
-
-//engenA for dungeons (generates battle variable y).
-fn engenA_dun(locus: &Place)->Vec<usize> {
-	println!("Entering engenA_dun");
-    let ngroups=rand::thread_rng().gen_range(0,10);
-    let ngroups=locus.engenA[ngroups];
-    let mut gsizes: Vec<usize>=vec!(0;ngroups);
-    for i in 0..ngroups {
-		let ggen=rand::thread_rng().gen_range(0,10);
-        gsizes[i]=locus.engenG[ggen]
-    };
-	println!("Exiting engenA_dun");
-    gsizes
-}
-
-//engenB (generates battle variable x).
-fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lifeform,usize)>{
-	println!("Entering engenB. Locale: {}. Populatations {}. engenA: {:?}",B.name,B.popu.len(),A);
-    let mut enemies: Vec<(Lifeform,usize)> = Vec::new();
-    let mut totapop = 0;
-    let mut tomoty: Vec<u8> = Vec::new();
-    let mut tomo: Vec<&str> = Vec::new();
-    let mut mon_type:u8 = GOBLIN;
-    let n_groups = A.len();
-     println!("EngenB initiated");
-     //generate the thread_gen max value and the type it corresponds to.
-    for l in 0..B.popu.len() {
-		let subpop=vec!(B.popu[l].0; B.popu[l].2 as usize);
-		let subtyp=vec!(B.popu[l].1; B.popu[l].2 as usize);
-        totapop +=B.popu[l].2;
-        tomo.extend(subpop);
-        tomoty.extend(subtyp);
-    };
-    println!("threadgen value obtained.tomo: {}. tomoty: {}.",tomo.len(),tomoty.len());
-    //generate group type and govern inner loops.
-    for i in 0..n_groups{
-        //generate type for group [i]
-        let i_type=rand::thread_rng().gen_range(0,totapop)  as usize;
-        mon_type=tomoty[i_type];
-        //generate each entity in group [i]. NEED TO:select monsters.
-        println!("A: {:?}",A);
-        for k in 0..A[i]{
-			let mut enemy_n: &str = "";
-			let mut k_name:usize = 0;
-			//Make sure that all monsters are of the same type, this will get complex.
-			loop{
-			    k_name=rand::thread_rng().gen_range(0,totapop) as usize;
-			    if tomoty[k_name]==mon_type{break}else{}
-			    println!("Post cleansing tomoty length: {}",tomoty.len());	   
-			};
-			enemy_n = tomo[k_name];
-			let enemy:Lifeform = bestiary[vvwhich_ln(&bestiary,enemy_n)[0]].clone();
-			enemies.push((enemy,i+1))
-		};
-    };
-	println!("Exiting engenB");
-    enemies
-}
-
-//generates the enemy vector for a scripted story encounter.
-fn engen_story_marker(){}
-pub fn engen_story(content:&Content) -> Vec<(Lifeform,usize)> {
-	let mut enemies:Vec<(Lifeform,usize)> = Vec::with_capacity(23);
-	
-	for x in content.actors.iter(){
-		enemies.push((x.1.clone(),x.2));
-	};
-
-	enemies
-}
-
-//Artefact of the terminal Moosequest.
-fn yeno_to_bool(x: &str)-> bool {
- match x.trim().to_lowercase().as_ref() {
-  "y"=>true,
-  "ye"=>true,
-  "yea"=>true,
-  "yeh"=>true,
-  "yep"=>true,
-  "yes"=>true,
-  "yeah"=>true,
-  "true"=>true,
-  "indeed"=>true,
-  "aye"=>true,
-  "ofcourse"=>true,
-  "i do"=>true,
-  _=>false,
- }
-}
-
-//gmoose lvl up function. Does not currently cover spells.
-fn lvl_upg (mut party:&mut Vec<(Lifeform,usize)>,
-			r:usize,
-			mut t_e_c_i_ll:&mut [bool;8]) {
-	
-	let i:usize = r/10;
-	let mut expble:f32 = party[i].0.Exp-party[i].0.ExpUsed;
-	println!("Exp to use:{}",expble);
-	match r%10 {
-		1 => {party[i].0.HP+= expble*2.0;
-			  party[i].0.ExpUsed+= expble;},
-		2 => {party[i].0.MP+= expble*2.0;;
-			  party[i].0.ExpUsed+= expble;},
-		3 => {party[i].0.Speed+= expble/5.0;
-			  party[i].0.ExpUsed+= expble;},
-		4 => {party[i].0.Attack+= expble/2.0;
-			  party[i].0.ExpUsed+= expble;},
-		5 => {party[i].0.Defence+= expble/2.0;
-			  party[i].0.ExpUsed+= expble;},
-		6 => {party[i].0.WM+= expble/2.0;
-			  party[i].0.ExpUsed+= expble;},
-		7 => {party[i].0.BM+= expble/2.0;
-			  party[i].0.ExpUsed+= expble;},
-		_ => {},
-	};
-	expble = 0.0;
-	for x in party.iter() {
-		println!("Exp left on {}:{}",x.0.name,x.0.Exp-x.0.ExpUsed);
-		expble+= x.0.Exp-x.0.ExpUsed;
-	};
-	if expble==0.0 {t_e_c_i_ll[6] = false;};
-}
-
 
 // write configuration into the soundtrack config sound/
 // config file has eighteen lines that look like:
@@ -3728,6 +3579,10 @@ widget_ids! {
 					spell_list_scroll,
 					spell_list_title,
 				party_stats_scroll,
+				quest_diary_matrix,
+					quest_diary_entry,
+				dungeon_diary_matrix,
+					dungeon_diary_entry,
 				load_menu,				//menu of save game file buttons
 					load_menu_scroll,
 				partyc_can,				//battle canvas containing party
@@ -4606,42 +4461,36 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 			
-			let (travel_button,fight_button,explore_button,
-				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
 
-			for _click in fight_button{
-				println!("Pick a fight button pressed.");
-				gui_box_previous = gui_box.clone();
-				gui_box = GUIBox::GameFight(true);
-				encounter_starter(party, enemies, encounter, p_loc, mons);
-				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				set_comm_text(&mut "Well now you've gone and picked a fight.\nThe Great White Moose is dreaming of what this world has become...".to_owned(),ui,ids);
-			};
-			for _click in explore_button{
-				gui_box = GUIBox::GameExplore;
-				*idungeon = dungeon_finder(p_loc,dungeons,party);
-				*freeze_timer = timer;
-				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				println!("Explore button pressed.");
-			};
-			for _click in cast_button{
-				//Prepare the sages!
-				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				sages = sage_generator(&mon_faces,&p_names);		
-				gui_box = GUIBox::GameCastPre; 			
-				//Put a function to cast a spell here and then poll sages.
-			};
-			for _click in party_button{
-				println!("Inspect party button pressed..");
-				gui_box = GUIBox::GameTravel;
-			};
-			for _click in gm_button{
-				println!("Main manu button pressed..");
-				gui_box = GUIBox::Main(true);
-			};
 			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);	
 			set_comm_text(comm_text,ui,ids);
 		},
+		
+		GUIBox::GameInspectInventory => {
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+				
+		},
+		
+		GUIBox::GameInspectQuests => {
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			
+		},
+		
+		GUIBox::GameInspectDungeons=> {
+			*p_scape = p_loc.scape;
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			
+		},
+		
 		GUIBox::GameStory(story,stage_in,stage_out) => {
 			//not finished.
 			*p_scape = p_loc.scape;
@@ -4981,6 +4830,41 @@ fn generate_play_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f
 	let gm_button = game_menu_button.clone().label("Main Menu").down_from(ids.party_button,0.0).set(ids.gm_button,ui);
 	
 	(travel_button,fight_button,explore_button,cast_button,party_button,gm_button)
+	
+}
+
+fn generate_inspect_menu_buttons_marker(){}
+fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
+								 men_wh:&[f64;2], win_wh:&[f64;2], gui_box:&mut GUIBox)
+{
+	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	
+	let inspect_button = game_menu_button.clone().label("Inspect Party").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);		
+	let inventory_button = game_menu_button.clone().label("Inventory").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
+	let dungeon_d_button = game_menu_button.clone().label("Dungeon Diary").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);			
+	let quest_d_button = game_menu_button.clone().label("Quest Diary").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
+	let travel_button = game_menu_button.clone().label("Travel").down_from(ids.cast_button,0.0).set(ids.gm_button,ui);
+	
+	for _click in inspect_button {
+		*gui_box = GUIBox::GameInspectParty(false);
+		println!("Inspect Party button pressed (from inspect menu)");
+	};
+	for _click in inventory_button {
+		*gui_box = GUIBox::GameInspectInventory;
+		println!("Inspect Inventory button pressed (from inspect menu)");
+	};
+	for _click in dungeon_d_button {
+		*gui_box = GUIBox::GameInspectDungeons;
+		println!("Inspect Dungeons button pressed (from inspect menu)");
+	};
+	for _click in quest_d_button {
+		*gui_box = GUIBox::GameInspectQuests;
+		println!("Inspect Quests button pressed (from inspect menu)");
+	};
+	for _click in travel_button {
+		*gui_box = GUIBox::GameTravel;
+		println!("Travel button pressed (from inspect menu)");
+	};
 	
 }
 

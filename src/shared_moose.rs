@@ -2,13 +2,15 @@
 /// shared between modules, and certain inner game logic not related to
 /// battle.
 extern crate conrod;
+extern crate rand;
 
 use std::fs::File;
 use std::env;
 use std::io::{Read,Write};
 use std::mem::{forget,transmute};
+use rand::Rng;
 
-use smoose::{MyStories,MyDungeons};
+use smoose::{MyStories,MyDungeons,Content};
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
 
@@ -624,3 +626,237 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 	};
 		
 }
+
+//Various game related functions.
+
+
+//This fucntion is for picking sidekick's name from a thematic list.
+fn sidekick_namer(x:&Vec<(Lifeform,usize)>)-> String{
+	let mut names:Vec<&str>=Vec::new();
+	if x[1].0.name=="Witch"{
+		names.extend(["Madoka","Walpurgis","Yaga","Maud","Cassandra","Circe","Morgan","Hecate","Medea","Agamede","Ariadne"].iter());
+	}else if x[1].0.name=="Warrior"{
+		names.extend(["Andromachos","Hector","Achilles","Bruce","Jackie","Musashi","Ilya","Alexander","Gengis","Julius"].iter());
+	}else{
+		names.extend(["Kino","Odysseos","Scott","Piri","Amsund","Marco","Yuri","Neil","Orpheus","Jason","Mallory","Messner","Kirk"].iter());
+	};
+    let picker=rand::thread_rng().gen_range(0,names.len());
+    let nome=names[picker].to_string();
+    println!("\nYour sidekick happens to be {} the {}.", &nome, x[1].0.name);
+    //Class and name setter. OVER.
+    nome
+}
+
+//Sidekick maker
+pub fn sidekick_maker(mut party: &mut Vec<(Lifeform,usize)>, mut p_names: &mut Vec<String>) {
+	let dlb = rand::thread_rng().gen_range(-12,13) as f32;
+	party[1].0.Attack-= party[1].0.Attack/25.0*dlb;
+	party[1].0.Defence+= party[1].0.Defence/25.0*dlb;
+	party[1].0.WM+= party[1].0.WM/25.0*dlb;
+	party[1].0.BM-= party[1].0.BM/25.0*dlb;
+	party[1].0.Attack_shade= party[1].0.Attack;
+	party[1].0.Defence_shade= party[1].0.Defence;
+	party[1].0.WM_shade= party[1].0.WM;
+	party[1].0.BM_shade= party[1].0.BM;
+	println!("Self Attack:{}",party[1].0.Attack);
+	if dlb<0.0{
+		party[1].0.Spellist = match party[1].0.name{
+			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
+			"Warrior"=>vec![S_DARKNESS],
+			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
+			_=>vec![],
+		};
+	}else{
+		party[1].0.Spellist = match party[1].0.name{
+			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
+			"Warrior"=>vec![S_LIGHT],
+			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
+			_=>vec![],
+		};
+	};
+	p_names.push(sidekick_namer(party));
+}
+
+//engenA (generates battle variable y).
+fn engenA()->Vec<usize> {
+	
+	println!("Entering engenA");
+    let ngroups=rand::thread_rng().gen_range(0,10);
+    let ngroups=[1,1,1,2,2,2,3,3,3,4][ngroups];
+    let mut gsizes: Vec<usize>=vec!(0;ngroups);
+    for i in 0..ngroups{
+		let ggen=rand::thread_rng().gen_range(0,10);
+        gsizes[i]=[1,1,1,2,2,2,3,3,4,4][ggen]
+    };
+	println!("Exiting engenA");
+    gsizes
+}
+
+//engenA for dungeons (generates battle variable y).
+fn engenA_dun(locus: &Place)->Vec<usize> {
+	println!("Entering engenA_dun");
+    let ngroups=rand::thread_rng().gen_range(0,10);
+    let ngroups=locus.engenA[ngroups];
+    let mut gsizes: Vec<usize>=vec!(0;ngroups);
+    for i in 0..ngroups {
+		let ggen=rand::thread_rng().gen_range(0,10);
+        gsizes[i]=locus.engenG[ggen]
+    };
+	println!("Exiting engenA_dun");
+    gsizes
+}
+
+//engenB (generates battle variable x).
+fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lifeform,usize)>{
+	println!("Entering engenB. Locale: {}. Populatations {}. engenA: {:?}",B.name,B.popu.len(),A);
+    let mut enemies: Vec<(Lifeform,usize)> = Vec::new();
+    let mut totapop = 0;
+    let mut tomoty: Vec<u8> = Vec::new();
+    let mut tomo: Vec<&str> = Vec::new();
+    let mut mon_type:u8 = GOBLIN;
+    let n_groups = A.len();
+     println!("EngenB initiated");
+     //generate the thread_gen max value and the type it corresponds to.
+    for l in 0..B.popu.len() {
+		let subpop=vec!(B.popu[l].0; B.popu[l].2 as usize);
+		let subtyp=vec!(B.popu[l].1; B.popu[l].2 as usize);
+        totapop +=B.popu[l].2;
+        tomo.extend(subpop);
+        tomoty.extend(subtyp);
+    };
+    println!("threadgen value obtained.tomo: {}. tomoty: {}.",tomo.len(),tomoty.len());
+    //generate group type and govern inner loops.
+    for i in 0..n_groups{
+        //generate type for group [i]
+        let i_type=rand::thread_rng().gen_range(0,totapop)  as usize;
+        mon_type=tomoty[i_type];
+        //generate each entity in group [i]. NEED TO:select monsters.
+        println!("A: {:?}",A);
+        for k in 0..A[i]{
+			let mut enemy_n: &str = "";
+			let mut k_name:usize = 0;
+			//Make sure that all monsters are of the same type, this will get complex.
+			loop{
+			    k_name=rand::thread_rng().gen_range(0,totapop) as usize;
+			    if tomoty[k_name]==mon_type{break}else{}
+			    println!("Post cleansing tomoty length: {}",tomoty.len());	   
+			};
+			enemy_n = tomo[k_name];
+			let enemy:Lifeform = bestiary[vvwhich_ln(&bestiary,enemy_n)[0]].clone();
+			enemies.push((enemy,i+1))
+		};
+    };
+	println!("Exiting engenB");
+    enemies
+}
+
+//generates the enemy vector for a scripted story encounter.
+fn engen_story_marker(){}
+fn engen_story(content:&Content) -> Vec<(Lifeform,usize)> {
+	let mut enemies:Vec<(Lifeform,usize)> = Vec::with_capacity(23);
+	
+	for x in content.actors.iter(){
+		enemies.push((x.1.clone(),x.2));
+	};
+
+	enemies
+}
+
+//lvl up function. Does not currently cover spells.
+pub fn lvl_upg (mut party:&mut Vec<(Lifeform,usize)>,
+			r:usize,
+			mut t_e_c_i_ll:&mut [bool;8]) {
+	
+	let i:usize = r/10;
+	let mut expble:f32 = party[i].0.Exp-party[i].0.ExpUsed;
+	println!("Exp to use:{}",expble);
+	match r%10 {
+		1 => {party[i].0.HP+= expble*2.0;
+			  party[i].0.ExpUsed+= expble;},
+		2 => {party[i].0.MP+= expble*2.0;;
+			  party[i].0.ExpUsed+= expble;},
+		3 => {party[i].0.Speed+= expble/5.0;
+			  party[i].0.ExpUsed+= expble;},
+		4 => {party[i].0.Attack+= expble/2.0;
+			  party[i].0.ExpUsed+= expble;},
+		5 => {party[i].0.Defence+= expble/2.0;
+			  party[i].0.ExpUsed+= expble;},
+		6 => {party[i].0.WM+= expble/2.0;
+			  party[i].0.ExpUsed+= expble;},
+		7 => {party[i].0.BM+= expble/2.0;
+			  party[i].0.ExpUsed+= expble;},
+		_ => {},
+	};
+	expble = 0.0;
+	for x in party.iter() {
+		println!("Exp left on {}:{}",x.0.name,x.0.Exp-x.0.ExpUsed);
+		expble+= x.0.Exp-x.0.ExpUsed;
+	};
+	if expble==0.0 {t_e_c_i_ll[6] = false;};
+}
+
+fn encounter_starter_marker(){}
+//standard encounter generator.
+pub fn encounter_starter(party: &mut Vec<(Lifeform,usize)>,
+					 mut enemies: &mut Vec<(Lifeform,usize)>,
+					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+					 p_loc: &Place,
+					 mons: &Vec<Lifeform>) {
+	*enemies = engenB(&engenA(),&p_loc,mons);
+	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
+}
+
+//Dungeon encounter generator.
+pub fn encounter_starter_dun(party: &mut Vec<(Lifeform,usize)>,
+					 mut enemies: &mut Vec<(Lifeform,usize)>,
+					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+					 p_loc: &Place,
+					 mons: &Vec<Lifeform>) {
+	*enemies = engenB(&engenA_dun(p_loc),&p_loc,mons);
+	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
+}
+
+//standard encounter generator.
+pub fn encounter_starter_story(party: &mut Vec<(Lifeform,usize)>,
+					 mut enemies: &mut Vec<(Lifeform,usize)>,
+					 mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+					 content: &Content,
+					 mons: &Vec<Lifeform>) {
+	*enemies = engen_story(content);
+	for x in party.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in enemies.iter() {encounter.push((x.0.clone(),x.1,[None,None]))};
+	for x in encounter.iter() {println!("{}: {}",x.1,x.0.name)};
+}
+
+pub fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
+	let dlb = dl as f32;
+	character.Attack-= character.Attack/25.0*dlb;
+	character.Defence+= character.Defence/25.0*dlb;
+	character.WM+= character.WM/25.0*dlb;
+	character.BM-= character.BM/25.0*dlb;
+	character.Attack_shade= character.Attack;
+	character.Defence_shade= character.Defence;
+	character.WM_shade= character.WM;
+	character.BM_shade= character.BM;
+	println!("Self Attack:{}",character.Attack);
+	if dlb<0.0{
+		character.Spellist = match character.name {
+			"Witch"=>vec![S_CURE,S_EMBER,S_DARKNESS,S_SPARK],
+			"Warrior"=>vec![S_DARKNESS],
+			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
+			_=>vec![],
+		};	
+	}else{
+		character.Spellist = match character.name {
+			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
+			"Warrior"=>vec![S_LIGHT],
+			"Wonderer"=>vec![S_CURE,S_HASTE,S_LIGHT],
+			_=>vec![],
+		};
+	};
+}
+
