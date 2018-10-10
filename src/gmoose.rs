@@ -2705,6 +2705,7 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 		
 	let button = widget::Button::new().color(BUTTON_COLOUR)
 						.h(men_wh[1]/10.0)
+						.w(width)
 						.label_font_size(font_size_chooser_button_b(width));
 	
 	//NB, double/triple redundancy of Options.		
@@ -2714,11 +2715,11 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 			let label = if story.is_some() {
 				story.unwrap().name
 			}else{
-				"Nothing quest on this page."
+				"No quests on this page."
 			};
 			
 			for _click in questlet.set(button.clone().label(label),ui) {
-				println!("Story retrieved: {}.",label);
+				println!("Story retrieved: {} (q_id={:?}",label,q_id);
 			};
 		};
 	};
@@ -2756,6 +2757,7 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 			
 	let button = widget::Button::new().color(BUTTON_COLOUR)
 								.h(men_wh[1]/10.0)
+								.w(width)
 								.label_font_size(font_size_chooser_button_b(width));
 			
 	//Make dungeon name button.		
@@ -2769,7 +2771,7 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 			};
 			
 			for _click in dunglet.set(button.clone().label(label),ui) {
-				println!("Dungeon retrieved: {}.",label);
+				println!("Dungeon retrieved: {}. (dung={:?})",label,dung);
 			};
 		};
 	}
@@ -4479,8 +4481,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
 			
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			set_quest_diary(ui,ids,my_stories,stories,&men_wh);
 		},
 		
 		GUIBox::GameInspectDungeons=> {
@@ -4488,6 +4491,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			set_dungeon_diary(ui,ids,my_dungeons,dungeons,&men_wh);
 			
 		},
 		

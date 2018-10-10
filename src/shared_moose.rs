@@ -557,7 +557,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 			)
 		};
 	
-		splot.write_all(&dids).expect("Tried to save dungeons, but couldn't get out.");
+		sdung.write_all(&dids).expect("Tried to save dungeons, but couldn't get out.");
 	};				
 
 	let n_party:u8=xx.len() as u8;
