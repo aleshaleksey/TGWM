@@ -565,9 +565,9 @@ pub enum GUIBox<'a> {
 	 //GS.1 can change, GS.2 should stay constant.
 	GameStory(Story<'a>,u16,u16),
 	GameInspectParty(bool),
-	GameInspectInventory, 	//Opens party inventory
-	GameInspectQuests,		//Opens quest records.
-	GameInspectDungeons,	//Opens dungeons records.
+	GameInspectInventory(Option<usize>), 	//Opens party inventory
+	GameInspectQuests(Option<u32>),			//Opens quest records.
+	GameInspectDungeons(Option<u32>),		//Opens dungeons records.
 }
 
 impl <'a>GUIBox<'a> {

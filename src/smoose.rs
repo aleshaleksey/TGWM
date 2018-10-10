@@ -267,6 +267,11 @@ impl MyDungeons {
 		self.ids.insert(id,[tries,done,last]);
 	}
 	
+	//Tries to add a new dungeon.
+	pub fn try_get(&mut self,id:u32)->Option<[u32;3]> {
+		self.ids.get(id)
+	}
+	
 	//A function for extracting the numbers. Used when saving.
 	pub fn get_ids(&self)->Vec<[u32;4]> {
 		let mut output_vec = Vec::with_capacity(self.ids.len());

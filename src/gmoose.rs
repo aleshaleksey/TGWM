@@ -2685,6 +2685,7 @@ fn get_story_by_id<'a>(stories:&'a Vec<Story<'a>>,id:u32)-> Option<&'a Story<'a>
 
 fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   gui_box:&mut GUIBox,
 				   my_stories:&MyStories,
 				   all_stories:&Vec<Story>,
 				   men_wh:&[f64;2]){
@@ -2720,6 +2721,7 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 			
 			for _click in questlet.set(button.clone().label(label),ui) {
 				println!("Story retrieved: {} (q_id={:?}",label,q_id);
+				*gui_box = GUIBox::GameInspectQuests(Some(q_id.0));
 			};
 		};
 	};
@@ -2738,6 +2740,7 @@ fn get_dungeon_by_id(dungeons:&Vec<Dungeon>,id:u32)-> Option<&Dungeon> {
 fn set_dungeon_diary_marker(){}
 fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   gui_box:&mut GUIBox,
 				   my_dung:&MyDungeons,
 				   all_dung:&Vec<Dungeon>,
 				   men_wh:&[f64;2]){
@@ -2772,9 +2775,38 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 			
 			for _click in dunglet.set(button.clone().label(label),ui) {
 				println!("Dungeon retrieved: {}. (dung={:?})",label,dung);
+				*gui_box = GUIBox::GameInspectDungeons(Some(*dung.0));
 			};
 		};
 	}
+}
+
+//Function to display dungeon entry.
+fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   my_dungeons:&MyDungeons,
+				   dungeon:&Dungeon) {
+	
+	let wh = ui.wh_of(ids.middle_column).unwrap();
+	
+	let current_entry = my_dungeons.get(dungeon.id);
+	
+	if current_entry.is_some() {
+		//Set the canvas saying which rooms you've done,
+		//And the afterstory is the dungeon is complete
+	}else{
+		//Don't set anything.
+	};
+}
+
+//Function to display quest diary entry.
+fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
+				   ids:& Ids,
+				   my_stories:&MyStories,
+				   quest:&Story) {
+	
+	let wh = ui.wh_of(ids.middle_column).unwrap();
+	
 }
 
 //set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,comm_text:String)
@@ -4469,7 +4501,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			set_comm_text(comm_text,ui,ids);
 		},
 		
-		GUIBox::GameInspectInventory => {
+		GUIBox::GameInspectInventory(i) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
@@ -4477,22 +4509,28 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				
 		},
 		
-		GUIBox::GameInspectQuests => {
+		GUIBox::GameInspectQuests(q) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 			
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
-			set_quest_diary(ui,ids,my_stories,stories,&men_wh);
+			
+			set_quest_diary(ui,ids,&mut gui_box,my_stories,stories,&men_wh);
+			
+			if q.is_some() {display_quest_diary_entry(ui,ids,my_stories,d);};
 		},
 		
-		GUIBox::GameInspectDungeons=> {
+		GUIBox::GameInspectDungeons(d) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
-			set_dungeon_diary(ui,ids,my_dungeons,dungeons,&men_wh);
 			
+			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			
+			set_dungeon_diary(ui,ids,&mut gui_box,my_dungeons,dungeons,&men_wh);
+			
+			if d.is_some() {display_dungeon_diary_entry(ui,ids,my_dungeons,d);};
 		},
 		
 		GUIBox::GameStory(story,stage_in,stage_out) => {
@@ -4854,15 +4892,15 @@ fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
 		println!("Inspect Party button pressed (from inspect menu)");
 	};
 	for _click in inventory_button {
-		*gui_box = GUIBox::GameInspectInventory;
+		*gui_box = GUIBox::GameInspectInventory(None);
 		println!("Inspect Inventory button pressed (from inspect menu)");
 	};
 	for _click in dungeon_d_button {
-		*gui_box = GUIBox::GameInspectDungeons;
+		*gui_box = GUIBox::GameInspectDungeons(None);
 		println!("Inspect Dungeons button pressed (from inspect menu)");
 	};
 	for _click in quest_d_button {
-		*gui_box = GUIBox::GameInspectQuests;
+		*gui_box = GUIBox::GameInspectQuests(None);
 		println!("Inspect Quests button pressed (from inspect menu)");
 	};
 	for _click in travel_button {
