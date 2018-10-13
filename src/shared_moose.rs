@@ -10,7 +10,7 @@ use std::io::{Read,Write};
 use std::mem::{forget,transmute};
 use rand::Rng;
 
-use smoose::{MyStories,MyDungeons,Content};
+use smoose::{MyStories,MyDungeons,Content,Story};
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
 
@@ -860,3 +860,18 @@ pub fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
 	};
 }
 
+//function to get a story from its id.
+pub fn get_a_story<'a>(id:u32,stories:&'a Vec<Story<'a>>)-> Option<&'a Story<'a>> {
+	for x in stories.iter() {
+		if x.id==id {return Some(x)};
+	}
+	None
+}
+
+//function to get a dungeon from its id.
+pub fn get_a_dungeon(id:u32,dungeons:&Vec<Dungeon>)-> Option<&Dungeon> {
+	for x in dungeons.iter() {
+		if x.id==id {return Some(x)};
+	}
+	None
+}

@@ -2781,31 +2781,101 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 	}
 }
 
-//Function to display dungeon entry.
+//Function to display dungeon entry. Reminder:
+//ids, tries, successes, and last stage.
 fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
-				   my_dungeons:&MyDungeons,
-				   dungeon:&Dungeon) {
+				   my_dungeons:&mut MyDungeons,
+				   dungeon:&Dungeon,
+				   gui_box:&mut GUIBox) {
 	
-	let wh = ui.wh_of(ids.middle_column).unwrap();
-	
-	let current_entry = my_dungeons.get(dungeon.id);
+	//Get current entry.
+	let current_entry = my_dungeons.try_get(dungeon.id);
 	
 	if current_entry.is_some() {
+		//Get basic contexts.
+		let wh = ui.wh_of(ids.middle_column).unwrap();
+		let font_size = font_size_chooser_button_b(ui.w_of(ids.master).unwrap_or(800.0));
+		let inner_entry = current_entry.unwrap();
 		//Set the canvas saying which rooms you've done,
 		//And the afterstory is the dungeon is complete
+		widget::Canvas::new()
+			  .floating(true)
+			  .scroll_kids_vertically()
+			  .wh([wh[0]/2.0,wh[1]])
+			  .pad(5.0)
+			  .border(BORDER)
+			  .border_color(BORDER_COLOUR)
+			  .middle_of(ids.middle_column)
+			  .set(ids.dungeon_diary_entry_canvas,ui);
+		
+		//Write text that dscribes the dungeon.
+		let mut entry_text:String = dungeon.name.to_owned();
+		for i in 0..(inner_entry[2]+1) {
+			entry_text = format!("{}\n{}: {}.",entry_text,i,dungeon.scenes[i as usize]);
+		};
+		
+		if inner_entry[1]>0 {
+			entry_text.push_str("\n\nDungeon completed:\n\n");
+			for x in dungeon.afterstory.split("...") {
+				entry_text.push_str(x);
+				entry_text.push_str("\n\n");
+			};
+		};
+		
+		//Put the dungeon entry text on the canvas.
+		widget::Text::new(&entry_text)
+					.color(color::YELLOW)
+					.font_size(font_size)
+					.left_justify()
+					.line_spacing(5.0)
+					.top_left_of(ids.dungeon_diary_entry_canvas)
+					.padded_w_of(ids.dungeon_diary_entry_canvas,9.0)
+					.set(ids.dungeon_diary_entry,ui);
+		
+		//Switch of the displayed dungeon is needed.
+		for _ in ui.widget_input(ids.dungeon_diary_entry).clicks() {
+			*gui_box = GUIBox::GameInspectDungeons(None);
+		};
+					
 	}else{
 		//Don't set anything.
 	};
 }
 
-//Function to display quest diary entry.
+//Function to display quest diary entry. Reminder:
+//x.0 is the unique story id.
+//x.1 is the exit node for the entry content.
+//x.2 is the exit node for the completion sequence.
 fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
 				   my_stories:&MyStories,
-				   quest:&Story) {
+				   quest:&Story,
+				   gui_box:&mut GUIBox) {
 	
 	let wh = ui.wh_of(ids.middle_column).unwrap();
+	
+	let current_entry = my_stories.get_by_id(quest.id);
+	
+	if current_entry.is_some() {
+		let inner_entry = current_entry.unwrap();
+		//if we have this quest in record
+		widget::Canvas::new()
+			  .floating(true)
+			  .scroll_kids_vertically()
+			  .wh([wh[0]/2.0,wh[1]])
+			  .border(BORDER)
+			  .border_color(BORDER_COLOUR)
+			  .middle_of(ids.middle_column)
+			  .set(ids.quest_diary_entry_canvas,ui);
+			  
+		//Switch of the displayed quest is needed.
+		for _ in ui.widget_input(ids.quest_diary_entry).clicks() {
+			*gui_box = GUIBox::GameInspectQuests(None);
+		};
+	}else{
+		//Otherwise don't set anything.
+	};
 	
 }
 
@@ -3614,9 +3684,11 @@ widget_ids! {
 					spell_list_title,
 				party_stats_scroll,
 				quest_diary_matrix,
-					quest_diary_entry,
+					quest_diary_entry_canvas,
+						quest_diary_entry,
 				dungeon_diary_matrix,
-					dungeon_diary_entry,
+					dungeon_diary_entry_canvas,
+						dungeon_diary_entry,
 				load_menu,				//menu of save game file buttons
 					load_menu_scroll,
 				partyc_can,				//battle canvas containing party
@@ -4518,7 +4590,12 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			set_quest_diary(ui,ids,&mut gui_box,my_stories,stories,&men_wh);
 			
-			if q.is_some() {display_quest_diary_entry(ui,ids,my_stories,d);};
+			if q.is_some() {
+				let q = get_a_story(q.unwrap(),stories);
+				if q.is_some() {
+					display_quest_diary_entry(ui,ids,my_stories,q.unwrap(),&mut gui_box);
+				};
+			};
 		},
 		
 		GUIBox::GameInspectDungeons(d) => {
@@ -4530,7 +4607,13 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			set_dungeon_diary(ui,ids,&mut gui_box,my_dungeons,dungeons,&men_wh);
 			
-			if d.is_some() {display_dungeon_diary_entry(ui,ids,my_dungeons,d);};
+			if d.is_some() {
+				let d = get_a_dungeon(d.unwrap(),dungeons);
+				
+				if d.is_some() {
+					display_dungeon_diary_entry(ui,ids,my_dungeons,d.unwrap(),&mut gui_box);
+				};
+			};
 		},
 		
 		GUIBox::GameStory(story,stage_in,stage_out) => {

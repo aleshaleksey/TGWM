@@ -62,6 +62,7 @@ extern crate conrod;
 use std::collections::BTreeMap;
 use std::collections::btree_map;
 use std::slice;
+use std::option;
 
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -268,8 +269,8 @@ impl MyDungeons {
 	}
 	
 	//Tries to add a new dungeon.
-	pub fn try_get(&mut self,id:u32)->Option<[u32;3]> {
-		self.ids.get(id)
+	pub fn try_get(&mut self,id:u32)->option::Option<&[u32;3]> {
+		self.ids.get(&id)
 	}
 	
 	//A function for extracting the numbers. Used when saving.
@@ -424,7 +425,7 @@ impl MyStories {
 		None
 	}
 	
-	fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
+	pub fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
 		for x in self.ids.iter() {
 			if x.0==id {return Some(x);};
 		}
