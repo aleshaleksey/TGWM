@@ -106,7 +106,11 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key:entry_map,
 		entry_node: ENTRY,
+		entry_description: "I had a strange encounter today. I met a ghost which wanted me to take it to a resting place.",
 		exit_nodes: vec![1,2,FIGHT_EXIT],
+		exit_descriptions: vec!["I agreed to take it to the Void Bridge.",
+								"I agreed to take it to the Black Tower.",
+								"I would have none of it, who wants to be haunted?"],
 	};
 	
 	let mut void_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
@@ -119,7 +123,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: void_dialog,
 		entry_node: 1,
+		entry_description: "I arrived at the Void Bridge, ghost in tale.",
 		exit_nodes: vec![111],
+		exit_descriptions: vec!["It left, merging into the darkness of the Void."],
 	};
 	
 	let mut tower_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
@@ -132,7 +138,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: tower_dialog,
 		entry_node: 2,
+		entry_description: "I arrived at the Black Tower, followed by the ghost.",
 		exit_nodes: vec![222],
+		exit_descriptions: vec!["The ghost approached the tower, and disappeared into its darkness."],
 		
 	};
 	
@@ -146,7 +154,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
+		entry_description: "I did battle with the ghost.",
 		exit_nodes: vec![888],
+		exit_descriptions: vec!["Now it is here no more."],
 		
 	};
 	
@@ -173,7 +183,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	
 	let mut entry_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
 	
-	entry_map.insert(ENTRY,(vec![1,2,3,4,5],"Excuse me, did an evil spirit come this way?".to_owned()));
+	entry_map.insert(ENTRY,(vec![1,2,3,4,5,6],"Excuse me, did an evil spirit come this way?".to_owned()));
 	entry_map.insert(1,(vec![10],"Who are you?".to_owned()));
 	entry_map.insert(2,(vec![20],"No.".to_owned()));
 	entry_map.insert(3,(vec![30],"Yes.".to_owned()));
@@ -200,7 +210,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(202,(vec![60],"If you don't like it, you can try to punish me instead..".to_owned()));
 	entry_map.insert(203,(vec![210],"Yes. And I'll do it all again...".to_owned()));
 	
-	entry_map.insert(210,(vec![211,212,213,214],"Then we regret you that you must be terminated.".to_owned())); //Well, that escalated quickly.
+	entry_map.insert(210,(vec![211,212,213,214,215],"Then we regret you that you must be terminated.".to_owned())); //Well, that escalated quickly.
 	entry_map.insert(211,(vec![220],"Wait! Who are you?".to_owned()));
 	entry_map.insert(212,(vec![221],"I'm sorry! I'm sorry! Spare me!".to_owned()));
 	entry_map.insert(213,(vec![221],"Can't we resolve this peacefully?".to_owned()));
@@ -233,7 +243,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(11,(vec![40],"Nice to meet you.".to_owned()));
 	
 	entry_map.insert(40,(vec![81,82,83,84],"Well met...".to_owned()));
-	entry_map.insert(100,(vec![81,84,72,113,60,114],"We are hunting an evil spirit that is trying to escape its eternal damnation".to_owned()));
+	entry_map.insert(100,(vec![81,84,72,113,6,114],"We are hunting an evil spirit that is trying to escape its eternal damnation".to_owned()));
 	entry_map.insert(110,(vec![81,82,72,111,112],"Have you heard the rumours of a necromantic cult at work in Malachia?".to_owned()));
 	entry_map.insert(111,(vec![120],"Yes".to_owned()));
 	entry_map.insert(112,(vec![130],"No".to_owned()));
@@ -270,7 +280,13 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: entry_map,
 		entry_node: ENTRY,
-		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,FIGHT_EXIT],
+		entry_description: "After the incident with the ghost, I was approached by an odd group of fellows calling themselves \"Exorcists\".",
+		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,EXIT_4,FIGHT_EXIT],
+		exit_descriptions: vec!["I spoke with the exorcists. Intolerable! I hope never to see them again!",
+								"I spoke with the exorcists, and I did not like what I heard.",
+								"We had a pleasant conversations.",
+								"I agreed to help them to rid Malachia of a necromantic cult.",
+								"I spoke with the exorcists. Horrific folk! I entered battle with them."],
 	};
 	
 	
@@ -287,7 +303,9 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
+		entry_description: "I did battle with the exorcists.",
 		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["I wonder what the White Temple will do next?"],
 		
 	};
 	
@@ -307,7 +325,9 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: exit4_dialog,
 		entry_node: EXIT_4,
+		entry_description: "I annihilated the cult in downtown Malachia.",
 		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["..And came to the white temple."],
 		
 	};
 	
@@ -317,10 +337,12 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		//EXIT_1 bad ending
 		//EXIT_2 bad ending
 		//EXIT_3 ok ending
-		(EXIT_4,ex4_content,vec![Trigger::StartedStoryWith(667,EXIT_4),
-								 Trigger::FinishedDungeon(ID_MALACHIA_PUBCRAWL),
-								 Trigger::LocusXY([-160,20])
-			]
+		(EXIT_4,
+		 ex4_content,
+		 vec![
+			Trigger::StartedStoryWith(667,EXIT_4),
+			Trigger::FinishedDungeon(ID_MALACHIA_PUBCRAWL),
+			Trigger::LocusXY([-160,20])]
 		),
 		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(667,FIGHT_EXIT)])
 	];

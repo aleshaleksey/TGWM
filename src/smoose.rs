@@ -474,7 +474,6 @@ impl <'a>Story<'a> {
 		};
 		&self.content
 	}
-	
 
 }
 
@@ -488,10 +487,28 @@ pub struct Content<'a> {
 	pub tokens: Vec<Item>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
+	pub entry_description: &'a str,
 	pub exit_nodes: Vec<u16>,
+	pub exit_descriptions: Vec<&'a str>,
 }
 
 impl <'a>Content<'a> {
+	
+	//A function that gets references to descriptions of a quest, based on exit node.
+	pub fn get_descriptions(&self,exit_node:u16)->Vec<&str> {
+		let mut output = Vec::new();
+		
+		//Put entry description into the output.
+		output.push(self.entry_description);
+		
+		//Poll exit nodes and place the description corresponding to
+		//the exit node selected here.
+		for (i,x) in self.exit_nodes.iter().enumerate() {
+			if exit_node==*x {output.push(self.exit_descriptions[i]);};
+		};
+		
+		output
+	}
 	
 	//Function to insert guest monsters into a party.
 	//Plan stories carefully so that you can then remove the inserted lifeforms afterwards.

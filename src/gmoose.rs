@@ -80,7 +80,7 @@ use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
 			 
 use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
 			door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
-			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace,petrified_shrine};
+			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace,petrified_shrine,woods_of_winter};
 			 
 //General constacts.			 
 const VOID_TEXT:&str = "You cannot travel through the void.";
@@ -2806,17 +2806,18 @@ fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 			  .pad(5.0)
 			  .border(BORDER)
 			  .border_color(BORDER_COLOUR)
-			  .middle_of(ids.middle_column)
+			  .middle_of(ids.map_and_word)
 			  .set(ids.dungeon_diary_entry_canvas,ui);
 		
 		//Write text that dscribes the dungeon.
 		let mut entry_text:String = dungeon.name.to_owned();
 		for i in 0..(inner_entry[2]+1) {
-			entry_text = format!("{}\n{}: {}.",entry_text,i,dungeon.scenes[i as usize]);
+			entry_text.push('\n');
+			entry_text.push_str(&format!("{}",dungeon.scenes[i as usize]));
 		};
 		
 		if inner_entry[1]>0 {
-			entry_text.push_str("\n\nDungeon completed:\n\n");
+			entry_text.push_str("\n\nDungeon completed:\n");
 			for x in dungeon.afterstory.split("...") {
 				entry_text.push_str(x);
 				entry_text.push_str("\n\n");
@@ -2853,12 +2854,15 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 				   quest:&Story,
 				   gui_box:&mut GUIBox) {
 	
-	let wh = ui.wh_of(ids.middle_column).unwrap();
-	
 	let current_entry = my_stories.get_by_id(quest.id);
 	
+	//Some crash prevention may be needed.
 	if current_entry.is_some() {
+		//Set up variables.
 		let inner_entry = current_entry.unwrap();
+		let font_size = font_size_chooser_button_b(ui.w_of(ids.master).unwrap_or(800.0));
+		let wh = ui.wh_of(ids.middle_column).unwrap();
+		
 		//if we have this quest in record
 		widget::Canvas::new()
 			  .floating(true)
@@ -2866,11 +2870,27 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 			  .wh([wh[0]/2.0,wh[1]])
 			  .border(BORDER)
 			  .border_color(BORDER_COLOUR)
-			  .middle_of(ids.middle_column)
+			  .middle_of(ids.map_and_word)
 			  .set(ids.quest_diary_entry_canvas,ui);
+		
+		//get the quest descriptions.
+		let mut descriptions = quest.content.get_descriptions(inner_entry.1);
+		descriptions.append(&mut quest.try_get_completion_cont(inner_entry.1).get_descriptions(inner_entry.2));
+		
+		let descriptions = descriptions.into_iter().map(|x|x.to_owned()+"\n").collect::<String>();
+		
+		//Put the quest entry text on the canvas.
+		widget::Text::new(&descriptions)
+					.color(color::YELLOW)
+					.font_size(font_size)
+					.left_justify()
+					.line_spacing(5.0)
+					.mid_top_of(ids.quest_diary_entry_canvas)
+					.padded_w_of(ids.quest_diary_entry_canvas,9.0)
+					.set(ids.quest_diary_entry,ui);
 			  
 		//Switch of the displayed quest is needed.
-		for _ in ui.widget_input(ids.quest_diary_entry).clicks() {
+		for _ in ui.widget_input(ids.quest_diary_entry_canvas).clicks() {
 			*gui_box = GUIBox::GameInspectQuests(None);
 		};
 	}else{
@@ -4104,7 +4124,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 											 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 											 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-											 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine()];
+											 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine(),woods_of_winter()];
 					},
 					_ => {},
 				};
@@ -4156,7 +4176,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 								 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 								 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
-								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine()];
+								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),petrified_shrine(),woods_of_winter()];
 					println!("Party on! {:?}",&party);
 				}else if answer.0==0 {
 					*comm_text = "Could not load this moose. Try another maybe?".to_owned();
