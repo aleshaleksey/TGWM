@@ -317,6 +317,7 @@ pub fn main() {
 	println!("number of stories: {}",stories.len());
 	let mut my_stories:MyStories = MyStories::new();
 	let mut my_dungeons:MyDungeons = MyDungeons::new();
+	let mut my_kills:KillList = KillList::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
 	let mut p_names:Vec<String> = Vec::with_capacity(5);
@@ -720,6 +721,7 @@ pub fn main() {
 								  &mut gui_box);
 		gui_box.check_for_story(&stories,&mut my_stories,
 										 &mut my_dungeons,
+										 &mut my_kills,
 										 &scapes,
 										 &p_loc,
 										 &party,
@@ -791,6 +793,7 @@ pub fn main() {
 					&mut sprite_pos,
 					&mut my_stories,
 					&mut my_dungeons,
+					&mut my_kills,
 					&stories,
 					sages);
 								  
@@ -1107,6 +1110,7 @@ pub fn main() {
 												&mut shaking_timer,
 												&mut shaking_dam,
 												&mut sprite_boxer,
+												&mut my_kills,
 												&mut sprite_pos,
 												&mut targets);
 								//if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};

@@ -3887,6 +3887,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					sprite_pos: &mut [[f64;2];25],
 					my_stories:&mut MyStories,
 					my_dungeons:&mut MyDungeons,
+					my_kills:&mut KillList,
 					stories: &Vec<Story>,
 					mut sages: Vec<Sage<'a>>) 
 //	->(bool,String,bool,[bool;7],usize,u8,i32,usize,Vec<Sage<'a>>)
@@ -3925,7 +3926,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);							
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
 				};			
@@ -4152,7 +4153,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			if init & (answer.0==1){
 				gui_box = GUIBox::MainLoad((0,false));
-				save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);
+				save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);
 				*comm_text = "Backup complete... Choose a moose to load:".to_owned();
 			}else if !init & (answer.0!=5){
 				if to_load.0.is_some() & (answer.0==42) {
@@ -4166,7 +4167,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						pl,
 						coords,
 						my_stories,
-						my_dungeons);
+						my_dungeons,
+						my_kills);
 					loaded_confirmed(party,p_names,comm_text,ui,ids);
 					
 					*to_load = (None,1);
@@ -4216,7 +4218,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);							
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
 				};			

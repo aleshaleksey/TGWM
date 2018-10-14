@@ -190,8 +190,9 @@ impl <'a>Sage<'a> {
 }
 
 // A structure to record how many monsters you have slain.
+#[derive(Debug)]
 pub struct KillList {
-	kills:Vec<(String,usize)>,
+	kills:Vec<(String,u64)>,
 }
 
 impl KillList {
@@ -201,15 +202,19 @@ impl KillList {
 		}
 	}
 	
-	pub fn push(&mut self,name:&str,kills:usize) {
-		self.kills.push((name.to_owned(),kills))
+	pub fn len(&self)->usize {
+		self.kills.len()
 	}
 	
-	pub fn take_kills(&self)-> Vec<(String,usize)> {
+	pub fn push(&mut self,name:&str,kills:usize) {
+		self.kills.push((name.to_owned(),kills as u64))
+	}
+	
+	pub fn take_kills(&self)-> Vec<(String,u64)> {
 		self.kills.clone()
 	}
 	
-	pub fn replace_kills(&mut self,kills:Vec<(String,usize)>) {
+	pub fn replace_kills(&mut self,kills:Vec<(String,u64)>) {
 		self.kills = kills; 
 	}
 	
@@ -224,12 +229,12 @@ impl KillList {
 	//returns number of kills of said monster.
 	pub fn poll(&self,name:&str)->usize {
 		for x in self.kills.iter() {
-			if x.0==name {return x.1;};
+			if x.0==name {return x.1 as usize;};
 		};
 		0
 	}
 	
-	//returns number of kills of said monster.
+	//incremenrs number of kills of said monster or adds it in at 1.
 	pub fn increment_or(&mut self,name:&str) {
 		for x in self.kills.iter_mut() {
 			if x.0==name {
@@ -589,7 +594,7 @@ pub enum Trigger {
 	Locus(Place),
 	LocusType(u8),
 	LocusXY([i32;2]),
-	HasKill(String),	//Kill list not implemented yet.
+	HasKills(String,u64),	//Kill list not implemented yet.
 }
 
 
@@ -616,7 +621,7 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 
 // A function to poll stories vs start and finish triggers.
 // If conditions are met a story index is given into the story box.
-pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
+pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,kill_list:&KillList, p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
 	//Initiate story.
 	//iterate over stories.
 	for (i,x) in stories.iter().enumerate() {
@@ -669,6 +674,9 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 						},
 						Trigger::FinishedDungeon(x) => {
 							if !my_dungeons.has_done(*x) {get = false;};
+						},
+						Trigger::HasKills(n,k) => {
+							if kill_list.poll(n)<*k as usize {get = false;};
 						},
 						_				   => {},
 					};
