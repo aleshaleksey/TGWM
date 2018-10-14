@@ -62,7 +62,6 @@ extern crate conrod;
 use std::collections::BTreeMap;
 use std::collections::btree_map;
 use std::slice;
-use std::option;
 
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -190,9 +189,8 @@ impl <'a>Sage<'a> {
 }
 
 // A structure to record how many monsters you have slain.
-#[derive(Debug)]
 pub struct KillList {
-	kills:Vec<(String,u64)>,
+	kills:Vec<(String,usize)>,
 }
 
 impl KillList {
@@ -202,19 +200,15 @@ impl KillList {
 		}
 	}
 	
-	pub fn len(&self)->usize {
-		self.kills.len()
-	}
-	
 	pub fn push(&mut self,name:&str,kills:usize) {
-		self.kills.push((name.to_owned(),kills as u64))
+		self.kills.push((name.to_owned(),kills))
 	}
 	
-	pub fn take_kills(&self)-> Vec<(String,u64)> {
+	pub fn take_kills(&self)-> Vec<(String,usize)> {
 		self.kills.clone()
 	}
 	
-	pub fn replace_kills(&mut self,kills:Vec<(String,u64)>) {
+	pub fn replace_kills(&mut self,kills:Vec<(String,usize)>) {
 		self.kills = kills; 
 	}
 	
@@ -229,12 +223,12 @@ impl KillList {
 	//returns number of kills of said monster.
 	pub fn poll(&self,name:&str)->usize {
 		for x in self.kills.iter() {
-			if x.0==name {return x.1 as usize;};
+			if x.0==name {return x.1;};
 		};
 		0
 	}
 	
-	//incremenrs number of kills of said monster or adds it in at 1.
+	//returns number of kills of said monster.
 	pub fn increment_or(&mut self,name:&str) {
 		for x in self.kills.iter_mut() {
 			if x.0==name {
@@ -274,8 +268,8 @@ impl MyDungeons {
 	}
 	
 	//Tries to add a new dungeon.
-	pub fn try_get(&mut self,id:u32)->option::Option<&[u32;3]> {
-		self.ids.get(&id)
+	pub fn try_get(&mut self,id:u32)->Option<[u32;3]> {
+		self.ids.get(id)
 	}
 	
 	//A function for extracting the numbers. Used when saving.
@@ -430,7 +424,7 @@ impl MyStories {
 		None
 	}
 	
-	pub fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
+	fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
 		for x in self.ids.iter() {
 			if x.0==id {return Some(x);};
 		}
@@ -479,6 +473,7 @@ impl <'a>Story<'a> {
 		};
 		&self.content
 	}
+	
 
 }
 
@@ -492,28 +487,10 @@ pub struct Content<'a> {
 	pub tokens: Vec<Item>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
-	pub entry_description: &'a str,
 	pub exit_nodes: Vec<u16>,
-	pub exit_descriptions: Vec<&'a str>,
 }
 
 impl <'a>Content<'a> {
-	
-	//A function that gets references to descriptions of a quest, based on exit node.
-	pub fn get_descriptions(&self,exit_node:u16)->Vec<&str> {
-		let mut output = Vec::new();
-		
-		//Put entry description into the output.
-		output.push(self.entry_description);
-		
-		//Poll exit nodes and place the description corresponding to
-		//the exit node selected here.
-		for (i,x) in self.exit_nodes.iter().enumerate() {
-			if exit_node==*x {output.push(self.exit_descriptions[i]);};
-		};
-		
-		output
-	}
 	
 	//Function to insert guest monsters into a party.
 	//Plan stories carefully so that you can then remove the inserted lifeforms afterwards.
@@ -594,7 +571,7 @@ pub enum Trigger {
 	Locus(Place),
 	LocusType(u8),
 	LocusXY([i32;2]),
-	HasKills(String,u64),	//Kill list not implemented yet.
+	HasKill(String),	//Kill list not implemented yet.
 }
 
 
@@ -621,7 +598,7 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 
 // A function to poll stories vs start and finish triggers.
 // If conditions are met a story index is given into the story box.
-pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,kill_list:&KillList, p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
+pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
 	//Initiate story.
 	//iterate over stories.
 	for (i,x) in stories.iter().enumerate() {
@@ -674,9 +651,6 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 						},
 						Trigger::FinishedDungeon(x) => {
 							if !my_dungeons.has_done(*x) {get = false;};
-						},
-						Trigger::HasKills(n,k) => {
-							if kill_list.poll(n)<*k as usize {get = false;};
 						},
 						_				   => {},
 					};

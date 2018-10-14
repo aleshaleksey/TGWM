@@ -64,7 +64,6 @@ pub const ID_WAY_DOWN:u32 = 16;
 pub const ID_WHITE_TEMPLE:u32 = 17;
 pub const ID_WILD_HUNT:u32 = 18;
 pub const ID_WITCH_MAZE:u32 = 19;
-pub const ID_WOOD_WINTER:u32 = 20;
 
 pub fn malek_grove()-> Dungeon {
 	Dungeon {
@@ -1302,7 +1301,7 @@ pub fn ice_palace() -> Dungeon {
 						beast_great(),
 						beast_serpent(),
 						ghost().diff_lvl(10),
-						white_queen().rename("The Northern Light").hp_change(2.0).defence_change(2.0).diff_lvl(4),
+						white_queen().rename("Aurora").hp_change(2.0).defence_change(2.0).diff_lvl(4),
 		],
 						
 		afterstory: ICE_PALACE,
@@ -1319,7 +1318,7 @@ pub fn petrified_shrine() -> Dungeon {
 		diff: 1000.0,
 		affinity: RADIANT,
 		scenes: vec![
-			Place { name: "Forgotten Alley",							scape: DESERT,		xy: [0,-60],		affinity: ELF,
+			Place { name: "Forgotten Alley",							scape: DESERT,		xy: [0,-60],		affinity: RADIANT,
 					engenG: [4,4,4,4,4,4,4,4,4,4],
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("Forgotten Beast",SPIRIT,1000),
@@ -1348,7 +1347,7 @@ pub fn petrified_shrine() -> Dungeon {
 							  ("Primal Serpent",BEAST,1000),
 					],
 			},
-			Place { name: "Shrine of Elvenkind",						scape: TIME,		xy: [0,-60],		affinity: ELF,
+			Place { name: "Shrine of Elvenkind",						scape: TIME,		xy: [0,-60],		affinity: RADIANT,
 					engenG: [1,1,1,1,1,1,1,1,1,1],
 					engenA: [3,3,3,3,3,3,3,3,3,3],
 					popu:vec![("First Elf",SPIRIT,1000),
@@ -1373,11 +1372,11 @@ pub fn petrified_shrine() -> Dungeon {
 					beast_green().rename("Primal Green Beast").speed_change(0.2).diff_lvl(50).spellist(vec![S_SACRED_CURE,S_TIMESTOP,S_CURSE]),
 					beast_serpent().rename("Primal Serpent").speed_change(0.4).diff_lvl(20).spellist(vec![S_LIGHTNING,S_LIFESTEALER]),
 					
-					sage_forsaken().rename("First Elf").re_type(ELF).speed_change(1.0).hp_change(5.5).bm_change(2.0).wm_change(4.0).mp_change(2.0)
+					sage_forsaken().rename("First Elf").re_type(SPIRIT).speed_change(1.0).hp_change(5.5).bm_change(2.0).wm_change(4.0).mp_change(2.0)
 								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_SACRED_CURE,S_SACRED_EXORCISM,S_EMBER]),
-					sage_forsaken().rename("True Elf").re_type(ELF).speed_change(2.0).hp_change(3.5).bm_change(3.0).wm_change(3.0).mp_change(2.0)
+					sage_forsaken().rename("True Elf").re_type(SPIRIT).speed_change(2.0).hp_change(3.5).bm_change(3.0).wm_change(3.0).mp_change(2.0)
 								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_GREATER_CURE,S_JOVIAN_LIGHTNING,S_EMBER]),
-					sage_forsaken().rename("Last Elf").re_type(ELF).speed_change(3.0).hp_change(1.5).bm_change(4.0).wm_change(2.0).mp_change(2.0)
+					sage_forsaken().rename("Last Elf").re_type(SPIRIT).speed_change(3.0).hp_change(1.5).bm_change(4.0).wm_change(2.0).mp_change(2.0)
 								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_CURE,S_SUMMON_REAPER,S_EMBER]),
 		],
 						
@@ -1386,123 +1385,14 @@ pub fn petrified_shrine() -> Dungeon {
 	
 }
 
-pub fn woods_of_winter() -> Dungeon {
-	
-	Dungeon {
-		id: ID_WOOD_WINTER,
-		name: "The Woods of Ages",
-		xy: [120,70],
-		diff: 1000.0,
-		affinity: HOLY,
-		scenes: vec![
-			Place { name: "The Glade of the Void",							scape: FOREST,		xy: [120,70],		affinity: UNDEAD,
-					engenG: [1,1,2,2,2,3,3,3,3,4],
-					engenA: [1,1,1,1,1,1,1,2,2,2],
-					popu:vec![("Wraith",UNDEAD,1000),
-							  ("Necromancer Lord",UNDEAD,1000),
-							  ("Skeletal Beast",UNDEAD,1000),
-							  ("Hero of Might",SPIRIT,100),
-							  ("Hero of Wit",SPIRIT,100),
-							  ("Hero of Magic",SPIRIT,100),
-					],
-			},
-			Place { name: "The Glade of the Sages",							scape: FOREST,		xy: [120,70],		affinity: SPIRIT,
-					engenG: [4,4,4,4,4,4,4,4,4,4],
-					engenA: [4,4,4,4,4,4,4,4,4,4],
-					popu:vec![("Sage's Afterimage",UNDEAD,1000),
-					],
-			},
-			Place { name: "The Glade of Men",							scape: FOREST,		xy: [120,70],		affinity: HUMAN,
-					engenG: [1,1,2,2,2,3,3,3,3,4],
-					engenA: [1,1,1,1,1,1,2,2,2,3],
-					popu:vec![("Wraith",UNDEAD,100),
-							  ("Necromancer Lord",UNDEAD,100),
-							  ("Skeletal Beast",UNDEAD,100),
-							  ("Hero of Might",SPIRIT,1000),
-							  ("Hero of Wit",SPIRIT,1000),
-							  ("Hero of Magic",SPIRIT,1000),
-							  ("Serpent",BEAST,50),
-							  ("Green Beast",BEAST,50),
-					],
-			},
-			Place { name: "The Glade of Beasts",							scape: FOREST,		xy: [120,70],		affinity: BEAST,
-					engenG: [1,1,2,2,2,3,3,3,3,4],
-					engenA: [1,1,1,1,1,1,2,2,2,3],
-					popu:vec![("Hero of Might",SPIRIT,100),
-							  ("Hero of Wit",SPIRIT,100),
-							  ("Hero of Magic",SPIRIT,100),
-							  ("Serpent",BEAST,500),
-							  ("Green Beast",BEAST,500),
-							  ("True Elf",ELF,10),
-					],
-			},
-			Place { name: "The Glade of Elves",							scape: FOREST,		xy: [120,70],		affinity: ELF,
-					engenG: [1,1,2,2,2,3,3,3,3,4],
-					engenA: [1,1,1,1,1,1,2,2,2,3],
-					popu:vec![("Serpent",BEAST,50),
-							  ("Green Beast",BEAST,50),
-							  ("True Elf",SPIRIT,1000),
-							  ("Shadow of the Magus",WITCH,50),
-					],
-			},
-			Place { name: "The Glade of the Magus",							scape: FOREST,		xy: [120,70],		affinity: WITCH,
-					engenG: [1,1,1,1,1,1,1,1,1,1],
-					engenA: [1,1,1,1,1,1,2,2,2,3],
-					popu:vec![("True Elf",ELF,50),
-							  ("Shadow of the Magus",WITCH,1000),
-							  ("Ancient",SPIRIT,50),
-					],
-			},
-			Place { name: "The Glade of Ancients",							scape: FOREST,		xy: [120,70],		affinity: SPIRIT,
-					engenG: [4,4,4,4,4,4,4,4,4,4],
-					engenA: [1,1,1,1,1,1,2,2,2,2],
-					popu:vec![("Ancient",SPIRIT,1000),
-							  ("Ancient Hero",SPIRIT,1000),
-							  ("Ancient Velociraptor",SPIRIT,1000),
-					],
-			},
-			Place { name: "The Glade Before Time",							scape: FOREST,		xy: [120,70],		affinity: RADIANT,
-					engenG: [1,1,1,1,1,1,1,1,1,1],
-					engenA: [1,1,1,1,1,1,1,1,1,1],
-					popu:vec![("Traveller",SPIRIT,1000),
-					],
-			},
-			
-		],	
-		denizens: vec![
-			ghost_an().rename("Wraith").diff_lvl(10).bm_change(2.0).attack_change(2.0),
-			necromancer_lord().diff_lvl(10).bm_change(2.0).attack_change(2.0),
-			skeleton_kn().rename("Skeletal Beast").diff_lvl(10).hp_change(2.0).defence_change(2.0).attack_change(2.0).magic_up(100.0),
-			sage_forsaken().rename("Sage's Afterimage").diff_lvl(4).rename("Sage's Afterimage"),
-			warrior().rename("Hero of Might").diff_lvl(40).speed_change(0.4),
-			witch().rename("Hero of Magic").diff_lvl(40).speed_change(0.4).spellist(vec![S_EMBER,S_LIGHTNING,S_GREATER_CURE,S_EXORCISM,S_SLOW]),
-			wonderer().rename("Hero of Wit").diff_lvl(40).speed_change(0.4).spellist(vec![S_SPARK,S_CURE,S_EXORCISM]),
-			beast_green().rename("Green Beast").diff_lvl(50).speed_change(0.3),
-			beast_serpent().rename("Serpent").diff_lvl(30).speed_change(0.4),
-			sage_forsaken().rename("True Elf").re_type(ELF).speed_change(2.0).hp_change(3.5).bm_change(3.0).wm_change(3.0).mp_change(2.0)
-						   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_GREATER_CURE,S_JOVIAN_LIGHTNING,S_EMBER]),
-			wonderer().rename("Shadow of the Magus").speed_change(2.0).hp_change(4.0).bm_change(10.0).wm_change(20.0).mp_change(20.0).defence_change(4.0)
-					  .re_type(WITCH).spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_CURE,S_JOVIAN_LIGHTNING,S_EMBER,S_INFERNO]),
-			goblin_dem().rename("Ancient").diff_lvl(90).speed_change(0.2).spellist(vec![S_LESSER_CRYSTALLISE,S_CURE]).re_type(SPIRIT),
-			loser().rename("Ancient Hero").diff_lvl(190).speed_change(0.1).spellist(vec![S_CRYSTALLISE,S_CURE,S_CURSE]).re_type(SPIRIT),
-			skeleton_kn().rename("Ancient Velociraptor").diff_lvl(40).re_type(BEAST),
-			alien().rename("Traveller").diff_lvl(40).speed_change(0.4).magic_up(800.0).mp_change(4.0)
-									   .spellist(vec![S_TIMESTOP,S_CURE,S_CURSE,S_INFERNO,S_TRUE_CRYSTALLISE]),
-			
-			
-		],
-						
-		afterstory: WOODS_WINTER,
-	}
-	
-}
-
 
 const CITADEL_OF_SPIRIT:&str = "...It is said that those who wonder up onto the moors with the wish, fixed in their heart, \
 to find another world, may see, before themselves, the gates of the Citadel of Spirit.\
 
+
 ...It is said that the citadel straddles this world and the next, the world without and the world within. \
 That those who go through hell and can walk the brilliant road to its end, can become their better selves...\
+
 
 ...Did you become your better self? \
 ";
@@ -1510,15 +1400,19 @@ const DOOR_TO_DARKNESS:&str = "...In the dryest corner of the desert dwelt the r
 who was said to know the secrets of the soul, and the light and darkness that dwelt within. \
 Pilgrims of all shapes and walks of life came to learn from the sorceress. \
 
+
 ...Eventually, tired of the pilgrims, Anthracene created a mirror and all who gazed into the mirror would spawn two reflections. \
 The sorceress bid all visitors distinguish between the true reflection and the false, \
 those who could not, would be sent away. But no one could tell the reflections apart. \
 
+
 ...One day Anthracene looked into her own mirror, but not even she could tell apart the reflections. \
 Haunted by her own reflections, she summoned the sages, imploring for a solution to her conundrum. \
 
+
 ...It was the Sage of Darkness who stepped forth. The Sage bound Anthracene and her reflections \
 In the lightless microcosm of the Black Tower. There she has dwelt ever since... \
+
 
 ...Who did you behold in Anthracene's mirror? \
 ";
@@ -1529,6 +1423,7 @@ Those few elves who remained, flocked to the Islands of Moracea, \
 Surrounded by the deepest ocean, \
 where under the care of Princess Mora and her guardian beasts they had at least some degree of protection \
 against the encroaching darkness. \
+
 
 ...But the darkness was ever encroaching. Thus as the years went on, goblins and undead grew bolder, \
 the seas receded and the rains failed. \
@@ -1542,17 +1437,23 @@ The Sage offered the princess a magical gem. With it, the sage assured, her peop
 and nor would she have to worry fear death at the claws of the endless hordes that assailed Moraecea... \
 Princess Mora took the offered gem and called upon its power. \
 
+
 ...And the gem's power took the breath and heartbeat of Moracea's elves, \
 trapping them and their princess in undeath for the rest of time.\
+
 
 ...And Princess Mora had all eternity to curse her decision to trust \
 an offer from the Sage of Death.\
 ";
 const LOST_LIGHTHOUSE:&str = "...Once upon a time, before the world ended, one would occasionally see an angel above, \
 but since time immemoral, an exeption to the rule, one such being dwelt on the eastern coast of the golden lands. \
+
+
 ...And the light of its holy being were a guide to those who sailed those treacherous rocky shores \
 throughout the ages. Through ages of prosperity and ages of woe, through times of peace and times of war, \
 the angel continued to dwell, unchanging on the same coast.
+
+
 ...And as the gods led the golden lands to ruin and as the sages brought the world down around them, \
 the angel continued to shine. \
 Only now, by your hand, does the last angel shine no more...\
@@ -1562,12 +1463,19 @@ const MALACHIA_PUBCRAWL:&str = "...You have survived a night out in Malachia, th
 const MALEK_GROVE:&str = "...The archdruid Malek used to watched over the forests surrounding Malachia. \
 Be it by the light of the sun or of the moon, Malek, his disciples and guardian beasts \
 watched over Malachia.
+
+
 ...Then the world ended...
+
+
 ...And with it, so did Malek's benevolence. Now, withdrawn from the world, \
 he presides over his grove ignorant of the ruin beyond...\
 ";
 const MONSTER_HALL:&str = "...To a human, they are all monsters, but to them, there is truly only one monster...\
+
+
 ...You...
+
 ...And in the age of man they came together and founded a stronghold where they would be safe from you. \
 Now, that the world has ended, the stronghold served to protect them from the dead and malicious spirits that wonder the world.\
 ";
@@ -1584,6 +1492,8 @@ const TOWER_OF_SOUL:&str = "...One of the three foundations of the city of the d
 The Tower of Soul";
 const WAY_DOWN:&str = "...When the world broke and the void appeared, the titans built a bridge connecting its two halves. \
 And half way accross they placed a pillar anchoring the bridge against the nothingness...
+
+
 ...It is said that by descending this pillar, it is possible to descend down into the void \
 and behold the heart of this abbyss, and still return to the world above. \
 One more way to go to hell and back...\
@@ -1591,26 +1501,38 @@ One more way to go to hell and back...\
 const WHITE_TEMPLE:&str = "If Albion was the white city of hope, then the White Temple was the crucible where \
 those hopes were forged. It is the heart of Albion, with the city built around it. \
 It is here that the Sage of Albion uncovered the secrets of time...
+
+
 ...It is said that its walls are permeated with the hopes of the ages, \
 that by touching its walls it is possible to touch those hopes and see the shades of those to whom they belong...
+
+
 ...Was this what the Sage of Albion was hoping for, or is this what the sage will hope for?\
 ";
 const WILD_HUNT:&str = "...When the world ended and even the gods gave up hope, there was but one who stayed. \
 \"The world may have died, but all who dwell here are yet to die. \
 My forests and beasts will still be here till the corpse they inhabit has wilted away\" \
 She reasoned, \"Thus the hunt must goes on.\"...
+
+
 ...Therefore, when you enter the wilds, do not be surprised if the wild hunt finds you...\
 ";
 const WITCH_MAZE:&str = "The archdruid Malek had three sisters. All witches. All outstanding in their field. \
-For the longest of ages they travelled the forests of Malachia, guarding it against the darkness...\
-...Then, when Malek withdrew into his grove, cutting all the links with the world without, the three witches too went their separate way, \
-withdrawing into a far corner of the woods. There, between them, they cast a spell to make all \
+For the longest of ages they travelled the forests of Malachia, guarding it with their brother...\
+
+
+...Then, when Malek withdrew into his grove, he cut his links with his sisters and they too went their seperate way, \
+withdrawing into a far corner of the woods. There between them they cast a spell to make that would make all \
 within those woods lose their way...
+
+
 ...And those three witches lost themselves in their spell.\
 ";
 const HALL_OF_STONE:&str = "...In the heart of the Stone Maze lies the City of Stone. In the heart of the City of Stone \
 lie the Halls of Stone. At the heart of the Halls of Stone lies the last of the treasures of the Golden Land. \
 Left standing by the gods as a reminder that it once existed. That it once dared to challenge them...
+
+
 ...Now the only ones in this place are those who seek its treasures, those who seek its secrets, and those who cannot let go \
 of what it used to be...\
 ";
@@ -1619,9 +1541,13 @@ connects this world to the world above. On the opposite side of the world there 
 stairway. Deep in the northern highlands, a land of rock and ice, \
 there is a particularly high and lonely range. Since time immemorial, this range \
 has been a holy place. In the heart of this range, there stands the Holy Peak...
+
+
 ...There is nothing higher than this summit. Nothing holier.
 It stands above and beyond its peers. Isolated. Indomitable.
 Many seek to stand on its summit, but few can walk the path...
+
+
 ...All the way to the summit. And for those lost souls who make it there \
 all that awaits is the empty summit.
 ";
@@ -1634,23 +1560,11 @@ It brought with it droughts, rains, snows...
 ";
 const ICE_PALACE:&str = "...What lies at the end of the world? A desert of snow and ice, \
  blanketed by a wall of unending storms...
+ 
+ 
  ...It is the winter itself that builds the walls surrounding its palace and weaves the dreams of summer. \
  ";
  
 const PETRIFIED:&str = "...It was here that elvenkind willed itself into existence...
 ...It was here that elvenkind lost its will...
-...Now only their creations, left alone for all eternity, wonder this place, unable to find the will that was lost by their creators.
-...Perhaps it is still collecting dust somewhere in this dreary shrine to that which once existed?
-";
-
-const WOODS_WINTER:&str = "...You travel deeper and deeper into the woods, \
-and upon each tree you pass hang the fruit of the age that bore it. \
-...Sweet fruits... 
-Bitter fruits... 
-Healthful fruits... 
-Poisonous fruits... 
-Having travelled to the depth of the Woods of Ages, \
-you find yourself at the place where the branches and the roots converge.
-...What if instead of the fruits of your wishes, you could reap the sweet and healthful fruits? \
-If it would be those seeds from which the next age would grow?
 ";

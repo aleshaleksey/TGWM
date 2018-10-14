@@ -8,7 +8,6 @@ use xmoose::*;
 use imoose::{byteru16,permit_a};
 use cmoose::*;
 use shared_moose::*;
-use smoose::KillList;
 
 use inflector::Inflector;
 use rand::Rng;
@@ -619,7 +618,6 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 						mut shaking_timer: &mut usize,
 						mut shaking_dam: &mut [bool;25],
 						mut sprite_boxer: &mut GraphicsBox,
-						kill_list:&mut KillList,
 						sprite_pos: &mut [[f64;2];25],
 						targets:&mut Vec<usize>) {
 
@@ -697,35 +695,23 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 												p_t,
 												&ns,
 												comm_text);
-				
-				//If attack does non-zero damage, do this:
 				if attack_result.0 > 0.0 {
-						
-					//kill_list update.
-					if (encounter[attack_result.1].0.HP_shade>0.0)
-					& (encounter[attack_result.1].0.HP_shade-attack_result.0<0.0) {
-						kill_list.increment_or(encounter[attack_result.1].0.name);
-					};
-					
-					//Subtract damage from health.
 					encounter[attack_result.1].0.HP_shade-= attack_result.0;
 					if encounter[attack_result.1].0.HP_shade>0.0 {
 						shaking_dam[attack_result.1] = true;
 						//*shaking_timer = timer;
 					};
-					
-					//Remove defending status if target killed.
-					if encounter[attack_result.1].0.HP_shade<=0.0 {
-						for x in encounter.iter_mut() {
-							if x.2[0].is_some() {
-								if x.2[0].unwrap()[0]==attack_result.1 {x.2[0] = None;};
-							};
-						};
-					};
 				};
 					
 				//in_battle_record.push(recl.clone());
 				turn_over = true;
+				if encounter[attack_result.1].0.HP_shade<=0.0 {
+					for x in encounter.iter_mut() {
+						if x.2[0].is_some() {
+							if x.2[0].unwrap()[0]==attack_result.1 {x.2[0] = None;};
+						};
+					};
+				};
 				
 				*sprite_boxer = GraphicsBox::Attack
 									(SpriteBox::new
@@ -848,8 +834,6 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 						};
 						if (encounter[z].0.HP_shade<=0.0)
 						 & (hpo>0.0){
-							//increment kill list and make message.
-							kill_list.increment_or(encounter[z].0.name);
 							*comm_text = format!("{}\n{} from group {} is slain by the spell.",
 									 comm_text,&ns[z],encounter[z].1)
 						}else{};	

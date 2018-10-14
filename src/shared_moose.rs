@@ -10,7 +10,7 @@ use std::io::{Read,Write};
 use std::mem::{forget,transmute};
 use rand::Rng;
 
-use smoose::{MyStories,MyDungeons,KillList,Content,Story};
+use smoose::{MyStories,MyDungeons,Content};
 use lmoose::{Lifeform,Spell,Place};
 use lmoose::*;
 
@@ -284,8 +284,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 				mut pl:&mut (usize,usize),
 				mut coords: &mut [i32;2],
 				my_stories:&mut MyStories,
-				my_dungeons:&mut MyDungeons,
-				my_kills:&mut KillList,){	
+				my_dungeons:&mut MyDungeons){	
 	println!("filename: {}",file_name);
 	//Initiate raw data constructs.
 	let mut rlb = Vec::with_capacity(8000);
@@ -294,14 +293,11 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
 	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrtxt");
 	let to_open_s = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrp");
-	let to_open_d = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrd");
-	let to_open_k = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrk");
+	let to_open_d = env::current_dir().unwrap().join("as/saves").join(file_name+".msqrd");
 
 	println!("msqrb: {:?}",to_open_a);
 	println!("msqrtxt: {:?}",to_open_b);
 	println!("msqrp: {:?}",to_open_s);
-	println!("msqrd: {:?}",to_open_d);
-	println!("msqrk: {:?}",to_open_k);
 	//open files and read into raw data constructs.
 	let mut loadb= File::open(to_open_a).unwrap();
 	let mut loadtxt= File::open(to_open_b).unwrap();
@@ -351,36 +347,9 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 		},
 		_		=> {println!("There are no dungeons.");},
 	};
-
-	let mut kill_n_vector:Vec<u64> = Vec::new();
-	
-	let kill_n:usize = match File::open(to_open_k) {
-		Ok(mut fp) => {
-			println!("There are kills");
-			let mut packed_kills:Vec<u8> = Vec::with_capacity(2000);
-			fp.read_to_end(&mut packed_kills);
-			let kills_len = packed_kills.len()/8; //Assumes vec<u64>, hence 8 bytes per entry,
-			let kills_pointer = unsafe {transmute::<*mut u8,*mut u64>(packed_kills.as_mut_ptr())};
-			forget(packed_kills);
-			let mut kills_counts = unsafe {
-				Vec::from_raw_parts(
-					kills_pointer,
-					kills_len,
-					kills_len,
-				)
-			};
-			let count = kills_counts.remove(0) as usize;
-			kill_n_vector = kills_counts;
-			count
-		},
-		_		=> {
-			println!("There are no kills.");
-			0},
-	};
 	println!("Got here");
-	// NB old files will not have a plot,dungeon,quest or killist files initially
-	// so for compatibility this is written to taken that into account.
-	// reformat text file from &str to String.
+	
+	//reformat text file from &str to String.
 	let rrltxt:Vec<&str> = rltxt.split("\n").collect();
 	for i in 0..rrltxt.len(){ltxt.push(rrltxt[i].to_owned())};
 		
@@ -492,7 +461,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 			};
 		};
 		println!("{:?}",lspellist);
-		indtrack+=sp_len;
+		indtrack+=sp_len;		
 		//implement inventory later.
 //export from iterator.
 		
@@ -528,15 +497,6 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 					id: lid,
 					},0))	
 	};
-	
-	//reconstitude kill list (very hackable file).
-	let mut killist:Vec<(String,u64)> = Vec::with_capacity(kill_n);
-	for i in 0..(kill_n) {
-		killist.push((ltxt[i+indtrack].clone(),kill_n_vector[i]));
-	};		
-	my_kills.replace_kills(killist);
-	println!("Killist reconstituted: {:?}",my_kills);
-		
 	*pl = place_loader(&world,[coords[1],coords[0]]);
 	*pl = (world.len()-1-pl.0,pl.1);
 	//*pl = (pl.0,pl.1);
@@ -550,23 +510,21 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		spl:&Vec<Spell>,
 		p:&Place,
 		s:&MyStories,
-		d:&MyDungeons,
-		k:&KillList){
+		d:&mut MyDungeons){
 	
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");
 	let mut f1 = dir.join(s_name.clone()+".msqrtxt");
 	let mut f2 = dir.join(s_name.clone()+".msqrb");
 	let mut fs = dir.join(s_name.clone()+".msqrp");
-	let mut fd = dir.join(s_name.clone()+".msqrd");
-	let mut fk = dir.join(s_name+".msqrk");
+	let mut fd = dir.join(s_name+".msqrd");
+	
 	
 	//Need to "safetify" this.		
 	let mut stxt = File::create(&f1).unwrap();
 	let mut sfile = File::create(&f2).unwrap();
 	let mut splot = File::create(&fs).unwrap();
 	let mut sdung = File::create(&fd).unwrap();
-	let mut skill = File::create(&fk).unwrap();
 	
 	//Write plot completion file.
 	if s.len()>0 {
@@ -600,31 +558,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		};
 	
 		sdung.write_all(&dids).expect("Tried to save dungeons, but couldn't get out.");
-	};
-	
-	//Write kill list (number) file.
-	let klen = k.len();
-	let kills = k.take_kills();
-	if klen>0 {
-		let klen = k.len();
-		let mut kill_numbers = Vec::with_capacity(klen+1);
-		kill_numbers.push(klen as u64); //Important step.
-		
-		for x in kills.iter() {kill_numbers.push(x.1);};
-		
-		let finlen = k.len()*8+8;  //u64 therefore 8 bytes per entry. First entry is the length as u64 (another 8 bytes).
-		let ids_pointer = unsafe {transmute::<*mut u64,*mut u8>(kill_numbers.as_mut_ptr())};
-		forget(kill_numbers);
-		let kill_numbers = unsafe {
-			Vec::from_raw_parts(
-				ids_pointer,
-				finlen,
-				finlen,
-			)
-		};
-	
-		skill.write_all(&kill_numbers).expect("Tried to save kills, but didn't survive.");
-	};					
+	};				
 
 	let n_party:u8=xx.len() as u8;
 	sfile.write_all(&[n_party]);
@@ -666,8 +600,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		sfile.write_all(&loy).expect("error writing sfile");
 		sfile.write_all(&lgp).expect("error writing sfile");
 		sfile.write_all(&lid).expect("error writing sfile");
-		
-		//write bits and bobs as txt.
+	
 		stxt.write(&nx[i].as_bytes()).expect("error writing stxt");
 		stxt.write("\n".as_bytes()).expect("error writing stxt");
 		stxt.write(&xx[i].0.name.as_bytes()).expect("error writing stxt");
@@ -678,11 +611,10 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		stxt.write("\n".as_bytes()).expect("error writing stxt");
 		stxt.write(&convert_affinity(xx[i].0.Affinity).as_bytes()).expect("error writing stxt");
 		stxt.write("\n".as_bytes()).expect("error writing stxt");
-		//Write spellist as txt.
-		if l1>0 {
+		if l1>0{
 			for j in 0..l1{
-				stxt.write(arcana_name_from_spell_id(spl,xx[i].0.Spellist[j]).as_bytes()).expect("error writing stxt spellist");
-				stxt.write("\n".as_bytes()).expect("error writing stxt spellist");
+				stxt.write(arcana_name_from_spell_id(spl,xx[i].0.Spellist[j]).as_bytes()).expect("error writing stxt");
+				stxt.write("\n".as_bytes()).expect("error writing stxt");
 			};
 		}else{};
 //		if l2>0{
@@ -692,14 +624,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 //			};
 //		}else{};
 	};
-	//write killist names as txt.
-	if klen>0 {
-		for k in 0..klen {
-			stxt.write(kills[k].0.as_bytes()).expect("error writing stxt killist");
-			stxt.write("\n".as_bytes()).expect("error writing stxt killist");
-		};
-	};
-	
+		
 }
 
 //Various game related functions.
@@ -935,18 +860,3 @@ pub fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
 	};
 }
 
-//function to get a story from its id.
-pub fn get_a_story<'a>(id:u32,stories:&'a Vec<Story<'a>>)-> Option<&'a Story<'a>> {
-	for x in stories.iter() {
-		if x.id==id {return Some(x)};
-	}
-	None
-}
-
-//function to get a dungeon from its id.
-pub fn get_a_dungeon(id:u32,dungeons:&Vec<Dungeon>)-> Option<&Dungeon> {
-	for x in dungeons.iter() {
-		if x.id==id {return Some(x)};
-	}
-	None
-}

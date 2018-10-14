@@ -195,10 +195,6 @@ impl Display for Place{
 	  write!(f,"It is populated by");
 	  if pops[0]==UNDEAD{
 		  write!(f," undead.");
-	  }else if pops[0]==WITCH {
-		    write!(f," witches.");
-	  }else if pops[0]==ELF {
-		    write!(f," elves.");
 	  }else{
 		  write!(f," {}s.",convert_mon_type(pops[0]));
    };
@@ -209,20 +205,12 @@ impl Display for Place{
 		   if i<pl {
 			if pops[i]==UNDEAD{
 				write!(f," undead,");
-			}else if pops[i]==WITCH{
-				write!(f," witches,");
-			}else if pops[i]==ELF{
-				write!(f," elves,");
 			}else{
 				write!(f," {}s,",convert_mon_type(pops[i]));
 			};
 		   }else{
 			   if pops[pops.len()-1]==UNDEAD{
 				   write!(f," and undead");
-			   }else if pops[pops.len()-1]==WITCH{
-				   write!(f," and witches");
-			   }else if pops[pops.len()-1]==ELF{
-				   write!(f," and elves");
 			   }else{
 				   write!(f," and {}s.",convert_mon_type(pops[pops.len()-1]));
 			   };
