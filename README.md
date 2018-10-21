@@ -32,7 +32,7 @@ texture widgets and images (ie sprites) are adjusted separately.
 
 There is a juke box powered by rodio, which plays music in battle, which can be customised or silenced.
 There are currently no sound effects. (As this is an etude in programming and not composing, the game
-music is half-hearted and the in-game song list can be changed.
+music is half-hearted and the in-game song list can be changed. Currently looping needs tweaking in order to not be jarring.
 
 ***Graphics:***
 
@@ -45,7 +45,7 @@ In battle sprite shake on damage.
 Implemented: The mechanisms for travelling the world, battle, in battle spellcasting,
 exp. and dungeons have been implemented.
 Mostly implemented: NPCs,story.
-Unimplementd: Teleportation spells and inventory have not been implemented.
+Unimplemented: Teleportation spells and inventory have not been implemented.
 
 ***AI:***
 
@@ -65,7 +65,7 @@ The computer simulates battles for ten seconds at the start of a battle (using t
 and then uses this battle record to make a decision. Currenly the algorithm probability tables of actions and
 consequences, and uses them to decide the best action. As a back up uses a cause-effect algorithm, however this currently has some "bugs" related to healing spells. If the "statistics are weak" it will resort to the first
 two methods. Currently this approach is problematic for battles which aren't one-on-one, and where there is a
-small chance of winning or losing. In fact it's problematic in general and needs work.
+small chance of winning or losing. In fact it's problematic in general and needs work. It should be noted that obviously it's not a computationally efficient "AI" for a computer game. The idea in using this is to use the game as a machine learning platform (I will work on this more once the rest of the game is written).
 
 Notes on compiling
 ------------------
@@ -74,13 +74,19 @@ This version is compiled using rust stable (so far compiled successfully with 1.
 There are a lot of indirect dependencies which may go horribly wrong when compiling (see below),
 therefore I have included an old Cargo.lock file for troubleshooting.
 
-NB: for a clean, release version add " --release -C link-args="-Wl,--subsystem,windows" "
+NB: for a clean, release version (on Windows) add " --release -C link-args="-Wl,--subsystem,windows" "
 
 ***Linux:***
 
 cargo run --release --features="winit glium libc"
 
 ***Windows (x64):***
+
+*From windows:*
+
+cargo run --release --features="winit glium libc"
+
+*Crosscompile from Linux:*
 
 cargo rustc --bin q-moose --release --features="winit glium libc" --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
 
