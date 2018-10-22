@@ -62,6 +62,7 @@ extern crate conrod;
 use std::collections::BTreeMap;
 use std::collections::btree_map;
 use std::slice;
+use std::option;
 
 #[allow(unused_imports)] use lmoose::{Spell,Item,Lifeform,Shade,Place,Dungeon,cureL,cure,cureG,cureH,exorcism,exorcismG,exorcismH,
 			 ember,fire,fireball,inferno,spark,lightning,lightningH,crystalliseL,crystallise,crystalliseH,
@@ -189,8 +190,9 @@ impl <'a>Sage<'a> {
 }
 
 // A structure to record how many monsters you have slain.
+#[derive(Debug)]
 pub struct KillList {
-	kills:Vec<(String,usize)>,
+	kills:Vec<(String,u64)>,
 }
 
 impl KillList {
@@ -200,15 +202,19 @@ impl KillList {
 		}
 	}
 	
-	pub fn push(&mut self,name:&str,kills:usize) {
-		self.kills.push((name.to_owned(),kills))
+	pub fn len(&self)->usize {
+		self.kills.len()
 	}
 	
-	pub fn take_kills(&self)-> Vec<(String,usize)> {
+	pub fn push(&mut self,name:&str,kills:usize) {
+		self.kills.push((name.to_owned(),kills as u64))
+	}
+	
+	pub fn take_kills(&self)-> Vec<(String,u64)> {
 		self.kills.clone()
 	}
 	
-	pub fn replace_kills(&mut self,kills:Vec<(String,usize)>) {
+	pub fn replace_kills(&mut self,kills:Vec<(String,u64)>) {
 		self.kills = kills; 
 	}
 	
@@ -223,12 +229,12 @@ impl KillList {
 	//returns number of kills of said monster.
 	pub fn poll(&self,name:&str)->usize {
 		for x in self.kills.iter() {
-			if x.0==name {return x.1;};
+			if x.0==name {return x.1 as usize;};
 		};
 		0
 	}
 	
-	//returns number of kills of said monster.
+	//incremenrs number of kills of said monster or adds it in at 1.
 	pub fn increment_or(&mut self,name:&str) {
 		for x in self.kills.iter_mut() {
 			if x.0==name {
@@ -268,8 +274,8 @@ impl MyDungeons {
 	}
 	
 	//Tries to add a new dungeon.
-	pub fn try_get(&mut self,id:u32)->Option<[u32;3]> {
-		self.ids.get(id)
+	pub fn try_get(&mut self,id:u32)->option::Option<&[u32;3]> {
+		self.ids.get(&id)
 	}
 	
 	//A function for extracting the numbers. Used when saving.
@@ -408,11 +414,27 @@ impl MyStories {
 		}
 		false
 	}
+	//polls only for this story if finished with any end but.
+	fn poll_finished_not_with(&self,id:u32,finish_code:u16)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.2!=finish_code) { return true;};
+		}
+		false
+	}
+	
 	
 	//polls only for this story if finished with a particular end.
 	fn poll_started_with(&self,id:u32,starting_code:u16)-> bool {
 		for x in self.ids.iter() {
 			if (x.0==id) & (x.1==starting_code) { return true;};
+		}
+		false
+	}
+	
+	//polls only for this story if started with an end other than starting code.
+	fn poll_started_not_with(&self,id:u32,starting_code:u16)-> bool {
+		for x in self.ids.iter() {
+			if (x.0==id) & (x.1!=starting_code) { return true;};
 		}
 		false
 	}
@@ -424,7 +446,7 @@ impl MyStories {
 		None
 	}
 	
-	fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
+	pub fn get_by_id(&self,id:u32)-> Option<&(u32,u16,u16)> {
 		for x in self.ids.iter() {
 			if x.0==id {return Some(x);};
 		}
@@ -473,7 +495,6 @@ impl <'a>Story<'a> {
 		};
 		&self.content
 	}
-	
 
 }
 
@@ -487,10 +508,28 @@ pub struct Content<'a> {
 	pub tokens: Vec<Item>,
 	pub phrases_by_key: BTreeMap<u16,(Vec<u16>,String)>, //There must be at least one answer.
 	pub entry_node: u16,
+	pub entry_description: &'a str,
 	pub exit_nodes: Vec<u16>,
+	pub exit_descriptions: Vec<&'a str>,
 }
 
 impl <'a>Content<'a> {
+	
+	//A function that gets references to descriptions of a quest, based on exit node.
+	pub fn get_descriptions(&self,exit_node:u16)->Vec<&str> {
+		let mut output = Vec::new();
+		
+		//Put entry description into the output.
+		output.push(self.entry_description);
+		
+		//Poll exit nodes and place the description corresponding to
+		//the exit node selected here.
+		for (i,x) in self.exit_nodes.iter().enumerate() {
+			if exit_node==*x {output.push(self.exit_descriptions[i]);};
+		};
+		
+		output
+	}
 	
 	//Function to insert guest monsters into a party.
 	//Plan stories carefully so that you can then remove the inserted lifeforms afterwards.
@@ -564,14 +603,17 @@ pub enum Trigger {
 	Exp(f32),
 	StartedStory(u32),
 	StartedStoryWith(u32,u16),
+	StartedStoryNotWith(u32,u16),
 	FinishedStory(u32),
 	FinishedStoryWith(u32,u16),
-	FinishedDungeon(u32), //This is a paceholder.
+	FinishedStoryNotWith(u32,u16),
+	FinishedDungeon(u32),
 	Other(usize), //This is a placeholder.
 	Locus(Place),
-	LocusType(u8),
+	LocusAffinity(u8),
+	LocusScape(u8),
 	LocusXY([i32;2]),
-	HasKill(String),	//Kill list not implemented yet.
+	HasKills(String,u64),
 }
 
 
@@ -598,7 +640,7 @@ fn sage_prices<'a>(list:&'a Vec<Spell>,typ:u8,special:Vec<&str>)->Vec<(&'a Spell
 
 // A function to poll stories vs start and finish triggers.
 // If conditions are met a story index is given into the story box.
-pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
+pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&mut MyDungeons,kill_list:&KillList, p_loc:&Place,party:&Vec<(Lifeform,usize)>)->Option<(usize,u16)> {
 	//Initiate story.
 	//iterate over stories.
 	for (i,x) in stories.iter().enumerate() {
@@ -615,7 +657,10 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 							println!("xy = {:?}",tr);
 							if p_loc.xy != *tr {get = false;};
 						},
-						Trigger::LocusType(tr) => {
+						Trigger::LocusScape(tr) => {
+							if p_loc.scape != *tr {get = false;};
+						},
+						Trigger::LocusAffinity(tr) => {
 							if p_loc.affinity != *tr {get = false;};
 						},
 						Trigger::Locus(tr) => {
@@ -649,8 +694,14 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 						Trigger::FinishedStoryWith(x,y) => {
 							if !my_stories.poll_finished_with(*x,*y) {get = false;};
 						},
+						Trigger::FinishedStoryNotWith(x,y) => {
+							if !my_stories.poll_finished_not_with(*x,*y) {get = false;};
+						},
 						Trigger::FinishedDungeon(x) => {
 							if !my_dungeons.has_done(*x) {get = false;};
+						},
+						Trigger::HasKills(n,k) => {
+							if kill_list.poll(n)<*k as usize {get = false;};
 						},
 						_				   => {},
 					};
@@ -669,7 +720,10 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 							Trigger::LocusXY(tr) => {
 								if p_loc.xy != *tr {get = false;};
 							},
-							Trigger::LocusType(tr) => {
+							Trigger::LocusScape(tr) => {
+								if p_loc.scape != *tr {get = false;};
+							},
+							Trigger::LocusAffinity(tr) => {
 								if p_loc.affinity != *tr {get = false;};
 							},
 							Trigger::Locus(tr) => {
@@ -697,14 +751,14 @@ pub fn story_poller (stories:&Vec<Story>,my_stories:&mut MyStories,my_dungeons:&
 							Trigger::StartedStory(x) => {
 								get = my_stories.poll_started(*x);
 							},
-							Trigger::StartedStoryWith(x,y) => {
-								get = my_stories.poll_started_with(*x,*y);
-							},
 							Trigger::FinishedStory(x) => {
 								get = my_stories.poll_finished(*x);
 							},
 							Trigger::FinishedStoryWith(x,y) => {
 								get = my_stories.poll_finished_with(*x,*y);
+							},
+							Trigger::FinishedStoryNotWith(x,y) => {
+								get = my_stories.poll_finished_not_with(*x,*y);
 							},
 							_				   => {},
 						};
@@ -733,7 +787,7 @@ pub fn sage_poller<'a,'b,'c,'d,'e>(sages: &'e Vec<Sage<'a>>,p_loc:&'b Place,spel
 				Trigger::LocusXY(tr) => {
 					if p_loc.xy != *tr {summon = false;};
 				},
-				Trigger::LocusType(tr) => {
+				Trigger::LocusAffinity(tr) => {
 					if p_loc.affinity != *tr {summon = false;};
 				},
 				Trigger::CastSpell(tr) => {
@@ -802,7 +856,7 @@ pub fn sage_fire<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<Strin
 		name: "Sage of Fire".to_owned(),
 		exp_min: 10.0,
 		face: &mon_faces[22][1],
-		trigger: vec![Trigger::CastSpell(S_EMBER),Trigger::LocusType(FIRE)],
+		trigger: vec![Trigger::CastSpell(S_EMBER),Trigger::LocusAffinity(FIRE)],
 		spells: vec![S_EMBER,S_FIRE,S_FIREBALL,S_INFERNO],
 		dialog_greeting:["You light a fire in the desert night and realise \
 that you are not alone. The form of a nomad sits by the fire, adoring it \
@@ -835,7 +889,7 @@ pub fn sage_lightning<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<
 		name: "Sage of Lightning".to_owned(),
 		exp_min: 50.0,
 		face: &mon_faces[19][0],
-		trigger: vec![Trigger::CastSpell(S_SPARK),Trigger::LocusType(LIGHTNING)],
+		trigger: vec![Trigger::CastSpell(S_SPARK),Trigger::LocusAffinity(LIGHTNING)],
 		spells: vec![S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING],
 		dialog_greeting:["A single spark in the stony labyrinth...\n...Calls down lightning from a clear sky. \
 The flash momentarily blinds you and you realise that this lightning is something else. \
@@ -868,7 +922,7 @@ pub fn sage_ice<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<String
 		name: "Sage of Ice".to_owned(),
 		exp_min: 50.0,
 		face: &mon_faces[25][0],
-		trigger: vec![Trigger::CastSpell(S_LESSER_CRYSTALLISE),Trigger::LocusType(ICE)],
+		trigger: vec![Trigger::CastSpell(S_LESSER_CRYSTALLISE),Trigger::LocusAffinity(ICE)],
 		spells: vec![S_LESSER_CRYSTALLISE,S_CRYSTALLISE,S_TRUE_CRYSTALLISE],
 		dialog_greeting:["You try to make the artic wastes a little colder...\n...And the air around you begins to coalesce. \
 Before you stands the White Queen. \
@@ -901,7 +955,7 @@ pub fn sage_light<'a>(mon_faces:&'a Vec<[conrod::image::Id;3]>,p_names:&Vec<Stri
 		name: "Sage of Light".to_owned(),
 		exp_min: 100.0,
 		face: &mon_faces[26][0],
-		trigger: vec![Trigger::CastSpell(S_LIGHT),Trigger::LocusType(HOLY)],
+		trigger: vec![Trigger::CastSpell(S_LIGHT),Trigger::LocusAffinity(HOLY)],
 		spells: vec![S_LIGHT,S_SACRED_LIGHT,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM],
 		dialog_greeting:["As you cast your spell, a shining figure approaches you from the mists. \
 Serene, it walks over the water. As it approaches your ship, it says: \

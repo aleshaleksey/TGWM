@@ -313,10 +313,11 @@ pub fn main() {
 	let sp_list:Vec<Spell> = index_arcana();
 	let mons:Vec<Lifeform> = tree_of_life();
 	 //Currently placeholder.
-	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces),ghosthunt_part_1(&mons_faces)];
+	let mut stories:Vec<Story> = vec![void_bridge_or_black_tower(&mons_faces),ghosthunt_part_1(&mons_faces),ghosthunt_part_2a(&mons_faces)];
 	println!("number of stories: {}",stories.len());
 	let mut my_stories:MyStories = MyStories::new();
 	let mut my_dungeons:MyDungeons = MyDungeons::new();
+	let mut my_kills:KillList = KillList::new();
 	let mut diff:i32 = 0;
 	let mut p_names_m:Vec<&str> = Vec::with_capacity(5);
 	let mut p_names:Vec<String> = Vec::with_capacity(5);
@@ -720,6 +721,7 @@ pub fn main() {
 								  &mut gui_box);
 		gui_box.check_for_story(&stories,&mut my_stories,
 										 &mut my_dungeons,
+										 &mut my_kills,
 										 &scapes,
 										 &p_loc,
 										 &party,
@@ -791,6 +793,7 @@ pub fn main() {
 					&mut sprite_pos,
 					&mut my_stories,
 					&mut my_dungeons,
+					&mut my_kills,
 					&stories,
 					sages);
 								  
@@ -1011,7 +1014,6 @@ pub fn main() {
 							
 							println!("Ending battle");
 							//music player controlled to off.
-							b_muse_sender.try_send((false,to_play));
 							//Tell the brain that the battle is over.
 							thought_sender_to_brain.send((0,0,[0;28],0,Vec::new(),false));
 							//if game_over functions determines end of battle, reset battle variables, level party and end battle.
@@ -1033,9 +1035,12 @@ pub fn main() {
 							gui_box = gui_box_previous.clone();
 							
 							//set p_scape as needed.
+							//Switch of music player unless you're in a dungeon.
 							if idungeon.is_none() {
+								b_muse_sender.try_send((false,to_play));
 								p_scape = p_loc.scape;
 							}else if (dungeon_pointer<2) | (dungeon_pointer>dungeons[idungeon.unwrap()].scenes.len()+1) {
+								b_muse_sender.try_send((false,to_play));
 								p_scape = p_loc.scape;
 							}else{
 								p_scape = dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2].scape;
@@ -1107,6 +1112,7 @@ pub fn main() {
 												&mut shaking_timer,
 												&mut shaking_dam,
 												&mut sprite_boxer,
+												&mut my_kills,
 												&mut sprite_pos,
 												&mut targets);
 								//if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
@@ -1349,6 +1355,7 @@ impl EventLoop {
         // We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
         // since the last yield.
         let last_update = self.last_update;
+        //Aye, 25 fps is enough.
         let sixteen_ms = std::time::Duration::from_millis(40);
         let duration_since_last_update = std::time::Instant::now().duration_since(last_update);
         if duration_since_last_update < sixteen_ms {

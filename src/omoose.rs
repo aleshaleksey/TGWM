@@ -91,7 +91,7 @@ pub fn play_song_rod(gone:(bool,usize),
 		sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
 		
 		while go.0 & !sink.empty() & !silence {
-			std::thread::sleep(Duration::from_millis(2000));
+			std::thread::sleep(Duration::from_millis(500));
 			go =  isekai_deguchi(go.clone(),postman);
 			silence = isekai_urusai(silence,silent_postman);
 		};

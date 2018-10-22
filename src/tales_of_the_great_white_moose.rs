@@ -106,7 +106,11 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key:entry_map,
 		entry_node: ENTRY,
+		entry_description: "I had a strange encounter today. I met a ghost which wanted me to take it to a resting place.",
 		exit_nodes: vec![1,2,FIGHT_EXIT],
+		exit_descriptions: vec!["I agreed to take it to the Void Bridge.",
+								"I agreed to take it to the Black Tower.",
+								"I would have none of it, who wants to be haunted?"],
 	};
 	
 	let mut void_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
@@ -119,7 +123,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: void_dialog,
 		entry_node: 1,
+		entry_description: "I arrived at the Void Bridge, ghost in tale.",
 		exit_nodes: vec![111],
+		exit_descriptions: vec!["It left, merging into the darkness of the Void."],
 	};
 	
 	let mut tower_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
@@ -132,7 +138,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: tower_dialog,
 		entry_node: 2,
+		entry_description: "I arrived at the Black Tower, followed by the ghost.",
 		exit_nodes: vec![222],
+		exit_descriptions: vec!["The ghost approached the tower, and disappeared into its darkness."],
 		
 	};
 	
@@ -146,7 +154,9 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
+		entry_description: "I did battle with the ghost.",
 		exit_nodes: vec![888],
+		exit_descriptions: vec!["Now it is here no more."],
 		
 	};
 	
@@ -167,13 +177,14 @@ pub fn void_bridge_or_black_tower<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Sto
 
 //This is a continuation of id:666 assuming the ghost is slain.
 //NB: NOT FINISHED. Will crash on take off.
+fn ghosthunt_part_1_marker(){}
 pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	//define start_trigger
 	let start_trigger = vec![Trigger::FinishedStory(666)];
 	
 	let mut entry_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
 	
-	entry_map.insert(ENTRY,(vec![1,2,3,4,5],"Excuse me, did an evil spirit come this way?".to_owned()));
+	entry_map.insert(ENTRY,(vec![1,2,3,4,5,6],"Excuse me, did an evil spirit come this way?".to_owned()));
 	entry_map.insert(1,(vec![10],"Who are you?".to_owned()));
 	entry_map.insert(2,(vec![20],"No.".to_owned()));
 	entry_map.insert(3,(vec![30],"Yes.".to_owned()));
@@ -200,7 +211,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(202,(vec![60],"If you don't like it, you can try to punish me instead..".to_owned()));
 	entry_map.insert(203,(vec![210],"Yes. And I'll do it all again...".to_owned()));
 	
-	entry_map.insert(210,(vec![211,212,213,214],"Then we regret you that you must be terminated.".to_owned())); //Well, that escalated quickly.
+	entry_map.insert(210,(vec![211,212,213,214,215],"Then we regret you that you must be terminated.".to_owned())); //Well, that escalated quickly.
 	entry_map.insert(211,(vec![220],"Wait! Who are you?".to_owned()));
 	entry_map.insert(212,(vec![221],"I'm sorry! I'm sorry! Spare me!".to_owned()));
 	entry_map.insert(213,(vec![221],"Can't we resolve this peacefully?".to_owned()));
@@ -233,7 +244,7 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 	entry_map.insert(11,(vec![40],"Nice to meet you.".to_owned()));
 	
 	entry_map.insert(40,(vec![81,82,83,84],"Well met...".to_owned()));
-	entry_map.insert(100,(vec![81,84,72,113,60,114],"We are hunting an evil spirit that is trying to escape its eternal damnation".to_owned()));
+	entry_map.insert(100,(vec![81,84,72,113,6,114],"We are hunting an evil spirit that is trying to escape its eternal damnation".to_owned()));
 	entry_map.insert(110,(vec![81,82,72,111,112],"Have you heard the rumours of a necromantic cult at work in Malachia?".to_owned()));
 	entry_map.insert(111,(vec![120],"Yes".to_owned()));
 	entry_map.insert(112,(vec![130],"No".to_owned()));
@@ -270,7 +281,13 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: entry_map,
 		entry_node: ENTRY,
-		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,FIGHT_EXIT],
+		entry_description: "After the incident with the ghost, I was approached by an odd group of fellows calling themselves \"Exorcists\".",
+		exit_nodes: vec![EXIT_1,EXIT_2,EXIT_3,EXIT_4,FIGHT_EXIT],
+		exit_descriptions: vec!["I spoke with the exorcists. Intolerable! I hope never to see them again!",
+								"I spoke with the exorcists, and I did not like what I heard.",
+								"We had a pleasant conversations.",
+								"I agreed to help them to rid Malachia of a necromantic cult.",
+								"I spoke with the exorcists. Horrific folk! I entered battle with them."],
 	};
 	
 	
@@ -287,11 +304,13 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: death_dialog,
 		entry_node: FIGHT_EXIT,
+		entry_description: "I did battle with the exorcists.",
 		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["I wonder what the White Temple will do next?"],
 		
 	};
 	
-	//EXIT_1 conclusion. (You abused the exorcists and they went away).
+	//EXIT_4 conclusion. (You abused the exorcists and they went away).
 	let mut exit4_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
 	exit4_dialog.insert(EXIT_4,(vec![1],"You stand among the ruins of glory.".to_owned()));
 	exit4_dialog.insert(1,(vec![EXIT_1],"...".to_owned()));
@@ -307,20 +326,89 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		tokens:Vec::new(),
 		phrases_by_key: exit4_dialog,
 		entry_node: EXIT_4,
+		entry_description: "I annihilated the cult in downtown Malachia.",
 		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["..And came to the white temple."],
 		
 	};
 	
+	//EXIT_1 conclusion. (You abused the exorcists and they went away).
+	let mut exit1_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit1_dialog.insert(EXIT_1,(vec![1],"The exorcists left in a huff.".to_owned()));
+	exit1_dialog.insert(1,(vec![EXIT_2],"...".to_owned()));
+	exit1_dialog.insert(EXIT_2,(vec![],"But will they be back?..".to_owned()));
+	
+	//EXIT_1 conclusion. (You abused the exorcists and they went away).
+	//Just a commentary.
+	let ex1_content = Content {
+		actors:Vec::new(),
+		tokens:Vec::new(),
+		phrases_by_key: exit1_dialog,
+		entry_node: EXIT_1, 
+		entry_description: "",
+		exit_nodes: vec![EXIT_2],
+		exit_descriptions: vec!["..Perhaps I should watch my back."],
+		
+	};
+	
+	//EXIT_2 conclusion. (You left these guys with a badish relation.).
+	let mut exit2_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit2_dialog.insert(EXIT_2,(vec![1],"The exorcists didn't seem too happy.".to_owned()));
+	exit2_dialog.insert(1,(vec![EXIT_1],"...".to_owned()));
+	exit2_dialog.insert(EXIT_1,(vec![],"But will they be back?..".to_owned()));
+	
+	//EXIT_2 conclusion. (You abused the exorcists and they went away).
+	//Just a commentary.
+	let ex2_content = Content {
+		actors:Vec::new(),
+		tokens:Vec::new(),
+		phrases_by_key: exit2_dialog,
+		entry_node: EXIT_2, 
+		entry_description: "",
+		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["..Perhaps I should watch my back."],
+		
+	};
+	
+	//EXIT_3 conclusion. (You left these guys with a badish relation.).
+	let mut exit3_dialog:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit3_dialog.insert(EXIT_3,(vec![1],"Well, those folk seemed amiable.".to_owned()));
+	exit3_dialog.insert(1,(vec![EXIT_1],"...".to_owned()));
+	exit3_dialog.insert(EXIT_1,(vec![],"Perchance you shall meet again?..".to_owned()));
+	
+	//EXIT_3 conclusion. (You abused the exorcists and they went away).
+	//Just a commentary.
+	let ex3_content = Content {
+		actors:Vec::new(),
+		tokens:Vec::new(),
+		phrases_by_key: exit3_dialog,
+		entry_node: EXIT_3, 
+		entry_description: "",
+		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["..Perhaps I might visit the White Temple at some point..."],
+		
+	};
 	
 	//Create end vector -NB this will crash hard the way it is. I think.
 	let ends = vec![
-		//EXIT_1 bad ending
-		//EXIT_2 bad ending
-		//EXIT_3 ok ending
-		(EXIT_4,ex4_content,vec![Trigger::StartedStoryWith(667,EXIT_4),
-								 Trigger::FinishedDungeon(ID_MALACHIA_PUBCRAWL),
-								 Trigger::LocusXY([-160,20])
-			]
+		(EXIT_1,
+		 ex1_content,
+		 vec![Trigger::StartedStoryWith(667,EXIT_1)]
+		),
+		(EXIT_2,
+		 ex2_content,
+		 vec![Trigger::StartedStoryWith(667,EXIT_2)]
+		),
+		(EXIT_3,
+		 ex3_content,
+		 vec![Trigger::StartedStoryWith(667,EXIT_3)]
+		),
+		(EXIT_4,
+		 ex4_content,
+		 vec![
+			Trigger::StartedStoryWith(667,EXIT_4),
+			Trigger::FinishedDungeon(ID_MALACHIA_PUBCRAWL),
+			Trigger::LocusXY([-160,20])]
 		),
 		(FIGHT_EXIT,death_content,vec![Trigger::StartedStoryWith(667,FIGHT_EXIT)])
 	];
@@ -333,4 +421,148 @@ pub fn ghosthunt_part_1<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a> {
 		content: entry_content,
 		id:667,
 	}	
+}
+
+
+//Fight exit from chapter 1.
+//You get an invitation to a shady meeting at a shady place.
+fn ghosthunt_part_2a_marker(){}
+pub fn ghosthunt_part_2a<'a>(faces:&'a Vec<[conrod::image::Id;3]>)->Story<'a>  {
+	let name = "Ghosthunt: Chapter 2 - A letter from the other side.";
+	let start_trigger = vec![Trigger::Exp(20.0),Trigger::FinishedStoryNotWith(666,888)];
+	
+	//Make content.
+	let mut entry_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	
+	entry_map.insert(ENTRY,(vec![111,222],"You are approached by a lone skeleton. Outstretched hand holds an elegant envelope in your direction.".to_owned()));
+	entry_map.insert(111,(vec![10],"Begone! I want nothing with you and nothing from you!".to_owned()));
+	entry_map.insert(222,(vec![334],"O! I'll take that...".to_owned()));
+	
+	entry_map.insert(10,(vec![11,12],"The skeleton does not heed your words, but holds the letter in outstretched hands".to_owned()));
+	entry_map.insert(11,(vec![FIGHT_EXIT],"I said I will have nothing with this! If you do not leave, then I shall grind your bones to dust!".to_owned()));
+	entry_map.insert(12,(vec![1],"I said I will have nothing with this! If you do not leave then I will.".to_owned()));
+	
+	entry_map.insert(1,(vec![],"You turn around and walk away...".to_owned()));
+	entry_map.insert(FIGHT_EXIT,(vec![],"You take a breath and prepare to make good on your promise...".to_owned()));
+	entry_map.insert(334,(vec![],"You take the mysterious letter...".to_owned()));
+	
+	let entry_content = Content {
+		actors:vec![(&faces[13][0],skeleton().diff_lvl(20),1)],
+		tokens:Vec::new(),
+		phrases_by_key:entry_map,
+		entry_node: ENTRY,
+		entry_description: "I had a another strange encounter today. A skeleton came to give me a letter.",
+		exit_nodes: vec![1,334,FIGHT_EXIT],
+		exit_descriptions: vec!["I wouldn't take the letter.\n",
+								"I took its letter and read it.",
+								"I would have none of it, why do these monsters keep coming to me?"],
+	};
+	
+	//Make good exit (took the letter).
+	let mut exit1_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit1_map.insert(1,(vec![2],"You hear footsteps behind you. And turn around.".to_owned()));
+	exit1_map.insert(2,(vec![EXIT_1],"...".to_owned()));
+	exit1_map.insert(EXIT_1,(vec![],"At a respectable distance, the skeleton kneels before you. Clearly it seems to have no intent to leave you alone.".to_owned()));
+	
+	let exit1_content = Content {
+		actors:vec![(&faces[13][0],skeleton().diff_lvl(20),0)],
+		tokens:Vec::new(),
+		phrases_by_key:exit1_map,
+		entry_node: 1,
+		entry_description: "Now this strange messenger won't leave me alone.",
+		exit_nodes: vec![EXIT_1],
+		exit_descriptions: vec!["I wonder how long this will continue?"],
+	};
+	
+	//Make ambivalent exit (the skeleton follows you forever).
+	let letter = "Greetings!
+    It has come to my attention that you have assisted an unfortunate soul. \
+A commendable action which not everyone would take kindly to, or indeed take. \
+Perhaps you may be who we have been looking for all along. Would you not come \
+to the black sands on a moonlit night for a touch of sophistry?
+
+Yours Truly,
+Anthracene.
+	";
+	
+	let mut exit334_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exit334_map.insert(334,(vec![2],letter.to_owned()));
+	exit334_map.insert(2,(vec![EXIT_2],"...".to_owned()));
+	exit334_map.insert(EXIT_2,(vec![],"By the time you have read it, the skeleton has crumbled to dust.".to_owned()));
+	
+	let exit334_content = Content {
+		actors:vec![(&faces[13][2],skeleton().diff_lvl(20),0)],
+		tokens:Vec::new(),
+		phrases_by_key:exit334_map,
+		entry_node: 1,
+		entry_description: "Then the skeleton cumbled to dust. By the way, the letter read:\n",
+		exit_nodes: vec![EXIT_2],
+		exit_descriptions: vec![letter],
+	};
+	
+	//Make fight exit.
+	let mut exitf_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	exitf_map.insert(334,(vec![2],letter.to_owned()));
+	exitf_map.insert(2,(vec![EXIT_2],"...".to_owned()));
+	exitf_map.insert(EXIT_2,(vec![],"By the time you have read it, the skeleton has crumbled to dust.".to_owned()));
+	
+	let exitf_content = Content {
+		actors:vec![(&faces[13][0],skeleton().diff_lvl(20),0)],
+		tokens:Vec::new(),
+		phrases_by_key:exitf_map,
+		entry_node: FIGHT_EXIT,
+		entry_description: "I fought the creepy messenger. I want nothing to do with necromancers!\n",
+		exit_nodes: vec![EXIT_3],
+		exit_descriptions: vec![""],
+	};
+	
+	let ends = vec![(1,exit1_content,vec![Trigger::StartedStoryWith(668,1)]),
+					(334,exit334_content,vec![Trigger::StartedStoryWith(668,334)]),
+					(FIGHT_EXIT,exitf_content,vec![Trigger::StartedStoryWith(668,FIGHT_EXIT)])];
+					
+	//The actual story.
+	Story {
+		name: name,
+		trigger: start_trigger,
+		completion: ends,
+		content: entry_content,
+		id: 668,
+	}
+}
+
+//The long talk with Anthracene. Takes your type and
+fn ghosthunt_part_2_1a_marker(){}
+pub fn ghosthunt_part_2_1a<'a>(faces:&'a Vec<[conrod::image::Id;3]>,p:&Vec<(Lifeform,usize)>,pn:&Vec<String>)->Story<'a> {
+	let name = "Ghosthunt: Chapter 2 - A letter from the other side II.";
+	let start_trigger = vec![Trigger::LocusScape(DESERT),Trigger::LocusAffinity(DEATH),Trigger::FinishedStory(668)];
+	
+	//Make content.
+	let mut entry_map:BTreeMap<u16,(Vec<u16>,String)> = BTreeMap::new();
+	
+	entry_map.insert(ENTRY,(vec![1],"As night falls over the desert of fine, black grains, you notice a shadow walking with you.".to_owned()));
+	entry_map.insert(1,(vec![10],"...".to_owned()));
+	entry_map.insert(10,(vec![11],format!("A pleasant evening to you, {}. ",pn[0])));
+	
+	let entry_content = Content {
+		actors:vec![(&faces[13][0],skeleton().diff_lvl(20),1)],
+		tokens:Vec::new(),
+		phrases_by_key:entry_map,
+		entry_node: ENTRY,
+		entry_description: "When I entered the Black Sands, I had another interesting encounter. I met the sorceress Anthracene, or better put, her shadow.",
+		exit_nodes: vec![1,334,FIGHT_EXIT],
+		exit_descriptions: vec!["I wouldn't take the letter.\n",
+								"I took its letter and read it.",
+								"I would have none of it, why do these monsters keep coming to me?"],
+	};
+	
+	let ends = vec![];
+	
+	//The actual story.
+	Story {
+		name: name,
+		trigger: start_trigger,
+		completion: ends,
+		content: entry_content,
+		id: 669,
+	}
 }
