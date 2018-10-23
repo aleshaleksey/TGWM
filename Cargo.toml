@@ -3,8 +3,7 @@ name = "q-moose"
 version = "0.1.0"
 authors = ["Aleksey Zholobenko <aleshaleksey@googlemail.com>"]
 
-
-
+[dependencies]
 find_folder = "0.3.0"
 Inflector = "0.10.1"
 num = "0.1.40"
@@ -13,6 +12,7 @@ rand = "0.3.18"
 time = "0.1.38"
 glium = { version = "=0.20", optional = true }
 winit = { version = "=0.10", optional = true }
+libc = { version = "=0.2.42", optional = true }
 conrod="=0.57.0"
 image="=0.18.0"
 rodio="=0.7.0"
