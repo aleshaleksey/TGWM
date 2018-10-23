@@ -1,0 +1,15 @@
+language: rust
+sudo: false
+rust:
+  - 1.28.0
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust:stable
+    - rust:nightly
+    - rust beta
+script:
+  - cargo build --features="winit glium libc"
+  
