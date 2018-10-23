@@ -7,5 +7,6 @@ git:
   depth: false
 rust:
   - 1.28.0
+name: "q-moose"
 script:
   - cargo build --release --features="winit glium libc"
