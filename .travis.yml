@@ -7,6 +7,5 @@ git:
   depth: false
 rust:
   - 1.28.0
-matrix
 script:
   - cargo build --release --features="winit glium libc"
