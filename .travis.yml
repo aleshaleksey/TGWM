@@ -1,10 +1,10 @@
 language: rust
 cache: cargo
 sudo: false
-branches: -master
+branches: master
 os: -linux
 git:
-  depth: false
+  depth: 1
 rust:
   - 1.28.0
 name: "q-moose"
