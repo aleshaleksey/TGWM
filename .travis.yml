@@ -1,15 +1,12 @@
 language: rust
+cache: cargo
 sudo: false
+branches: -master
+os: -linux
+git:
+  depth: false
 rust:
   - 1.28.0
-  - stable
-  - beta
-  - nightly
-matrix:
-  allow_failures:
-    - rust:stable
-    - rust:nightly
-    - rust beta
+matrix
 script:
-  - cargo build --features="winit glium libc"
-  
+  - cargo build --release --features="winit glium libc"
