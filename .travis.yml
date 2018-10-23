@@ -9,6 +9,10 @@ rust:
   - 1.28.0
 rustup:
   - 1.13.0
+addons:
+  apt:
+    packages:
+    - libasound2-dev
 name: "q-moose"
 before_script:
 - cargo update
