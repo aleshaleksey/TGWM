@@ -10,5 +10,7 @@ rust:
 rustup:
   - 1.13.0
 name: "q-moose"
+before_script:
+- cargo update
 script:
-  - cargo build --release --verbose --all
+- cargo build --release --features="libc glium winit" --verbose --all
