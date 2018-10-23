@@ -11,4 +11,4 @@ rustup:
   - 1.13
 name: "q-moose"
 script:
-  - cargo build --verbose --all
+  - cargo build --release --verbose --all
