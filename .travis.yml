@@ -22,6 +22,7 @@ name: "q-moose"
 
 before_script:
 - cargo update
+- apt-get install libasound2-dev
 
 script:
 - cargo build --release --features="libc glium winit" --verbose --all
