@@ -1321,19 +1321,19 @@ fn generate_world_map(world:&Vec<[Place;19]>,
 //NB the rest of this is the support.rs from the support module of conrod/examples. (with some small modifications)
 //NB the rest of this is the support.rs from the support module of conrod/examples. (with some small modifications)
 
-#[allow(dead_code)]
-fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
-    let input = ui.widget_input(button_id);
-    let interaction = input.mouse().map_or(Interaction::Idle, |mouse| {
-        let is_pressed =
-            mouse.buttons.left().is_down()
-            || ui.global_input().current.touch.values()
-                 .any(|t| t.start.widget == Some(button_id));
-        if is_pressed { Interaction::Press } else { Interaction::Hover }
-    });
-    let times_triggered = (input.clicks().left().count() + input.taps().count()) as u16;
-    (interaction, times_triggered)
-}
+//#[allow(dead_code)]
+//fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
+    //let input = ui.widget_input(button_id);
+    //let interaction = input.mouse().map_or(Interaction::Idle, |mouse| {
+        //let is_pressed =
+            //mouse.buttons.left().is_down()
+            //|| ui.global_input().current.touch.values()
+                 //.any(|t| t.start.widget == Some(button_id));
+        //if is_pressed { Interaction::Press } else { Interaction::Hover }
+    //});
+    //let times_triggered = (input.clicks().left().count() + input.taps().count()) as u16;
+    //(interaction, times_triggered)
+//}
 
 pub struct EventLoop {
     ui_needs_update: bool,
