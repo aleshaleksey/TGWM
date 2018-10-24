@@ -1,4 +1,4 @@
-# TGWM (Tales of the Great White Moose)
+# TGWM (Tales of the Great White Moose)[<img src="https://api.travis-ci.org/aleshaleksey/TGWM.svg?branch=master">](https://travis-ci.org/aleshaleksey/TGWM)
 
 A flat RPG written in rust as an etude in using the language.
 
