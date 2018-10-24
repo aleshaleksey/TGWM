@@ -1,21 +1,27 @@
-language: rust
-cache: cargo
-sudo: true
-branches: master
-os: -linux
-git:
-  depth: 1
-rust:
-  - 1.28.0
-rustup:
-  - 1.13.0
 addons:
   apt:
     packages:
     - libasound2-dev
+
+language: rust
+
+cache: cargo
+
+sudo: false
+
+branches: master
+
+os: -linux
+
+git:
+  depth: 1
+rust:
+  - 1.28.0
+
 name: "q-moose"
+
 before_script:
-- sudo apt install libasound2-dev
 - cargo update
+
 script:
 - cargo build --release --features="libc glium winit" --verbose --all
