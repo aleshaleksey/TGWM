@@ -70,7 +70,7 @@ use cmoose::GraphicsBox::Attack;
 
 use tales_of_the_great_white_moose::{MAX_JOIN_EXIT,MAX_LEAVE_EXIT,
 									 MAX_GIVE_EXIT,MAX_TAKE_EXIT,
-									 MIN_GIVE_EXIT,MIN_TAKE_EXIT};
+									 MIN_GIVE_EXIT,MIN_TAKE_EXIT,FIGHT_EXIT};
 
 use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};	
 			  
@@ -1337,7 +1337,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	};
 	
 	//Various types of stroy content exits.
-	if (stage_in==666) & lhas(&content.exit_nodes,&stage_in) {
+	if (stage_in==FIGHT_EXIT) & lhas(&content.exit_nodes,&stage_in) {
 		println!("We're getting to an exit node666: MyStories = {:?}",my_stories);
 		*gui_box_previous = GUIBox::GameTravel;
 		gui_box = GUIBox::GameFight(true);
