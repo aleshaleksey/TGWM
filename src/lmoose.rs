@@ -289,7 +289,7 @@ impl Display for Spell{
    _ => "no one",
 };
   write!(f,"{} is {}...\n",self.name,typ);
-  write!(f,"...It is a {} invocation that takes {} to cast and has {} {}.\n",self.Type,mp_i,dam,dam_t);
+  write!(f,"...It is a {} invocation that takes {} to cast and has {} {}.\n",convert_mag_type(self.Type),mp_i,dam,dam_t);
   write!(f,"...It smites {}...\n", targ_woe);
   write!(f,"...And aids {}...\n", targ_boon);
   match self.Death{
@@ -993,7 +993,7 @@ let teleport=Spell{
  Type: TELEPORTATION,
  MP: 260.0,
  Power: 10.0,
- target_boon: SELF,
+ target_boon: TARGET,
  target_woe: NONE,
  Health: 0.0,
  Mana: 0.0,

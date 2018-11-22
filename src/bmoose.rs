@@ -73,6 +73,7 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
     let mut tturns:u16=0;
     let mut omnicide:bool=false;
     while tturns<(cms*6+20) as u16{
+		//println!("Started random battle!");
 		let ttturns=byteru16(tturns);
 		//println!("Got minus A");
 		let mut recl:[u8;28]=[
@@ -105,7 +106,13 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 			255,										//26#x[20]
 			255,										//27#x[21]
 		];
-		for i in 0..cms{recl[6+i]=state_m(x[i].0.HP_shade,x[i].0.HP)};
+		
+		for i in 0..cms{
+			if record[record.len()-1][6+i]!=255 {
+				recl[6+i] = state_m(x[i].0.HP_shade,x[i].0.HP);
+			};
+		};
+		
 		tturns+= 1;
 		omnicide=all_dead(&x);
 		if omnicide==true{
@@ -128,17 +135,23 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 			}else{
 				ttakes[ifast]+= 1;
 				let mut idm:usize=0;
-				let mut dumbI:usize=0;			
-				if ifast==0{
-					idm = rand::thread_rng().gen_range(0,cms)
-				}else{
-					let mut liv_vec:Vec<usize> = Vec::with_capacity(25);
+				let mut dumbI:usize=0;
+				let mut liv_vec:Vec<usize> = Vec::with_capacity(25);
+				
+				if ifast==0 {
 					for i in 0..cms{
-						if state_m(x[i].0.HP,x[i].0.HP_shade)>0{liv_vec.push(i)}else{}
-					};		
-					let idm_pick = rand::thread_rng().gen_range(0,liv_vec.len());
-					idm = liv_vec[idm_pick]
+						if recl[i+6]!=255 {liv_vec.push(i)}else{}
+					};
+				}else{
+					for i in 0..cms{
+						if (state_m(x[i].0.HP,x[i].0.HP_shade)>0) & (recl[i+6]!=255) {liv_vec.push(i)}else{}
+					};	
 				};
+				if liv_vec.len()==0 {liv_vec.push(ifast);};
+					
+				let idm_pick = rand::thread_rng().gen_range(0,liv_vec.len());
+				idm = liv_vec[idm_pick];
+				
 				recl[3]=idm as u8;
 				if x[ifast].0.Spellist.len()>0{
 						dumbI=rand_choice(idm,&x[ifast].0,&ns[ifast],&x,&y,ifast);
@@ -184,32 +197,35 @@ pub fn battle_rand(mut x:Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 						let to_hit=sp_target_comp(&y[dumbj], &x, ifast, idm);
 						let shades=magic_rand_battle(to_hit.clone(),&x,&ns,&y[dumbj],ifast);
 						for z in 0..cms{
-							let hpo=x[z].0.HP_shade;
-							x[z].0.MP_shade+=shades.0[z].MP_shade;
-							x[z].0.HP_shade+=shades.0[z].HP_shade;
-							x[z].0.Speed_shade+= shades.0[z].S_shade;
-							if x[z].0.Speed_shade<5.0{
-								x[z].0.Speed_shade=5.0
-							}else{};
-							x[z].0.Attack_shade+=shades.0[z].A_shade;
-							x[z].0.Defence_shade+=shades.0[z].D_shade;
-							x[z].0.WM_shade+=shades.0[z].WM_shade;
-							x[z].0.BM_shade+=shades.0[z].BM_shade;
-							timer[z]+=shades.0[z].Timestop;
-							if shades.0[z].Death==true{
-								x[z].0.HP_shade=0.0
-							}else{};
-							if shades.0[z].Teleport==true{
-								//record teleport!!!
-								timer[z]=1000000.0
-							}else{
-							//record action choice & target+battlefield state!
-							};
-							//record target & battlefield state!!
-							if x[z].0.HP_shade<=0.0 {
-								for x in x.iter_mut() {
-									if x.2[0].is_some() {
-										if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+							if recl[z+6]!=255 {
+								let hpo=x[z].0.HP_shade;
+								x[z].0.MP_shade+=shades.0[z].MP_shade;
+								x[z].0.HP_shade+=shades.0[z].HP_shade;
+								x[z].0.Speed_shade+= shades.0[z].S_shade;
+								if x[z].0.Speed_shade<5.0{
+									x[z].0.Speed_shade=5.0
+								}else{};
+								x[z].0.Attack_shade+=shades.0[z].A_shade;
+								x[z].0.Defence_shade+=shades.0[z].D_shade;
+								x[z].0.WM_shade+=shades.0[z].WM_shade;
+								x[z].0.BM_shade+=shades.0[z].BM_shade;
+								timer[z]+=shades.0[z].Timestop;
+								if shades.0[z].Death==true{
+									x[z].0.HP_shade=0.0
+								}else{};
+								if shades.0[z].Teleport==true{
+									//record teleport!!!
+									timer[z]=1000000.0;
+									recl[z+6] = 255;
+								}else{
+								//record action choice & target+battlefield state!
+								};
+								//record target & battlefield state!!
+								if x[z].0.HP_shade<=0.0 {
+									for x in x.iter_mut() {
+										if x.2[0].is_some() {
+											if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+										};
 									};
 								};
 							};
@@ -288,9 +304,9 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 			ttturns[1],									//1#turns
 			0,											//2#action
 			0,											//3#idm
-			*battle_ifast as u8,								//4#ifast
+			*battle_ifast as u8,						//4#ifast
 			128,										//5#light
-			255,										//6#x0
+			255,										//6#x[0]
 			255,										//7#x[1]
 			255,										//8#x[2]
 			255,										//9#x[3]									
@@ -314,7 +330,12 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 			255,										//27#x[21]
 		];
 			
-		for i in 0..cms{recl[6+i]=state_m(encounter[i].0.HP_shade,encounter[i].0.HP)};
+		for i in 0..cms{
+			if in_battle_record[in_battle_record.len()-1][6+i]!=255 {
+				recl[6+i] = state_m(encounter[i].0.HP_shade,encounter[i].0.HP);
+			};
+		};
+		
 		*battle_tturns+= 1;
 		in_battle_record.push(recl.clone());
 		//NB genocide+omnicide loop moved outside of function.
@@ -331,7 +352,10 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 			*ai_turn_started = true;
 		};
 	};
-			
+		
+	let i_am_mindless = if (encounter[*battle_ifast].0.Type == MINDLESS) 
+		| (encounter[*battle_ifast].0.SubType == MINDLESS) {false}else{true};
+		
 	if *ai_turn_started & !*ai_started_thinking {
 		println!("{} from group {} is about to take action!",ns[*battle_ifast],encounter[*battle_ifast].1);
 		let turning = *battle_tturns as usize;
@@ -352,8 +376,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 		let rcl:[u8;28] = recl.clone();
 		let lsm:i32 = lsum.clone();
 		let borders:Vec<(u8,u8)> = battle_orders.clone();
-		if (encounter[*battle_ifast].0.Type != MINDLESS)
-		& (encounter[*battle_ifast].0.SubType != MINDLESS) {
+		if !i_am_mindless {
 			thought_sender_to_brain.clone().send((
 								bif,
 								trng,
@@ -368,6 +391,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 		*ai_started_thinking = true;
 		return
 	};
+	
 	if *ai_turn_started & *ai_started_thinking {
 		
 		if timer%5 != 0 {return}; //give the computer more time to think.
@@ -376,8 +400,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 		//(best_act_pm,best_tar_pm)
 		let mut choice:(usize,usize,bool);
 		
-		if (encounter[*battle_ifast].0.Type != MINDLESS)
-		 & (encounter[*battle_ifast].0.SubType != MINDLESS) {
+		if !i_am_mindless {
 			match thought_receiver_to_body.try_recv() {
 				Ok(answer) => {
 					let (choice_a,choice_b) = answer;
@@ -391,39 +414,43 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 								
 		if !choice.2 {return};
 		println!("Answer: {:?}",choice);						
-		let mut idm=choice.1;
-		let mut exI=choice.0;
+		let mut idm = choice.1;
+		let mut exI = choice.0;
 		
 		let libr:usize = in_battle_record.len()-1;
 		
 		//AI SCRIPT FAILURE COMBINATION<<<<<<<<<<<
-		if (idm>=encounter.len()) | (exI>y.len()+1) {
+		if (idm>=encounter.len()) | (exI>y.len()+1) | i_am_mindless {
 			
 			println!("AI script failed, idm={}, exI={}.",idm,exI);			
-			idm = dumb_target_chooser(idm,cms,encounter,*battle_ifast);
+			if !i_am_mindless {idm = dumb_target_chooser(idm,cms,encounter,*battle_ifast,&recl);};
 			
-			if idm>= encounter.len() {
+			if (idm>=encounter.len()) | i_am_mindless {
 				println!("{} Panics!\n",&ns[*battle_ifast]);
-				idm = bankai(*battle_ifast,&encounter)
+				idm = bankai(*battle_ifast,&encounter,&recl)
 			}else{};
+			
 			state_match(encounter[*battle_ifast].0.HP,
 						encounter[*battle_ifast].0.HP_shade,
 						&ns[*battle_ifast],
 						encounter[*battle_ifast].1);
-			let mut dumbI:usize=99999;		
+						
+			let mut dumbI:usize=99999;
+			
 			if encounter[*battle_ifast].0.Spellist.len()>0 {
-				dumbI=dumb_choice(idm,*battle_ifast,&encounter[*battle_ifast].0,&ns[*battle_ifast],&encounter,&y);
-				exI=dumbI;
+				dumbI = dumb_choice(idm,*battle_ifast,&encounter[*battle_ifast].0,&ns[*battle_ifast],&encounter,&y);
+				exI = dumbI;
 				println!("{}",dumbI)
 			}else{
 				dumbI = rand::thread_rng().gen_range(0,2);
 				exI = dumbI;	
 				println!("{}!",dumbI)
-			};				
-			in_battle_record[libr][3]=idm as u8;
-			in_battle_record[libr][2]=exI as u8;
+			};	
+						
+			in_battle_record[libr][3] = idm as u8;
+			in_battle_record[libr][2] = exI as u8;
+		};
 			
-		}else{};	
 		if exI==1 {			
 			//*comm_text = format!("{} from group {} attacks {} from group {}.", &ns[*battle_ifast],encounter[*battle_ifast].1, &ns[idm], &encounter[idm].1);	
 			
@@ -466,7 +493,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 		}else if exI==0 {
 			*comm_text = format!("{} from group {} takes a stance between {} from group {} and the world!", &ns[*battle_ifast],encounter[*battle_ifast].1, &ns[idm], &encounter[idm].1);			
 			encounter[idm].2[0] = Some([*battle_ifast,battle_ttakes[*battle_ifast]]);
-		}else if exI >1 {
+		}else if exI>1 {
 			//println!("magic idm:{} dI:{}",&idm,&dumbI);
 			let exj=exI-2;
 			if *battle_ifast==0{
@@ -476,7 +503,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 			};
 			if y[exj].MP > encounter[*battle_ifast].0.MP_shade {
 				println!("\nenemy ran out of mana\n");
-				in_battle_record[libr][2]=1;
+				in_battle_record[libr][2] = 1;
 				let spare_text:String = format!("{}\n...But doesn't have enough mana!", comm_text);		
 				let attack_result:(f32,usize) =  attack(encounter,
 													*battle_ifast,
@@ -485,12 +512,12 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 													comm_text);
 				//damage and shaking.									
 				if attack_result.0 > 0.0 {
-				encounter[attack_result.1].0.HP_shade-= attack_result.0;
-				if encounter[attack_result.1].0.HP_shade>0.0 {
-					shaking_dam[attack_result.1] = true;
-					*shaking_timer = timer;
+					encounter[attack_result.1].0.HP_shade-= attack_result.0;
+					if encounter[attack_result.1].0.HP_shade>0.0 {
+						shaking_dam[attack_result.1] = true;
+						*shaking_timer = timer;
+					};
 				};
-			};
 				if encounter[attack_result.1].0.HP_shade<=0.0 {
 					for x in encounter.iter_mut() {
 						if x.2[0].is_some() {
@@ -500,42 +527,45 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 				};
 				*comm_text = format!("{}\n{}",spare_text,comm_text);
 			}else{
-				let to_hit=sp_target_comp(&y[exj], &encounter, *battle_ifast, idm);
-				let shades=magic(to_hit.clone(),&encounter,&ns,&y[exj],*battle_ifast,comm_text);
+				let to_hit = sp_target_comp(&y[exj], &encounter, *battle_ifast, idm);
+				let shades = magic(to_hit.clone(),&encounter,&ns,&y[exj],*battle_ifast,comm_text);
 				for z in 0..cms{
-					let hpo=encounter[z].0.HP_shade;
-					encounter[z].0.MP_shade+=shades.0[z].MP_shade;
-					
-					encounter[z].0.HP_shade+=shades.0[z].HP_shade;
-					//Damage and avatar shaking.
-					if (shades.0[z].HP_shade<0.0) & (encounter[z].0.HP_shade>0.0) {
-						shaking_dam[z] = true;
-						*shaking_timer = timer;
-					};			
-					encounter[z].0.Speed_shade+= shades.0[z].S_shade;
-					if encounter[z].0.Speed_shade<5.0{
-							encounter[z].0.Speed_shade=5.0
-					}else{};
-					encounter[z].0.Attack_shade+=shades.0[z].A_shade;
-					encounter[z].0.Defence_shade+=shades.0[z].D_shade;
-					encounter[z].0.WM_shade+=shades.0[z].WM_shade;
-					encounter[z].0.BM_shade+=shades.0[z].BM_shade;
-					battle_timer[z]+=shades.0[z].Timestop;
-					if shades.0[z].Death==true{
-						encounter[z].0.HP_shade=0.0
-					}else{};
-					if shades.0[z].Teleport==true{
-						*comm_text = format!("{}\n...{} is warped off the battlefield.",comm_text,encounter[z].0.name);
-						battle_timer[z]=1000000.0;
-					};
-					if (encounter[z].0.HP_shade<=0.0) & (hpo>0.0){
-						*comm_text = format!("{}\n{} from group {} is slain by the spell.",
-											 comm_text,&ns[z],encounter[z].1);
-					};
-					if encounter[z].0.HP_shade<=0.0 {
-						for x in encounter.iter_mut() {
-							if x.2[0].is_some() {
-								if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+					if recl[z+6]!=255 {
+						let hpo = encounter[z].0.HP_shade;
+						encounter[z].0.MP_shade+= shades.0[z].MP_shade;
+						
+						encounter[z].0.HP_shade+= shades.0[z].HP_shade;
+						//Damage and avatar shaking.
+						if (shades.0[z].HP_shade<0.0) & (encounter[z].0.HP_shade>0.0) {
+							shaking_dam[z] = true;
+							*shaking_timer = timer;
+						};			
+						encounter[z].0.Speed_shade+= shades.0[z].S_shade;
+						if encounter[z].0.Speed_shade<5.0{
+								encounter[z].0.Speed_shade=5.0
+						}else{};
+						encounter[z].0.Attack_shade+=shades.0[z].A_shade;
+						encounter[z].0.Defence_shade+=shades.0[z].D_shade;
+						encounter[z].0.WM_shade+=shades.0[z].WM_shade;
+						encounter[z].0.BM_shade+=shades.0[z].BM_shade;
+						battle_timer[z]+=shades.0[z].Timestop;
+						if shades.0[z].Death==true{
+							encounter[z].0.HP_shade=0.0
+						}else{};
+						if shades.0[z].Teleport==true{
+							*comm_text = format!("{}\n...{} is warped off the battlefield.",comm_text,encounter[z].0.name);
+							battle_timer[z]=1000000.0;
+							in_battle_record[libr][z+6] = 255;
+						};
+						if (encounter[z].0.HP_shade<=0.0) & (hpo>0.0){
+							*comm_text = format!("{}\n{} from group {} is slain by the spell.",
+												 comm_text,&ns[z],encounter[z].1);
+						};
+						if encounter[z].0.HP_shade<=0.0 {
+							for x in encounter.iter_mut() {
+								if x.2[0].is_some() {
+									if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+								};
 							};
 						};
 					};
@@ -553,8 +583,9 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 				
 				in_battle_record[libr][5] = (in_battle_record[libr][5] as i32 + shades.1) as u8;
 			};
-		}else{};
-		in_battle_record[libr][2]=exI as u8;
+		};
+		
+		in_battle_record[libr][2] = exI as u8;
 		println!("battle record turn end length ibr.len()={},turn={}\n",in_battle_record.len(),battle_tturns);	
 	
 	
@@ -579,7 +610,7 @@ pub fn ai_battle_turn<'a,'b> ( mut encounter: &mut Vec<(Lifeform,usize,[Option<[
 		let tvar:f32=
 			(rand::thread_rng().gen_range(-10,11)-rand::thread_rng().gen_range(-10,11)) as f32;
 		let time = encounter[*battle_ifast].0.Speed_shade.clone()+tvar;
-		battle_timer[*battle_ifast]+=1.0/time;
+		battle_timer[*battle_ifast]+= 1.0/time;
 		let bt2 = battle_timer.to_owned();
 		let fast = vnmin(bt2);
 		*battle_ifast = vwhich(battle_timer,fast).unwrap_or(*battle_ifast);
@@ -662,7 +693,13 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 			255,										//26#x[20]
 			255,										//27#x[21]
 		];
-		for i in 0..cms{recl[6+i]=state_m(encounter[i].0.HP_shade,encounter[i].0.HP)};
+		
+		for i in 0..cms{
+			if in_battle_record[in_battle_record.len()-1][6+i]!=255 {
+				recl[6+i] = state_m(encounter[i].0.HP_shade,encounter[i].0.HP);
+			};
+		};
+		
 		*battle_tturns+= 1;
 		if encounter[*battle_ifast].0.HP_shade<=0.0{
 			//If player is dead, initiate the next turn.
@@ -814,45 +851,48 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 					};
 					
 					for z in 0..cms{
-						let hpo=encounter[z].0.HP_shade;
-						encounter[z].0.MP_shade+=shades.0[z].MP_shade;
-						
-						encounter[z].0.HP_shade+=shades.0[z].HP_shade;
-						//Damage and avatar shaking.
-						if (shades.0[z].HP_shade<0.0) & (encounter[z].0.HP_shade>0.0) {
-							shaking_dam[z] = true;
-							*shaking_timer = timer;
-						};	
-						encounter[z].0.Speed_shade+= shades.0[z].S_shade;
-						if encounter[z].0.Speed_shade<5.0{
-							encounter[z].0.Speed_shade=5.0
-						}else{};
-						encounter[z].0.Attack_shade+=shades.0[z].A_shade;
-						encounter[z].0.Defence_shade+=shades.0[z].D_shade;
-						encounter[z].0.WM_shade+=shades.0[z].WM_shade;
-						encounter[z].0.BM_shade+=shades.0[z].BM_shade;
-						battle_timer[z]+=shades.0[z].Timestop;
-						if shades.0[z].Death==true{
-							encounter[z].0.HP_shade=0.0
-						}else{};
-						if shades.0[z].Teleport==true{
-						*comm_text = format!("{}\n...{} is warped off the battlefield.",comm_text,encounter[z].0.name);
-						battle_timer[z]=1000000.0
-						}else{};
-						if encounter[z].0.HP_shade<=0.0 {
-							for x in encounter.iter_mut() {
-								if x.2[0].is_some() {
-									if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+						if recl[z+6]!=255 {
+							let hpo=encounter[z].0.HP_shade;
+							encounter[z].0.MP_shade+=shades.0[z].MP_shade;
+							
+							encounter[z].0.HP_shade+=shades.0[z].HP_shade;
+							//Damage and avatar shaking.
+							if (shades.0[z].HP_shade<0.0) & (encounter[z].0.HP_shade>0.0) {
+								shaking_dam[z] = true;
+								*shaking_timer = timer;
+							};	
+							encounter[z].0.Speed_shade+= shades.0[z].S_shade;
+							if encounter[z].0.Speed_shade<5.0{
+								encounter[z].0.Speed_shade=5.0
+							}else{};
+							encounter[z].0.Attack_shade+=shades.0[z].A_shade;
+							encounter[z].0.Defence_shade+=shades.0[z].D_shade;
+							encounter[z].0.WM_shade+=shades.0[z].WM_shade;
+							encounter[z].0.BM_shade+=shades.0[z].BM_shade;
+							battle_timer[z]+=shades.0[z].Timestop;
+							if shades.0[z].Death==true{
+								encounter[z].0.HP_shade=0.0
+							}else{};
+							if shades.0[z].Teleport==true{
+								*comm_text = format!("{}\n...{} is warped off the battlefield.",comm_text,encounter[z].0.name);
+								battle_timer[z]=1000000.0;
+								recl[z+6] = 255;
+							}else{};
+							if encounter[z].0.HP_shade<=0.0 {
+								for x in encounter.iter_mut() {
+									if x.2[0].is_some() {
+										if x.2[0].unwrap()[0]==z {x.2[0] = None;};
+									};
 								};
 							};
-						};
-						if (encounter[z].0.HP_shade<=0.0)
-						 & (hpo>0.0){
-							//increment kill list and make message.
-							kill_list.increment_or(encounter[z].0.name);
-							*comm_text = format!("{}\n{} from group {} is slain by the spell.",
-									 comm_text,&ns[z],encounter[z].1)
-						}else{};	
+							if (encounter[z].0.HP_shade<=0.0)
+							 & (hpo>0.0){
+								//increment kill list and make message.
+								kill_list.increment_or(encounter[z].0.name);
+								*comm_text = format!("{}\n{} from group {} is slain by the spell.",
+										 comm_text,&ns[z],encounter[z].1)
+							};
+						};	
 					};
 					println!("Effects of spellcasting over");
 										
@@ -931,11 +971,25 @@ pub fn player_battle_turn (mut encounter: &mut Vec<(Lifeform,usize,[Option<[usiz
 	//println!("Got to the end of player turn, next monster: {}",battle_ifast);		
 }
 
+//A function to work out whether the party has escaped.
+fn escape_by_teleport(escape:bool,current_states:&[u8;28],party_len:usize)->bool {
+	if escape {return escape}
+	else 	  {
+		let mut escape = true;
+		for i in 0..party_len {
+			if current_states[i+6]!=255 {escape = false;};
+		};
+		escape
+	}
+}
+
 fn game_over_marker(){}
 //Function for pronouncing the end of the battle.
+//NB, may be problematic as it is with teleportation.
 pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				mut enemies:  &mut Vec<(Lifeform,usize)>,
 				mut party: &mut Vec<(Lifeform,usize)>,
+				in_battle_record: &Vec<[u8;28]>,
 				dungeons: &mut Vec<Dungeon>,
 				mut fight:&mut bool,
 				mut tt_e_c_i_ll:&mut [bool;8],
@@ -950,17 +1004,21 @@ pub fn game_over(mut encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>
 				escape: bool) {
 					
 	//println!("entering game over");
+	let ibr_lastline = &in_battle_record[in_battle_record.len()-1];
 	let max_group = if encounter.len()==0 {0}else{encounter[encounter.len()-1].1};
 	let p_len = party.len();
 	let mut alive = [false;5];
-	let mut defeat = [true;5];				
+	let mut defeat = [true;5];
+				
 	let mut omnicide = true;
 	
-	for x in encounter.iter() {
-		if x.0.HP_shade>0.0 {
+	let escape = escape_by_teleport(escape,ibr_lastline,p_len);
+	
+	for (i,x) in encounter.iter().enumerate() {
+		if (x.0.HP_shade>0.0) & (ibr_lastline[i+6]!=255) {
 			defeat[x.1] = false;
 			alive[x.1] = true;
-			omnicide = false;
+			omnicide = false;	
 		};
 	};
 	
@@ -1847,7 +1905,7 @@ targets
 }
 
 //legacy algorithm for choosing a target (ie, attack the weakest enemy).
-fn dumb_choice_a_marker(){}
+fn dumb_target_chooser_legacy_m(){}
 fn dumb_target_chooser_legacy(idm:usize,				//target id.
 							  cms:usize,				//encounter len.
 							  encounter:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,	//encounter
@@ -1871,20 +1929,24 @@ fn dumb_target_chooser_legacy(idm:usize,				//target id.
 //Better target picking algorithm:
 //Find most dangerous group for YOU and attack quishiest member.
 //NB currently silly as does not compare BM vs WM, attack vs defence.
-fn dumb_choice_b_marker(){}
+fn dumb_target_chooser_m (){}
 fn dumb_target_chooser (idm:usize,
 						cms:usize,
 						encounter:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-						battle_ifast:usize) -> usize {
+						battle_ifast:usize,
+						recl: &[u8;28]) -> usize {
 	
 	//initiate vectors.
 	let mut squish: Vec<f32> =  Vec::with_capacity(cms);
 	let mut dngr_grs: [f32;5] = [0.0;5];
 	
 	//assign danger ratings and quish
-	for x in encounter.iter() {
-		dngr_grs[x.1]+= dangerous(&x.0,&encounter[battle_ifast].0);
-		squish.push(x.0.Defence_shade+x.0.WM_shade);
+	//NB if target is absent, do not count it.
+	for (i,x) in encounter.iter().enumerate() {
+		if recl[i+6]!=255 {
+			dngr_grs[x.1]+= dangerous(&x.0,&encounter[battle_ifast].0);
+			squish.push(x.0.Defence_shade+x.0.WM_shade);
+		};
 	};
 	
 	//assign group danger ratings.
@@ -1899,14 +1961,16 @@ fn dumb_target_chooser (idm:usize,
 	};
 	
 	//pick squishiest from dangerous group.
+	//NB if target is absent, do not count it.
 	let mut min:f32 = f32::MAX;	
-	for (def,mon) in squish.iter().zip(encounter.iter()){
+	for (i,(def,mon)) in squish.iter().zip(encounter.iter()).enumerate() {
 		if (min>=*def)
 		 & (encounter[battle_ifast].1 != mon.1)
 		 & (mon.1==target_gr)
-		 & (mon.0.HP_shade>0.0) {
+		 & (mon.0.HP_shade>0.0)
+		 & (recl[i+6]!=255) {
 			 min = *def
-		 };
+		};
 	};
 	
 	vwhich(&squish,min).unwrap_or(idm)
@@ -1991,7 +2055,12 @@ fn dumb_choice (idm:usize,
 //needs to be improved to take into account of waiting and panicking
 //dumb chocie for random battle, output: 0= defend, 1 = attack. 1<magic,
 //1=attack. 2...n=cast spell listed [n-2]th in ifast's spellist.
-fn rand_choice(idm:usize ,caster:&Lifeform,c_name:&String, pots: &Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, spells:&Vec<Spell>,ifast:usize)->usize{
+fn rand_choice(idm:usize,
+			   caster:&Lifeform,
+			   c_name:&String,
+			   pots:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+			   spells:&Vec<Spell>,
+			   ifast:usize) ->usize {
 	let lenny:usize=2+caster.Spellist.len();
 	let mut choice:usize=0;
 	if ifast==0{
@@ -2039,12 +2108,19 @@ fn spowl(power:f32, CM:f32, t:&Lifeform,spell:&Spell)->f32{
 	heal
 }
 
-fn bankai (ifast:usize, all:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)->usize{
-	let mut good_choice=false;
-	let mut kimegao:usize=0;
+fn bankai (ifast:usize, all:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,recl:&[u8;28])->usize{
+	let mut good_choice = false;
+	let mut kimegao:usize = 0;
 	while good_choice==false{
-		kimegao=rand::thread_rng().gen_range(0,all.len());
-		good_choice=if all[ifast].1!=all[kimegao].1{true}else{false}
+		
+		let mut liv_vec = Vec::with_capacity(25);
+		for i in 0..all.len() {
+			if (state_m(all[i].0.HP,all[i].0.HP_shade)>0) & (recl[i+6]!=255) {liv_vec.push(i)}else{}
+		};	
+		
+		kimegao = rand::thread_rng().gen_range(0,liv_vec.len());
+		kimegao = liv_vec[kimegao];
+		good_choice = if all[ifast].1!=all[kimegao].1 {true}else{false}
 	};
 	kimegao
 }

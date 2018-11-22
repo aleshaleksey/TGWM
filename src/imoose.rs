@@ -160,7 +160,7 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		let mut alive=false;
 		for i in 0..xx.len(){
 			if (all_groups[i]!=owng)
-			 & (l_line[i+6]>0) 
+			 & ((l_line[i+6]>0) & (l_line[i+6]<255)) 
 			 & xx[i].0.Alive {
 				alive=true
 			}else{};
@@ -170,25 +170,25 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		let mut foes_live=false;
 		let mut allies_live=false;
 		let mut hate=false;
-		for y in xx.iter(){
+		for (i,y) in xx.iter().enumerate() {
 			if (y.1!=xx[ii].1)
 			 & ((y.0.Type==GIANT)||(y.0.Type==UNDEAD)||(y.0.Type==HUMAN))
-			 & (y.0.HP_shade>0.0){hate=true}else{};
+			 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {hate=true}else{};
 		};
 		if hate {
 			for i in 0..xx.len(){
 				if (all_groups[i]!=owng)
 				& ((xx[i].0.Type==GIANT)||(xx[i].0.Type==UNDEAD)||(xx[i].0.Type==HUMAN))
-				& (l_line[i+6]>0){foes_live=true}else{}
+				& ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true}else{}
 			};
 			if foes_live {victory=false}else{}	
 		}else{
 			for i in 0..xx.len(){
 				if (all_groups[i]!=owng)
-				& (l_line[i+6]>0){foes_live=true
+				& ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true
 				}else{};
 				if (all_groups[i]==owng)
-			     & (l_line[i+6]>0){allies_live=true
+			     & ((l_line[i+6]>0) & (l_line[i+6]<255)) {allies_live=true
 				}else{};			 
 			};
 			if foes_live || !allies_live {victory=false}else{}
@@ -197,16 +197,16 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		let mut foes_live=false;
 		let mut allies_live=false;
 		let mut hate=false;
-		for y in xx.iter(){
+		for (i,y) in xx.iter().enumerate() {
 			if (y.1!=xx[ii].1)
 			 & (!y.0.Alive || y.0.Unclean)
-			 & (y.0.HP_shade>0.0){hate=true}else{}
+			 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {hate=true}else{}
 		};
 		if hate {
 			for i in 0..xx.len(){
 				if (all_groups[i]!=owng)
 				 & (!xx[i].0.Alive ||!xx[i].0.Unclean)
-				 & (l_line[i+6]>0){foes_live=true}else{}
+				 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true}else{}
 			};
 			if foes_live {victory=false}else{}	
 		}else{
@@ -215,7 +215,7 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 				& (l_line[i+6]>0){foes_live=true
 				}else{};
 				if (all_groups[i]==owng)
-			     & (l_line[i+6]>0){allies_live=true
+			     & ((l_line[i+6]>0) & (l_line[i+6]<255)) {allies_live=true
 				}else{};			 
 			};
 			if foes_live || !allies_live {victory=false}else{}
@@ -224,25 +224,25 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		let mut foes_live=false;
 		let mut allies_live=false;
 		let mut hate=false;
-		for y in xx.iter(){
+		for (i,y) in xx.iter().enumerate() {
 			if (y.1!=xx[ii].1)
 			 & (y.0.Type != GOBLIN)
-			 & (y.0.HP_shade>0.0){hate=true}else{}
+			 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {hate=true}else{}
 		};
 		if hate {
 			for i in 0..xx.len(){
 				if (all_groups[i]!=owng)
 				 & (xx[i].0.Type != GOBLIN)
-				 & (l_line[i+6]>0){foes_live=true}else{}
+				 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true}else{}
 			};
 			if foes_live {victory=false}else{}	
 		}else{
 			for i in 0..xx.len(){
 				if (all_groups[i]!=owng)
-				& (l_line[i+6]>0){foes_live=true
+				& ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true
 				}else{};
 				if (all_groups[i]==owng)
-			     & (l_line[i+6]>0){allies_live=true
+			     & ((l_line[i+6]>0) & (l_line[i+6]<255)) {allies_live=true
 				}else{};			 
 			};
 			if foes_live || !allies_live {victory=false}else{}
@@ -252,10 +252,10 @@ fn goal(xx:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, 		 //participating batt
 		let mut allies_live=false;
 		for i in 0..xx.len(){
 			if (all_groups[i]!=owng)
-			 & (l_line[i+6]>0){foes_live=true
+			 & ((l_line[i+6]>0) & (l_line[i+6]<255)) {foes_live=true
 			}else{};
 			if (all_groups[i]==owng)
-			       & (l_line[i+6]>0){allies_live=true
+			       & ((l_line[i+6]>0) & (l_line[i+6]<255)) {allies_live=true
 			}else{};			 
 		};
 		if foes_live || !allies_live {victory=false}else{}
@@ -774,7 +774,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 	{	
 		println!("x.len={}, ii={}",x.len(),ii);	 
 		let selfl= x[ii].clone();                              	//Lifeform acting.
-		println!("Got past first indexer");
+		//println!("Got past first indexer");
 		let ii8= ii as u8;									//self index as u8.
 		let t_u8= byteru16(turn as u16);					//turn as u8.
 		let mut chosen_battles:Vec<&Vec<[u8;28]>>= Vec::with_capacity(lore_len);	//vector of battles fulfilling criteria.
@@ -805,7 +805,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 		l_count.push(100000);
 		v_count.push(0);
 		
-		//println!("got A");
+		//println!("got to iterating lore");
 		for y in lore.iter(){ 		//create unique paths for everything. Curently pathed out.
 			
 			let mut lxsum:i32=0;
@@ -840,6 +840,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				light=light_m(lsum,lxsum.clone());
 			}
 		};
+		//println!("got past iterating lore");
 		
 		//generate vectors of unique paths in order to count and assess. Currently commented out as unique paths are not used.
 		let trigs_l=trigs.len();
@@ -867,7 +868,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 			
 			if !SWITCH_1 {
 				println!("Survival strategy failed. Herp (all_paths = {})",total_victories);
-				println!("Got A");
+				//println!("Got A");
 				for number in 0..lore.len(){        //Make chosen_battles battles list.  ((lsum-7)<=xlsum) & (xlsum<=(lsum+7)) &
 					let mut xlsum:i32=0;
 					for i in 3..lore[number].len(){ // Reminder:(turn,turn,action,idm,ifast,light,x[0],x[1],x[2],etc)
@@ -880,7 +881,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 						}else{}
 					};
 				};
-				println!("Got B");
+				//println!("Got B");
 
 				for y in chosen_battles.iter(){
 					let y_l=y.len()-1;
@@ -888,7 +889,7 @@ pub fn ai_part_a <'a> (x:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 						last_c_stat.push([y[y_l][2],y[y_l][3],y[y_l][6+ii],now[6+(y[y_l][3] as usize)]]);
 					}else{};
 				};
-				println!("Got C");
+				//println!("Got C");
 
 				let mut lv_effects:Vec<[i16;23]>=Vec::new();
 				if vict_c_battles.len()>0{

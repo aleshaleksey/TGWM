@@ -284,11 +284,13 @@ impl SpellBoxD {
 		let mut fin_targets:Vec<usize> = Vec::with_capacity(25);
 		for x in targets.iter() {fin_targets.push(*x);}
 		
+		let turns_to_last = if caster.0.BM_shade/gmoose::FPS>2.0 {gmoose::FPS*2.0}else{caster.0.BM_shade};
+		
 		SpellBoxD {
 			caster_indx: a_i,
 			targets: fin_targets,
-			turns_to_go: (gmoose::FPS as f64*3.0*100.0/caster.0.BM_shade as f64) as usize,
-			turns_init: gmoose::FPS as f64*3.0*100.0/caster.0.BM_shade as f64,
+			turns_to_go: turns_to_last as usize,
+			turns_init: turns_to_last as f64,
 			damage: damage.clone(),
 		}
 	}

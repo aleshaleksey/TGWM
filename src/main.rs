@@ -771,6 +771,7 @@ pub fn main() {
 					&mut sel_targets,
 					&mut to_cast,
 					battle_ifast,
+					&in_battle_record,
 					&mut battle_tturns,
 					&mut chosen_hero,
 					&mut dungeons,
@@ -983,7 +984,7 @@ pub fn main() {
 					b_muse_sender.try_send((true,to_play));
 				
 				}else if !x {
-			
+					//println!("Got into general battle round circuit.");
 					//Increment shaking timer. Switch off shaking if timer elapsed.
 					if shaking_timer+SHAKE_DURATION < timer {
 						shaking_dam = [false;25];
@@ -996,6 +997,7 @@ pub fn main() {
 						bmoose::game_over  (&mut encounter,
 											&mut enemies,
 											&mut party,
+											&in_battle_record,
 											&mut dungeons,
 											&mut fight,
 											&mut tt_e_c_i_ll,
@@ -1081,7 +1083,7 @@ pub fn main() {
 												&mut sprite_boxer,
 												&mut sprite_pos,
 												&mut targets);
-								//println!("D");
+								//println!("Past ai turn");
 							}else if !pause & (encounter[battle_ifast].1==0) {
 								//Player tuen
 								bmoose::player_battle_turn(&mut encounter,&enc_names,
@@ -1115,6 +1117,7 @@ pub fn main() {
 												&mut my_kills,
 												&mut sprite_pos,
 												&mut targets);
+								//println!("Past player turn");
 								//if !n_s_l_q_f[4] {b_muse_sender.try_send((false,to_play));};
 								//println!("E");
 							};

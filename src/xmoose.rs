@@ -759,8 +759,14 @@ pub fn set_death(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				thing.w = size*2.0;
 				thing.h = size*2.0;
 				
-				let mut circle = widget::Circle::outline(size)
-					.color(color::BLACK.with_alpha(0.5));
+				let style = widget::line::Style {
+					maybe_pattern: Some(widget::line::Pattern::Solid),
+					maybe_color: Some(color::BLACK.with_alpha(0.7)),
+					maybe_thickness: Some(3.0),
+					maybe_cap: std::option::Option::None,
+				};
+				
+				let mut circle = widget::Circle::outline_styled(size,style);
 					
 				thing.set(circle,ui);
 			};

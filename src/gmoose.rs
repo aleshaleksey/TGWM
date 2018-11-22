@@ -813,6 +813,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  world: &Vec<[Place;19]>,
 				  p_names:&mut Vec<String>,
 				  mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+				  in_battle_record: &Vec<[u8;28]>,
 				  sprite_boxer:&mut GraphicsBox,
 				  wo:&mut FlowCWin,
 				  p_loc:&mut Place,
@@ -844,6 +845,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let bw:f64 = base_w + pad_w;
 	let mut pos_bif:(Option<conrod::Point>,[conrod::position::Scalar;2]) = (None,[0.0,0.0]);
 	let mut spare_point:Option<conrod::Point> = None;
+	
 	//set up variables:
 	let enc_l = encounter.len();
 	let mut enc_c:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
@@ -851,14 +853,18 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let mut enc_e:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
 	let mut enc_s:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
 	let mut enc_w:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
-	for i in 0..encounter.len() {	
-		match encounter[i].1 {
-			0 => enc_c.push((encounter[i].0.clone(),i)),
-			1 => enc_n.push((encounter[i].0.clone(),i)),
-			2 => enc_e.push((encounter[i].0.clone(),i)),
-			3 => enc_s.push((encounter[i].0.clone(),i)),
-			_ => enc_w.push((encounter[i].0.clone(),i)),
-		};	
+	
+	//Assign groups, but only if they're there (not 255)
+	for i in 0..encounter.len() {
+		if in_battle_record[in_battle_record.len()-1][i+6] != 255 {	
+			match encounter[i].1 {
+				0 => enc_c.push((encounter[i].0.clone(),i)),
+				1 => enc_n.push((encounter[i].0.clone(),i)),
+				2 => enc_e.push((encounter[i].0.clone(),i)),
+				3 => enc_s.push((encounter[i].0.clone(),i)),
+				_ => enc_w.push((encounter[i].0.clone(),i)),
+			};	
+		};
 	};
 	
 	let enc_cl = enc_c.len(); let enc_clf:f64 = enc_cl as f64;
@@ -908,24 +914,23 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
 			renegade.rel_x += rel_pos; 
 			
-			
 			if enc_c[c].1==battle_ifast {
 				pos_bif.0 = ui.xy_of(ids.partyc_mtrx);
 				pos_bif.1[0] = renegade.rel_x;
 				pos_bif.1[1] = renegade.rel_y;
 			};
 			
-			
 			let x = format!("\n{}",p_names[c]);
 			let y = &x.x_chr_pl(8);
 			let b = widget::Button::image( if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 {mon_faces[enc_c[c].0.id][0]}else{mon_faces[enc_c[c].0.id][2]} )
-											.label(&y)
-											.hover_image(mon_faces[enc_c[c].0.id][1])
-											.press_image(mon_faces[enc_c[c].0.id][1])
-											.label_color(sm_retc(&enc_c[c].0,timer))
-											.label_font_size(font_size)
-											.label_y(conrod::position::Relative::Scalar(bh/2.0))
-											.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
+									.label(&y)
+									.hover_image(mon_faces[enc_c[c].0.id][1])
+									.press_image(mon_faces[enc_c[c].0.id][1])
+									.label_color(sm_retc(&enc_c[c].0,timer))
+									.label_font_size(font_size)
+									.label_y(conrod::position::Relative::Scalar(bh/2.0))
+									.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
+			
 			for _click in renegade.set(b,ui) {
 				if !yt_adcwpe_bw[0] {
 					*comm_text = format!("{} is {}.",p_names[c],sm_rets(&enc_c[c].0));
@@ -986,6 +991,8 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		spare_point = ui.xy_of(ids.enemye_mtrx);
 		let point = ui.xy_of(ids.enemye_mtrx).unwrap_or([0.0;2]);
 		
+		//println!("enc_el={}",enc_el);
+		
 		battle_line_v(ids,ui,mon_faces,enc_e_matrix,
 					  &enc_e,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
@@ -1031,6 +1038,8 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			
 		spare_point = ui.xy_of(ids.enemyw_mtrx);
 		let point = ui.xy_of(ids.enemyw_mtrx).unwrap_or([0.0;2]);
+		
+		//println!("enc_wl={}",enc_wl);
 		
 		battle_line_v(ids,ui,mon_faces,enc_w_matrix,
 					  &enc_w,comm_text,timer,&mut yt_adcwpe_bw,font_size,
@@ -2558,7 +2567,7 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
 				for _click in spell.set(x,ui) {
-					*comm_text = format!("{} reached out for {} and made it a part of their soul...",p_names[i],spell_out_spell);
+					*comm_text = format!("{} reached out for {} and made it a part of their soul...\n\n{}",p_names[i],spell_out_spell.name,spell_out_spell);
 					set_comm_text(&mut comm_text,ui,ids);
 					party[i].0.Spellist.push(spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()].id);
 					party[i].0.ExpUsed+= spell_out_spell.MP;
@@ -3868,6 +3877,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					sel_targets: &mut Vec<usize>,
 					to_cast: &mut String,
 					battle_ifast: usize,
+					in_battle_record: &Vec<[u8;28]>,
 					battle_ttakes: &mut u16,
 					chosen_hero: &mut usize,
 					dungeons: &mut Vec<Dungeon>,
@@ -4776,6 +4786,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							world,
 							p_names,
 							encounter,
+							in_battle_record,
 							sprite_boxer,
 							wo,
 							if (*dungeon_pointer<2) | idungeon.is_none() {

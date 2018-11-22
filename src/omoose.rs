@@ -75,6 +75,7 @@ pub fn play_song_rod(gone:(bool,usize),
     songs[13] = assets.join("notes/de.wav").to_str().unwrap().to_owned();
     songs[14] = assets.join("notes/to.wav").to_str().unwrap().to_owned();
     songs[16] = assets.join("notes/mo.wav").to_str().unwrap().to_owned();
+    songs[17] = assets.join("notes/vo.wav").to_str().unwrap().to_owned();
     songs[18] = assets.join("notes/ru.wav").to_str().unwrap().to_owned();
     
     //Read dukebox config file
@@ -141,26 +142,26 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 					 idun:&Option<usize>)-> usize {
 	if idun.is_some() & (dp>0) {
 		match dungeons[idun.unwrap()].affinity {
-			TIME | RADIANT => {1}, // 1
-			UNDEAD | EVIL => {2}, // 2
+			TIME | RADIANT => {1}, // 1 written
+			UNDEAD | EVIL => {2}, // 2 written
 			WITCH | SPIRIT => {8}, // 3
 			MALACHIA | ALBION => {18},// 4
 			_ => {if exp_calc(encounter,0)>10.0 {
 						0 //actually 6: boss music
 					}else{
 						match loc.scape {
-							ICE => 7, // 7
-							TUNDRA => 8, // 8
+							ICE => 7, // 7 written
+							TUNDRA => 8, // 8 written
 							WATER => 0, // 9
-							GRASSLAND => 10, // 10
-							FOREST => 11, // 11
-							STEPPE => 12, // 12
-							DESERT => 13, // 13
-							CITY => 14, // 14
+							GRASSLAND => 10, // 10 written
+							FOREST => 11, // 11 written
+							STEPPE => 12, // 12 written
+							DESERT => 13, // 13 written
+							CITY => 14, // 14 written
 							HIGHLAND => 0, // 15
-							MOORLAND => 16, // 16
-							VOID => 0, // 17
-							RUIN => 18, // 18
+							MOORLAND => 16, // 16 written
+							VOID => 17, // 17 written
+							RUIN => 18, // 18 written
 							_ => 0,	
 						}		
 					}
@@ -181,7 +182,7 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 				CITY => 14, // 14
 				HIGHLAND => 0, // 15
 				MOORLAND => 16, // 16
-				VOID => 0, // 17
+				VOID => 17, // 17
 				RUIN => 18, // 18
 				_ => 0,	
 			}		
