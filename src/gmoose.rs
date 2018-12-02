@@ -1439,6 +1439,7 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		for _click in grid_button {
 			//println!("Hey! {:?}", world[wml-c][r]);
 			*pl = (c,r);
+			*p_loc = world[wml-c][r].clone();
 			
 			*gui_box = GUIBox::GameTravel;
 			*gui_box_previous = GUIBox::GameTravelTeleport;
