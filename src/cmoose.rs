@@ -549,7 +549,7 @@ pub struct FlowCBat {
 	pub white: bool,
 }
 
-#[derive(Clone)]		 
+#[derive(Clone,PartialEq)]		 
 pub enum GUIBox<'a> {
 	Uninitiated,
 	Main(bool),
@@ -558,6 +558,7 @@ pub enum GUIBox<'a> {
 	MainOptions(bool),
 	MainQuit(bool),
 	GameTravel,
+	GameTravelTeleport,
 	GameFight(bool),
 	GameExplore,
 	GameCastPre,

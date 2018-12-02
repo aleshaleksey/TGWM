@@ -100,7 +100,7 @@ pub const SPELL3:u8 = 66;
 //A structure to contain spells, prices therefore
 //and fixed answers to questions.
 //this structure will change with time		
-#[derive(Clone,Debug)] 
+#[derive(Clone,Debug,PartialEq)] 
 pub struct Sage<'a> {
 	pub name: String,
 	pub exp_min: f32,
@@ -470,7 +470,7 @@ impl MyStories {
 // exit at an exit node. The exit node is saved in my_stories. When the
 // completion trigger for this exit node is tripped, you enter the completion
 // dialog. At the moment my_stories does not record exit triggers of conclusion. 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Story<'a> {
 	pub name: &'a str,
 	pub trigger: Vec<Trigger>,	
@@ -501,7 +501,7 @@ impl <'a>Story<'a> {
 //I have not decided what content should be stored as.
 //Some care must be taken to avoid out of index content.
 //Give it thought.
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Content<'a> {
 	//Monster's picture, Monster's id, monster's side if battle is started.
 	pub actors: Vec<(&'a conrod::image::Id,Lifeform,usize)>,
@@ -591,7 +591,7 @@ impl <'a>Content<'a> {
 
 //Trigger for the start of  story dialog can be any of the below,
 //or a combination thereof. Not sure combinations will work yet.
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum Trigger {
 	HasSpell(i8),
 	CastSpell(i8),

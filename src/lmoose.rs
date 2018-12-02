@@ -27,8 +27,7 @@ use shared_moose::*;
 use std::fmt::{self, Display, Formatter};
 #[allow(unused_imports)] use std::ops::Deref;
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone,Debug,PartialEq)]
 #[allow(non_snake_case)]
 pub struct Spell{
  pub name: &'static str,
@@ -52,8 +51,7 @@ pub struct Spell{
  pub id: i8,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone,Debug,PartialEq)]
 #[allow(non_snake_case)]
 pub struct Item{
  pub name: &'static str,
@@ -82,9 +80,8 @@ pub struct Item{
  pub id: usize,
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug,PartialEq)]
 #[allow(non_snake_case)]
-#[derive(Clone)]
 pub struct Lifeform{
  pub name: &'static str,
  pub Type: u8,
@@ -114,8 +111,7 @@ pub struct Lifeform{
  pub id: usize,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone,Debug,PartialEq)]
 #[allow(non_snake_case)]
 pub struct Shade{
  pub SL_shade: Vec<usize>,
@@ -144,8 +140,7 @@ pub struct Place{
  pub popu: Vec<(&'static str,u8,i32)>,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone,Debug,PartialEq)]
 #[allow(non_snake_case)]
 pub struct Dungeon{
 	pub id: u32,

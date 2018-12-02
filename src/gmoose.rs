@@ -1382,9 +1382,12 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 //Put the world map where it's meant to be.
 //This method uses a button matrix to represent the world map.
 //A better way in the second version uses an image of the world map.
+//Now used just for teleportation.
 fn marker_of_set_init_world_map(){}
 #[allow(unused_variables)]
 fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+						gui_box: &mut GUIBox,
+						gui_box_previous: &mut GUIBox,
 						world: &Vec<[Place;19]>,
 						p_names:&mut Vec<String>,
 						party:&mut Vec<(Lifeform,usize)>,
@@ -1395,61 +1398,55 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						timer:usize,
 						mut tt_e_c_i_ll: &mut [bool;8],
 						mut provisional_loc: &mut (usize,usize)) {
-		//set tteci[0] to true.
 		
-		*tt_e_c_i_ll = [true,tt_e_c_i_ll[1],false,false,false,tt_e_c_i_ll[5],tt_e_c_i_ll[6],false];
+	*tt_e_c_i_ll = [true,tt_e_c_i_ll[1],false,false,false,tt_e_c_i_ll[5],tt_e_c_i_ll[6],false];
+	
+	//get number of rows. and the map size.
+	let world_len = world.len();
+	let wml = world_len-1;
+	let mut map_size = ui.wh_of(ids.middle_column).unwrap();
+	map_size = [map_size[0]-6.0,map_size[1]-6.0];
+	
+	let mut world_matrix = widget::Matrix::new(world_len,19)
+		.wh(map_size)
+		.middle_of(ids.middle_column)
+		.set(ids.global_map_matrix, ui);
 		
-		//get number of rows. and the map size.
-		let world_len = world.len();
-		let wml = world_len-1;
-		let mut map_size = ui.wh_of(ids.middle_column).unwrap();
-		map_size = [map_size[0]-6.0,map_size[1]-6.0];
+	let mut button = widget::Button::new();
+	let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
+	
+	//Kind of fixed.
+	while let Some(mut square) = world_matrix.next(ui) {
+		let (r, c) = (square.row as usize, square.col as usize);
+		//if !tt_e_c_i_ll[0]{println!("{:?}",(r,c));};
+		let butt_col = map_sq_colour(&world[wml-c][r]);
+		let butt_txc = map_tx_colour(&world[wml-c][r]);
 		
-		let mut world_matrix = widget::Matrix::new(world_len,19)
-			.wh(map_size)
-			.middle_of(ids.middle_column)
-			.set(ids.global_map, ui);
+		//Set grid button.
+		let grid_button = if &(c,r)==pl {
+			square.set(button.clone().color(butt_col.with_luminance(sync_t(timer)))
+									 //.label(&world[wml-c][r].name[0..1])
+									// .label_color(butt_txc),
+									,ui)
+		}else{
+			square.set(button.clone().color(butt_col)
+									 //.label(&world[wml-c][r].name[0..1])
+									// .label_color(butt_txc)
+									,ui)
+		};
+	
+		//Functionalise: Just teleport to clicked square.
+		for _click in grid_button {
+			//println!("Hey! {:?}", world[wml-c][r]);
+			*pl = (c,r);
 			
-		let mut button = widget::Button::new();
-		let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
-		
-		//Find a way to fix this clusterfuck.
-        while let Some(mut square) = world_matrix.next(ui) {
-            let (r, c) = (square.row as usize, square.col as usize);
-			//if !tt_e_c_i_ll[0]{println!("{:?}",(r,c));};
-			let butt_col = map_sq_colour(&world[wml-c][r]);
-			let butt_txc = map_tx_colour(&world[wml-c][r]);
-            if &(c,r)==pl {
-				for _click in square.set(button.clone().color(butt_col.with_luminance(sync_t(timer)))
-											.label(&world[wml-c][r].name[0..1])
-											.label_color(butt_txc)
-										,ui) {
-					//println!("Hey! {:?}", world[wml-c][r]);
-					*comm_text = format!("You are here: {}", world[wml-c][r]);
-					set_comm_text(comm_text,ui,ids);
-				}
-			}else if within_one(r,c,&pl) {
-				for _click in square.set(button.clone().color(butt_col)
-											.label(&world[wml-c][r].name[0..1])
-											.label_color(butt_txc)
-										,ui) {
-					//println!("Hey! {:?}", world[wml-c][r]);
-					*comm_text = if world[wml-c][r].scape==VOID{
-						format!("Ho! You can see: {}{}", world[wml-c][r],VOID_TEXT)	
-					}else{
-						format!("Ho! You can see: {}", world[wml-c][r])					
-					};
-					*provisional_loc = (c,r);	
-					set_comm_text(comm_text,ui,ids);
-					tt_e_c_i_ll[1] = true;
-				}
-            }else{
-				let mut distant = square.set(
-						widget::Button::new()
-							.color(butt_col)
-						,ui);
-			};
-        };
+			*gui_box = GUIBox::GameTravel;
+			*gui_box_previous = GUIBox::GameTravelTeleport;
+				
+			set_comm_text(comm_text,ui,ids);
+			tt_e_c_i_ll[1] = true;
+		};
+	};
 }
 
 
@@ -2595,18 +2592,21 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				   party: &Vec<(Lifeform,usize)>,
 				   spl: &Vec<Spell>,
 				   p_names:&Vec<String>,
-				   w: f64)->Option<usize> { //nb i is "chosen_hero"
+				   w: f64)->Option<(usize,usize)> { //nb i is "chosen_hero"
+	
+	//get the joined length of the people's party's spellists.
+	let joined_lengths = party.iter().fold(0,|acc,x| acc + x.0.Spellist.len());
 	
 	//set up some variables for canvas size			   
 	let mut matrix_rows:usize = 1;
-	let rows:usize = if party[0].0.Spellist.len()==0 {
+	let rows:usize = if joined_lengths==0 {
 		1
-	}else if party[0].0.Spellist.len()<10 {
-		matrix_rows = party[0].0.Spellist.len()+1;
-		party[0].0.Spellist.len()+1
+	}else if joined_lengths<10 {
+		matrix_rows = joined_lengths+1;
+		joined_lengths+1
 	}else{
 		matrix_rows = 9;
-		party[0].0.Spellist.len()+1
+		joined_lengths+1
 	};	
 	
 	//calculate canvas sized based on spb length and window size.
@@ -2616,8 +2616,10 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
 	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
 	
+	
+	
 	//make canvas for spell_list.
-	if party[0].0.Spellist.len()>9 {
+	if joined_lengths>9 {
 		widget::Canvas::new()
 			.scroll_kids_vertically()
 			.floating(true)
@@ -2649,28 +2651,36 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 					   .set(ids.spell_list,ui);
 				   
 	//Write spell list if character has spells. Write sorry otherwise.
-	if party[0].0.Spellist.len()>0 {
+	if joined_lengths>0 {
+		
+		//make a joined spell lsit (at some point shouel make a once only version).
+		let mut joined_list:Vec<(i8,usize,usize)> = Vec::with_capacity(joined_lengths);
+		for i in 0..party.len() {
+			for (n,spell) in party[i].0.Spellist.iter().enumerate() {
+				joined_list.push((*spell,i,n));
+			};
+		};
+		
+		if let Some(spell) = spell_list.next(ui) {
+			let title:String = "Party Spellbook".to_owned();
+			spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+		}
 		while let Some(spell) = spell_list.next(ui) {
 			let snow = spell.row;
-			if snow==0{
-				let title:String = format!("{} the {}'s Spellbook",p_names[0],party[0].0.name);
-				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
-			}else{
-				let spell_name:String = arcana_name_from_spell_id(spl,party[0].0.Spellist[snow-1]);
-				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,party[0].0.Spellist[snow-1]).unwrap()];
-				let x = widget::Button::new().label(&spell_name)
-											 .label_font_size(font_size_chooser_button_b(w))
-											 .color(colour_of_magic(spell_out_spell.Type));
-				for _click in spell.set(x,ui){
-					*comm_text = format!("{}",spell_out_spell);
-					set_comm_text(&mut comm_text,ui,ids);
-					return Some(snow-1)
-				};
+			let spell_name:String = arcana_name_from_spell_id(spl,joined_list[snow-1].0);
+			let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,joined_list[snow-1].0).unwrap()];
+			let x = widget::Button::new().label(&spell_name)
+										 .label_font_size(font_size_chooser_button_b(w))
+										 .color(colour_of_magic(spell_out_spell.Type));
+			for _click in spell.set(x,ui){
+				*comm_text = format!("{}",spell_out_spell);
+				set_comm_text(&mut comm_text,ui,ids);
+				return Some((joined_list[snow-1].1,joined_list[snow-1].2))
 			};
 		};
 	}else{
 		while let Some(spell) = spell_list.next(ui) {
-			let spell_button_label:String = format!("{} knows no spells...",p_names[0]);
+			let spell_button_label:String = format!("This party has no magic");
 			let x = widget::Button::new().label(&spell_button_label)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
@@ -3693,7 +3703,8 @@ widget_ids! {
 			mid_label_can,				//label telling whether you are.
 				mid_label,
 			middle_column,				//The column of everything.
-				global_map,				//global map (matrix version)
+				global_map,
+				global_map_matrix,		//global map (matrix version)
 				global_map_image,		//global map (image version)
 				center_button,			//buttons for global map versions.
 				north_button,
@@ -4319,6 +4330,11 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			let (travel_button,fight_button,explore_button,
 				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
+			
+			//If you've teleported, tells you that you have. 
+			if gui_box_previous==GUIBox::GameTravelTeleport { 
+				*comm_text = format!("You teleport to {}...", p_loc.name);
+			};
 
 			for _click in fight_button{
 				println!("Pick a fight button pressed.");
@@ -4355,6 +4371,36 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						world,
 						world_map,
 						mon_faces,
+						p_names,
+						party,
+						p_loc,
+						pl,
+						coords,
+						comm_text,
+						timer,
+						tt_e_c_i_ll,
+						provisional_loc);	
+						
+			set_comm_text(comm_text,ui,ids);
+		},
+		
+		//Travel by teleport.
+		GUIBox::GameTravelTeleport => {
+			//If game is started, activate play menu.
+			//Preliminarily set canvases.
+			*p_scape = p_loc.scape;
+			
+			*comm_text = "As you cast the spell, the world blurs before your eyes. Where do warp to?".to_owned();
+			
+			let bkg_colour = map_sq_colour(p_loc);
+			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
+			
+			set_middle_label(ui,ids,p_loc.name,&win_wh);
+			
+			set_init_world_map(ids,ui,
+						&mut gui_box,
+						&mut gui_box_previous,
+						world,
 						p_names,
 						party,
 						p_loc,
@@ -4510,7 +4556,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			let maybe_spell:Option<usize> = set_spell_list_global(ui,ids, 
+			
+			//maybe_soell.0 is party member. maybe_spell.2 is spell
+			let maybe_spell:Option<(usize,usize)> = set_spell_list_global(ui,ids, 
 																  comm_text,
 																  party,
 																  spl,
@@ -4519,8 +4567,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 												  
 			if maybe_spell.is_some() {
 				//Horror show time!
+				let (mem,spell) = maybe_spell.unwrap();
 				gui_box = GUIBox::GameCastCast(
-					spl[arcana_index_from_spell_id(spl,party[0].0.Spellist[maybe_spell.unwrap()]).unwrap()].clone());
+					spl[arcana_index_from_spell_id(spl,party[mem].0.Spellist[spell]).unwrap()].clone());
 			};
 			
 			let exit = set_mutant_menu_uni(ui,ids,"Better Not...");
@@ -4551,11 +4600,13 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			
 			//Set mutant menu to cast. Currently a pseudo function.
 			let exit = set_mutant_menu_bin(ui,ids,"Cast","Hmm..",comm_text.clone());
+			
 			if exit.0==1 {
 				*comm_text = format!("You cast {}!",x.name);
 				//Placeholder!
 				let sage = sage_poller(&sages,p_loc,&x,party);
 				//sages = sages_b;
+				//If sages are present pick
 				match sage {
 					Some(s) => {
 						*comm_text = format!("We have a sage! The {}!",sages[s].name);
@@ -4566,7 +4617,11 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					},
 					None => {
 						*comm_text = format!("No sage!");
-						gui_box = GUIBox::GameCastPre;
+						gui_box = if x.Teleport {
+							GUIBox::GameTravelTeleport
+						}else{
+							GUIBox::GameCastPre
+						};
 					},
 				};
 			}else if exit.0==5 {
