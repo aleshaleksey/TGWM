@@ -1391,6 +1391,9 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						world: &Vec<[Place;19]>,
 						p_names:&mut Vec<String>,
 						party:&mut Vec<(Lifeform,usize)>,
+						bestiary: &Vec<Lifeform>,
+						encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+						enemies: &mut Vec<(Lifeform,usize)>,
 						p_loc:&mut Place,
 						pl:&mut (usize,usize),
 						coords:&mut [i32;2],
@@ -1441,8 +1444,15 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			*pl = (c,r);
 			*p_loc = world[wml-c][r].clone();
 			
-			*gui_box = GUIBox::GameTravel;
-			*gui_box_previous = GUIBox::GameTravelTeleport;
+			if rand_enc(p_loc) {
+				*gui_box = GUIBox::GameFight(true);
+				*gui_box_previous = GUIBox::GameTravel;
+				encounter_starter(party, enemies, encounter, p_loc, bestiary);
+				*comm_text = format!("You into to {}\n...And are met with a warm welcome!",p_loc.name);
+			}else{
+				*gui_box_previous = GUIBox::GameTravelTeleport;
+				*gui_box = GUIBox::GameTravel;
+			};
 				
 			set_comm_text(comm_text,ui,ids);
 			tt_e_c_i_ll[1] = true;
@@ -4404,6 +4414,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						world,
 						p_names,
 						party,
+						mons,
+						encounter,
+						enemies,
 						p_loc,
 						pl,
 						coords,
