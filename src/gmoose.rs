@@ -2967,7 +2967,7 @@ pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 		
 		//Check for voidwalking
 		if (world[wml][temp_pl.1].scape != VOID)
-		 & (world[pl.0][pl.1].scape != VOID) {
+		 | (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3007,7 +3007,7 @@ pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 		
 		//Check for voidwalking
 		if (world[wml][temp_pl.1].scape != VOID)
-		 & (world[pl.0][pl.1].scape != VOID) {
+		 | (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3047,7 +3047,7 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 		
 		//Check for voidwalking
 		if (world[wml][temp_pl.1].scape != VOID)
-		 & (world[pl.0][pl.1].scape != VOID) {
+		 | (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3067,6 +3067,7 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 }
 
 
+fn travel_right_marker(){}
 pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
@@ -3088,7 +3089,7 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 		
 		//Check for voidwalking
 		if (world[wml][temp_pl.1].scape != VOID)
-		 & (world[pl.0][pl.1].scape != VOID) {
+		 | (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
