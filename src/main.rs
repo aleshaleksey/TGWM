@@ -719,6 +719,8 @@ pub fn main() {
 		gmoose::correct_comm_text(&mut comm_text,
 								  pause,
 								  &mut gui_box);
+								  
+		//Check whether to enter a story dialog.
 		gui_box.check_for_story(&stories,&mut my_stories,
 										 &mut my_dungeons,
 										 &mut my_kills,

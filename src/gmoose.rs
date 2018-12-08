@@ -2960,10 +2960,14 @@ pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
 	
+	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1<17 {(pl.0,pl.1+1)}else{(cross_pole(pl.0,world),18)};
 		let wml = world.len()-1-temp_pl.0;
-		if world[wml][temp_pl.1].scape != VOID {
+		
+		//Check for voidwalking
+		if (world[wml][temp_pl.1].scape != VOID)
+		 & (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -2996,10 +3000,14 @@ pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
 	
+	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1>0 {(pl.0,pl.1-1)}else{(cross_pole(pl.0,world),0)};
 		let wml = world.len()-1-temp_pl.0;
-		if world[wml][temp_pl.1].scape != VOID {
+		
+		//Check for voidwalking
+		if (world[wml][temp_pl.1].scape != VOID)
+		 & (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3032,10 +3040,14 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
 	
+	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0>0 {(pl.0-1,pl.1)}else{(world.len()-1,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
-		if world[wml][temp_pl.1].scape != VOID {
+		
+		//Check for voidwalking
+		if (world[wml][temp_pl.1].scape != VOID)
+		 & (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3069,10 +3081,14 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
 	
+	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0<world.len()-1 {(pl.0+1,pl.1)}else{(0,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
-		if world[wml][temp_pl.1].scape != VOID {
+		
+		//Check for voidwalking
+		if (world[wml][temp_pl.1].scape != VOID)
+		 & (world[pl.0][pl.1].scape != VOID) {
 			*freeze_timer = timer;
 			*pl = temp_pl;
 			*p_loc = world[wml][pl.1].clone(); 
@@ -3094,6 +3110,7 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 
 
 //Type A worldwalker function (after taking into account of voidwalking.
+//currently not used.
 fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut Ids,
 							 mut party:&mut Vec<(Lifeform,usize)>,
 							 p_names:&Vec<String>,

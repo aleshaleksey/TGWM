@@ -13,28 +13,34 @@
 /// CastL(SpellBoxL)
 /// CastR(SpellBoxR)
 /// CastS(SpellBoxS)
+/// CastT(SpellBoxT)
 /// CastInferno(SpellBoxInferno)
 /// AttacK(SpriteBox)
+
 ///
-///GUIBox: Currently experimental and unimplemented. Meant to cover every major UI state uniquely.
-///Substates (ie mutm_box states) should be covered under.
-///(Not sure how it will be controlled.
-///GUIBox {
-/// Uninitiated,
-/// Main(bool),
-/// MainNew((usize,bool)),
-/// MainLoad((usize,bool)),
-/// MainOptions(bool),
-/// MainQuit(bool),
-/// GameTravel,
-/// GameFight(bool),
-/// GameExplore,
-/// GameCastPre,
-/// GameCastCast(Spell),
-/// GameCastSage(Sage<'a>,u8),
-/// GameStory(Story<'a>,bool,u8),
-/// GameInspectParty(bool),
-///}
+/// GUIBox: Now implemented but not still somewhat experimental.
+/// Substates (ie mutm_box states) should be covered under
+/// MainNew and MainLoad
+/// GUIBox<'a> {
+///		Uninitiated,
+///		Main(bool),
+///		MainNew((usize,bool)),
+///		MainLoad((usize,bool)),
+///		MainOptions(bool),
+///		MainQuit(bool),
+///		GameTravel,
+///		GameTravelTeleport,
+///		GameFight(bool),
+///		GameExplore,
+///		GameCastPre,
+///		GameCastCast(Spell),
+///		GameCastSage(Sage<'a>,u8),
+///		GameStory(Story<'a>,u16,u16),
+///		GameInspectParty(bool),
+///		GameInspectInventory(Option<usize>),
+///		GameInspectQuests(Option<u32>),	
+///		GameInspectDungeons(Option<u32>),
+/// }
 ///
 /// NB flow control structures for story elements are kept in smoose
 ///
