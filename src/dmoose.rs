@@ -13,7 +13,7 @@
 ///Dungeons are stored here because they take a lot of lines and lmoose
 ///is getting excessively long. Since each dungeon is a function, they
 ///can in fact undergo all sorts of teansformation depending on various
-///parameters (such as Pplayer experience).
+///parameters (such as player experience).
 ///
 ///This module depends on the lmoose module.
 ///
@@ -65,6 +65,7 @@ pub const ID_WHITE_TEMPLE:u32 = 17;
 pub const ID_WILD_HUNT:u32 = 18;
 pub const ID_WITCH_MAZE:u32 = 19;
 pub const ID_WOOD_WINTER:u32 = 20;
+pub const ID_ABBYSS:u32 = 21;
 
 pub fn malek_grove()-> Dungeon {
 	Dungeon {
@@ -1498,6 +1499,66 @@ pub fn woods_of_winter() -> Dungeon {
 }
 
 
+pub fn abbyss() -> Dungeon {
+	
+	Dungeon {
+		id: ID_ABBYSS,
+		name: "The Abbyss",
+		xy: [-40,40],
+		diff: 1000.0,
+		affinity: FALLEN,
+		scenes: vec![
+			Place { name: "The Dark Clouds",							scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
+					engenG: [1,1,2,2,2,3,3,3,3,4],
+					engenA: [1,1,2,2,2,3,3,3,4,4],
+					popu:vec![("Wraith",UNDEAD,1000),
+							  ("Ancient Ghost",UNDEAD,1000),
+							  ("Ghost",UNDEAD,1000),
+							  ("Forsaken Spirit",SPIRIT,100),
+					],
+			},
+			Place { name: "Dark Night of the Soul",						scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
+					engenG: [1,1,1,2,2,2,3,3,3,4],
+					engenA: [1,1,1,1,2,2,2,2,3,3],
+					popu:vec![("Wraith",UNDEAD,1000),
+							  ("Ancient Ghost",UNDEAD,1000),
+							  ("Wyrm",SPIRIT,1000),
+							  ("Forsaken Spirit",SPIRIT,100),
+					],
+			},
+			Place { name: "Benthic Layer",								scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
+					engenG: [1,1,1,2,2,2,3,3,3,4],
+					engenA: [2,3,3,3,3,4,4,4,4,4],
+					popu:vec![("Beast of the Deep",BEAST,1000),
+							  ("Bottom Feeder",HUMAN,1000),
+							  ("Ancient Ghost",UNDEAD,1000),
+							  ("Forsaken Spirit",SPIRIT,100),
+					],
+			},
+			
+		],	
+		denizens: vec![
+			ghost_an().rename("Wraith")
+					  .diff_lvl(10).bm_change(2.0).attack_change(2.0),
+			ghost_an().clone(),
+			ghost().clone().diff_lvl(10),
+			ghost().clone().rename("Forsaken Spirit")
+						   .diff_lvl(10).wm_change(2.0).re_type(SPIRIT),
+			beast_serpent().rename("Wyrm")
+						   .speed_change(2.0)
+						   .spellist(vec![S_FIRE,S_FIREBALL,S_CURE]),
+			alien().rename("Beast of the Deep")
+				   .re_type(BEAST).diff_lvl(20).magic_up(100.0),
+			loser().rename("Bottom Feeder")
+				   .diff_lvl(40),
+		],
+						
+		afterstory: ABBYSS,
+	}
+	
+}
+
+
 const CITADEL_OF_SPIRIT:&str = "...It is said that those who wonder up onto the moors with the wish, fixed in their heart, \
 to find another world, may see, before themselves, the gates of the Citadel of Spirit.\
 
@@ -1537,7 +1598,7 @@ there was nothing she could do to stop her lands from dying. \
 And with time, Princess Mora, despaired. \
 
 
-...Summoning the Sages, she implored for a way to save her people. One of the sages took pity on the elves and steppd forth. \
+...Summoning the Sages, she implored for a way to save her people. One of the sages took pity on the elves and stepped forth. \
 The Sage offered the princess a magical gem. With it, the sage assured, her people would need fear neither hunger nor thirst, \
 and nor would she have to worry fear death at the claws of the endless hordes that assailed Moraecea... \
 Princess Mora took the offered gem and called upon its power. \
@@ -1571,7 +1632,8 @@ const MONSTER_HALL:&str = "...To a human, they are all monsters, but to them, th
 ...And in the age of man they came together and founded a stronghold where they would be safe from you. \
 Now, that the world has ended, the stronghold served to protect them from the dead and malicious spirits that wonder the world.\
 ";
-const STAIRWAY:&str = "...If there was a way of reaching the heavens in life, would you too not emigrate? \
+const STAIRWAY:&str = "...It is said that if there was a stairway by which one could, \
+in life, reach the heavens, many would climb it. But what would they find there?
 ";
 const TOWER_OF_BONES:&str = "...One of the three foundations of the city of the dead:
 
@@ -1614,7 +1676,7 @@ Left standing by the gods as a reminder that it once existed. That it once dared
 ...Now the only ones in this place are those who seek its treasures, those who seek its secrets, and those who cannot let go \
 of what it used to be...\
 ";
-const THE_PATH:&str = "In south, it is said that there is a stairway that physically \
+const THE_PATH:&str = "In the south, it is said that there is a stairway that physically \
 connects this world to the world above. On the opposite side of the world there is another \
 stairway. Deep in the northern highlands, a land of rock and ice, \
 there is a particularly high and lonely range. Since time immemorial, this range \
@@ -1653,4 +1715,8 @@ Having travelled to the depth of the Woods of Ages, \
 you find yourself at the place where the branches and the roots converge.
 ...What if instead of the fruits of your wishes, you could reap the sweet and healthful fruits? \
 If it would be those seeds from which the next age would grow?
+";
+
+const ABBYSS:&str = "By means of a certain sorcery, you opened a portal leading into the void. \
+...And falling through the void you fall into a deeper void that lies at the heart of the world.
 ";
