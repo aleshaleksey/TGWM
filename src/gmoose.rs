@@ -84,6 +84,7 @@ use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachi
 			 
 //General constacts.			 
 const VOID_TEXT:&str = "You cannot travel through the void.";
+const VOID_TEXT_ESC:&str = "You cannot escape the void by conventional means.";
 const BLANK_THREAD:&str = "";
 const SQUARES:[usize;3] = [20,5,2];
 const TRAVEL_DELAY:usize = 15;
@@ -1448,7 +1449,7 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				*gui_box = GUIBox::GameFight(true);
 				*gui_box_previous = GUIBox::GameTravel;
 				encounter_starter(party, enemies, encounter, p_loc, bestiary);
-				*comm_text = format!("You into to {}\n...And are met with a warm welcome!",p_loc.name);
+				*comm_text = format!("You warp to {}\n...And are met with a warm welcome!",p_loc.name);
 			}else{
 				*gui_box_previous = GUIBox::GameTravelTeleport;
 				*gui_box = GUIBox::GameTravel;
@@ -1465,7 +1466,9 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 // Uses pregenerated world_map instead of widget matrix.
 fn marker_of_set_init_world_map2(){}
 #[allow(unused_variables)]
-fn set_init_world_map2 (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+						gui_box: &mut GUIBox<'a>,
+						gui_box_previous: &mut GUIBox<'a>,
 						world: &Vec<[Place;19]>,
 						map: &conrod::image::Id,
 						mon_faces: &Vec<[conrod::image::Id;3]>,
@@ -1501,11 +1504,10 @@ fn set_init_world_map2 (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		//initiate the five buttons.
 		let (c,r) = pl.clone();
 		let butt_col = color::BLACK.with_alpha(0.0);
-		let mut butt_txc = map_tx_colour(&world[wml-c][r]);
+		let butt_txc = map_tx_colour(&world[wml-c][r]);
 		
 		//initiate the invisible buttons.
-		let mut button_n = widget::Button::new().wh(square_size).color(butt_col);								  
-		let mut button_e = button_n.clone(); let mut button_s = button_n.clone(); let mut button_w = button_n.clone();
+		let mut button_n = widget::Button::new().wh(square_size).color(butt_col);
 		
 		//initate pulse variable
 		let s_sync = sync_s(timer);
@@ -1523,94 +1525,86 @@ fn set_init_world_map2 (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			set_comm_text(comm_text,ui,ids);
 		}
 		
-		let (a,b) = geographical_button(wml,c,r,'N');
-		
-		butt_txc = map_tx_colour(&world[wml-a][b]);
+		set_geographical_button('N',
+								ids,ui,button_n.clone(),
+								world,
+								&square_size,&bp,
+								wml,pl,provisional_loc,
+								comm_text,
+								tt_e_c_i_ll);
+								
+		set_geographical_button('S',
+								ids,ui,button_n.clone(),
+								world,
+								&square_size,&bp,
+								wml,pl,provisional_loc,
+								comm_text,
+								tt_e_c_i_ll);
+								
+		set_geographical_button('E',
+								ids,ui,button_n.clone(),
+								world,
+								&square_size,&bp,
+								wml,pl,provisional_loc,
+								comm_text,
+								tt_e_c_i_ll);
+								
+		set_geographical_button('W',
+								ids,ui,button_n,
+								world,
+								&square_size,&bp,
+								wml,pl,provisional_loc,
+								comm_text,
+								tt_e_c_i_ll);
+								
+}
+
+// set the invisible buttons.
+fn set_geographical_button<'a>(dir:char,
+						   ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+						   mut button: widget::Button<widget::button::Flat>,
+						   world: &Vec<[Place;19]>,
+						   square_size: &[f64;2],
+						   bp: &[f64;2],
+						   wml:usize,
+						   pl:&(usize,usize),
+						   provisional_loc:&mut(usize,usize),
+						   comm_text: &mut String,
+						   tt_e_c_i_ll:&mut [bool;8]) {
 	
-		button_n = button_n.color(butt_col)
-						   //.label(&world[wml-a][b].name[0..1])
-						   .label_color(butt_txc)
-						   .border_color(butt_col)
-				           .bottom_left_of(ids.middle_column);
-		button_n = reposition_geography_button(button_n,a,b,wml,&square_size,&bp);	
+	let (a,b) = geographical_button(wml,pl.0,pl.1,dir);
 		
-		for _click in button_n.set(ids.north_button,ui) { 
-					//println!("Hey! {:?}", world[wml-c][r]);
-			*comm_text = if world[wml-a][b].scape==VOID{
-				format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
-			}else{
-				format!("Ho! You can see: {}", world[wml-a][b])					
-			};
-			*provisional_loc = (a,b);	
-			set_comm_text(comm_text,ui,ids);
-			tt_e_c_i_ll[1] = true;
-		}
-		
-		let (a,b) = geographical_button(wml,c,r,'E');
-		butt_txc = map_tx_colour(&world[wml-a][b]);
+	let butt_txc = map_tx_colour(&world[wml-a][b]);
+	let butt_col = color::BLACK.with_alpha(0.0);
+
+	button = button.color(butt_col)
+					   //.label(&world[wml-a][b].name[0..1])
+					   .label_color(butt_txc)
+					   .border_color(butt_col)
+			           .bottom_left_of(ids.middle_column);
+	button = reposition_geography_button(button,a,b,wml,&square_size,&bp);
 	
-		button_e = button_e.color(butt_col)
-							//.label(&world[wml-a][b].name[0..1])
-							.label_color(butt_txc)
-							.border_color(butt_col)
-							.mid_right_of(ids.middle_column);
-		button_e = reposition_geography_button(button_e,a,b,wml,&square_size,&bp);	
-		
-		for _click in button_e.set(ids.east_button,ui) { 
-					//println!("Hey! {:?}", world[wml-c][r]);
-			*comm_text = if world[wml-a][b].scape==VOID{
-				format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
-			}else{
-				format!("Ho! You can see: {}", world[wml-a][b])					
-			};
-			*provisional_loc = (a,b);	
-			set_comm_text(comm_text,ui,ids);
-			tt_e_c_i_ll[1] = true;
-		}
-		
-		let (a,b) = geographical_button(wml,c,r,'S');
-		butt_txc = map_tx_colour(&world[wml-a][b]);
+	let button_id = match dir {
+		'N' => {ids.north_button},
+		'S' => {ids.south_button},
+		'E' => {ids.east_button},
+		'W' => {ids.west_button},
+		 _	=> {ids.north_button},
+	};
 	
-		button_s = button_s.color(butt_col)
-						   //.label(&world[wml-a][b].name[0..1])
-						   .label_color(butt_txc)
-						   .border_color(butt_col)
-						   .mid_bottom_of(ids.middle_column);							
-		button_s = reposition_geography_button(button_s,a,b,wml,&square_size,&bp);	
-		
-		for _click in button_s.set(ids.south_button,ui) { 
-					//println!("Hey! {:?}", world[wml-c][r]);
-			*comm_text = if world[wml-a][b].scape==VOID{
-				format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
-			}else{
-				format!("Ho! You can see: {}", world[wml-a][b])					
-			};
-			*provisional_loc = (a,b);	
-			set_comm_text(comm_text,ui,ids);
-			tt_e_c_i_ll[1] = true;
-		}
-		
-		let (a,b) = geographical_button(wml,c,r,'W');
-		butt_txc = map_tx_colour(&world[wml-a][b]);
-		
-		button_w = button_w.color(butt_col)
-						   //.label(&world[wml-a][b].name[0..1])
-						   .label_color(butt_txc)
-						   .border_color(butt_col)
-						   .mid_left_of(ids.middle_column);
-		button_w = reposition_geography_button(button_w,a,b,wml,&square_size,&bp);
-		
-		for _click in button_w.set(ids.west_button,ui) { 
-					//println!("Hey! {:?}", world[wml-c][r]);
-			*comm_text = if world[wml-a][b].scape==VOID{
-				format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
-			}else{
-				format!("Ho! You can see: {}", world[wml-a][b])					
-			};
-			*provisional_loc = (a,b);	
-			set_comm_text(comm_text,ui,ids);
-			tt_e_c_i_ll[1] = true;
-		}
+	for _click in button.set(button_id,ui) { 
+				//println!("Hey! {:?}", world[wml-c][r]);
+		*comm_text = if world[wml-a][b].scape==VOID{
+			format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
+		}else if world[wml-pl.0][pl.1].scape==VOID {
+			format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT_ESC)
+		}else{
+			format!("Ho! You can see: {}", world[wml-a][b])					
+		};
+		*provisional_loc = (a,b);	
+		set_comm_text(comm_text,ui,ids);
+		tt_e_c_i_ll[1] = true;
+	}
 }
 
 // sets the coordinates of the other 4 buttons relative to centre.
@@ -2945,7 +2939,51 @@ fn cross_pole(strt_longitude:usize, wld: &Vec<[Place;19]>)->usize {
 }
 
 
+
+// Function to check for voidwalking
+// and random encounters.
+fn travel_void_and_encounter_marker(){}
+fn travel_void_and_encounter<'a>(mut pl:&mut (usize,usize),
+							   mut p_loc:&mut Place,
+							   world:&Vec<[Place;19]>,
+							   wml:usize,
+							   temp_pl:(usize,usize),
+							   mut coords:&mut [i32;2],
+							   timer:usize,
+							   mut freeze_timer: &mut usize,
+							   mut comm_text: &mut String,
+							   mut gui_box: &mut GUIBox<'a>,
+							   mut gui_box_previous: &mut GUIBox<'a>,
+							   mut party:&mut Vec<(Lifeform,usize)>,
+							   mut enemies:&mut Vec<(Lifeform,usize)>,
+							   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
+							   mons:&Vec<Lifeform>){
+								 
+	//Check for voidwalking
+	*gui_box_previous = gui_box.clone();
+	if (world[wml][temp_pl.1].scape != VOID)
+	 & (world[world.len()-1-pl.0][pl.1].scape != VOID) {
+		*freeze_timer = timer;
+		*pl = temp_pl;
+		*p_loc = world[wml][pl.1].clone(); 
+		*coords = p_loc.xy;
+		*comm_text = format!("You journey north to {}...",p_loc.name);
+		if rand_enc(p_loc) {
+			*gui_box_previous = gui_box.clone();
+			*gui_box = GUIBox::GameFight(true);
+			encounter_starter(party, enemies, encounter, p_loc, mons);
+			*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
+		};
+	}else if world[wml][temp_pl.1].scape == VOID {
+		*comm_text = "You cannot travel through the Void.".to_owned();
+	}else{
+		*comm_text = "Alas, you cannot escape the Void.".to_owned();
+	};
+}
+
+
 //function to travel down the world map:
+fn trvael_down_marker(){}
 pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
@@ -2965,27 +3003,25 @@ pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 		let temp_pl:(usize,usize) = if pl.1<17 {(pl.0,pl.1+1)}else{(cross_pole(pl.0,world),18)};
 		let wml = world.len()-1-temp_pl.0;
 		
-		//Check for voidwalking
-		if (world[wml][temp_pl.1].scape != VOID)
-		 | (world[pl.0][pl.1].scape != VOID) {
-			*freeze_timer = timer;
-			*pl = temp_pl;
-			*p_loc = world[wml][pl.1].clone(); 
-			*coords = p_loc.xy;
-			*comm_text = format!("You journey south to {}...",p_loc.name);
-			if rand_enc(p_loc) {
-				gui_box_previous = gui_box.clone();
-				gui_box = GUIBox::GameFight(true);
-				encounter_starter(party, enemies, encounter, p_loc, mons);
-				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
-			};
-		}else{
-			*comm_text = "You cannot travel through the Void.".to_owned();
-		};
+		//check for voidwalking.
+		travel_void_and_encounter(pl, p_loc, world,
+							   wml,
+							   temp_pl,
+							   coords,
+							   timer,
+							   freeze_timer,
+							   comm_text,
+							   &mut gui_box,
+							   &mut gui_box_previous,
+							   party,
+							   enemies,
+							   encounter,
+							   mons);
 	};
 	(gui_box,gui_box_previous)
 }
 
+fn travel_up_marker(){}
 pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
@@ -3005,27 +3041,25 @@ pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 		let temp_pl:(usize,usize) = if pl.1>0 {(pl.0,pl.1-1)}else{(cross_pole(pl.0,world),0)};
 		let wml = world.len()-1-temp_pl.0;
 		
-		//Check for voidwalking
-		if (world[wml][temp_pl.1].scape != VOID)
-		 | (world[pl.0][pl.1].scape != VOID) {
-			*freeze_timer = timer;
-			*pl = temp_pl;
-			*p_loc = world[wml][pl.1].clone(); 
-			*coords = p_loc.xy;
-			*comm_text = format!("You journey north to {}...",p_loc.name);
-			if rand_enc(p_loc) {
-				gui_box_previous = gui_box.clone();
-				gui_box = GUIBox::GameFight(true);
-				encounter_starter(party, enemies, encounter, p_loc, mons);
-				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
-			};
-		}else{
-			*comm_text = "You cannot travel through the Void.".to_owned();
-		};
+		//check for voidwalking.
+		travel_void_and_encounter(pl, p_loc, world,
+							   wml,
+							   temp_pl,
+							   coords,
+							   timer,
+							   freeze_timer,
+							   comm_text,
+							   &mut gui_box,
+							   &mut gui_box_previous,
+							   party,
+							   enemies,
+							   encounter,
+							   mons);
 	};
 	(gui_box,gui_box_previous)
 }
 
+fn travel_left_marker(){}
 pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 				   mut p_loc:&mut Place,
 				   world:&Vec<[Place;19]>,
@@ -3045,23 +3079,20 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 		let temp_pl:(usize,usize) = if pl.0>0 {(pl.0-1,pl.1)}else{(world.len()-1,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
 		
-		//Check for voidwalking
-		if (world[wml][temp_pl.1].scape != VOID)
-		 | (world[pl.0][pl.1].scape != VOID) {
-			*freeze_timer = timer;
-			*pl = temp_pl;
-			*p_loc = world[wml][pl.1].clone(); 
-			*coords = p_loc.xy;
-			*comm_text = format!("You journey west to {}...",p_loc.name);
-			if rand_enc(p_loc) {
-				gui_box_previous = gui_box.clone();
-				gui_box = GUIBox::GameFight(true);
-				encounter_starter(party, enemies, encounter, p_loc, mons);
-				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
-			};
-		}else{
-			*comm_text = "You cannot travel through the Void.".to_owned();
-		};
+		//check for voidwalking.
+		travel_void_and_encounter(pl, p_loc, world,
+							   wml,
+							   temp_pl,
+							   coords,
+							   timer,
+							   freeze_timer,
+							   comm_text,
+							   &mut gui_box,
+							   &mut gui_box_previous,
+							   party,
+							   enemies,
+							   encounter,
+							   mons);
 	};
 	(gui_box,gui_box_previous)
 }
@@ -3087,23 +3118,20 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 		let temp_pl:(usize,usize) = if pl.0<world.len()-1 {(pl.0+1,pl.1)}else{(0,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
 		
-		//Check for voidwalking
-		if (world[wml][temp_pl.1].scape != VOID)
-		 | (world[pl.0][pl.1].scape != VOID) {
-			*freeze_timer = timer;
-			*pl = temp_pl;
-			*p_loc = world[wml][pl.1].clone(); 
-			*coords = p_loc.xy;
-			*comm_text = format!("You journey east to {}...",p_loc.name);
-			if rand_enc(p_loc) {
-				gui_box_previous = gui_box.clone();
-				gui_box = GUIBox::GameFight(true);
-				encounter_starter(party, enemies, encounter, p_loc, mons);
-				*comm_text = format!("{}\n...And are met with a warm welcome!",comm_text);
-			};
-		}else{
-			*comm_text = "You cannot travel through the Void.".to_owned();
-		};
+		//check for voidwalking.
+		travel_void_and_encounter(pl, p_loc, world,
+							   wml,
+							   temp_pl,
+							   coords,
+							   timer,
+							   freeze_timer,
+							   comm_text,
+							   &mut gui_box,
+							   &mut gui_box_previous,
+							   party,
+							   enemies,
+							   encounter,
+							   mons);
 	};
 	(gui_box,gui_box_previous)
 }
@@ -4397,6 +4425,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			};
 			
 			set_init_world_map2(ids,ui,
+						&mut gui_box,
+						&mut gui_box_previous,
 						world,
 						world_map,
 						mon_faces,
