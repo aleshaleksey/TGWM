@@ -16,7 +16,7 @@ os: -linux
 git:
   depth: 1
 rust:
-  - 1.28.0
+  - stable
 
 name: "q-moose"
 
