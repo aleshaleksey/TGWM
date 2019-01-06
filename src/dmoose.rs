@@ -1501,51 +1501,68 @@ pub fn woods_of_winter() -> Dungeon {
 
 pub fn abbyss() -> Dungeon {
 	
+	let benthithity = rand::thread_rng().gen_range(1,11);
+	let benthic_layer = Place
+	{
+		name: "Benthic Layer",
+		scape: VOID,
+		xy: [-40,40],
+		affinity: VOID,
+		engenG: [1,1,1,2,2,2,3,3,3,4],
+		engenA: [2,3,3,3,3,4,4,4,4,4],
+		popu:vec![("Beast of the Deep",BEAST,1000),
+				  ("Bottom Feeder",HUMAN,1000),
+				  ("Ancient Ghost",UNDEAD,1000),
+				  ("Forsaken Spirit",SPIRIT,100),
+		],
+	};
+	
+	let mut scenes_of_the_abbyss = vec![
+		Place { name: "The Dark Clouds",							scape: VOID,		xy: [-40,40],		affinity: EVIL,
+				engenG: [1,1,2,2,2,3,3,3,3,4],
+				engenA: [1,1,2,2,2,3,3,3,4,4],
+				popu:vec![("Wraith",UNDEAD,1000),
+						  ("Ancient Ghost",UNDEAD,1000),
+						  ("Ghost",UNDEAD,1000),
+						  ("Forsaken Spirit",SPIRIT,100),
+				],
+		},
+		Place { name: "Dark Night of the Soul",						scape: VOID,		xy: [-40,40],		affinity: EVIL,
+				engenG: [1,1,1,2,2,2,3,3,3,4],
+				engenA: [1,1,1,1,2,2,2,2,3,3],
+				popu:vec![("Wraith",UNDEAD,1000),
+						  ("Ancient Ghost",UNDEAD,1000),
+						  ("Wyrm",SPIRIT,1000),
+						  ("Forsaken Spirit",SPIRIT,100),
+				],
+		}
+	];
+	
+	for _ in 0..benthithity {
+		scenes_of_the_abbyss.push(benthic_layer.clone());
+	};
+	
+	scenes_of_the_abbyss.push(Place{
+		name: "The Abbyss",
+		scape: VOID,
+		xy: [-40,40],
+		affinity: ANGEL,
+		engenG: [4,4,4,4,4,4,4,4,4,4],
+		engenA: [1,1,1,1,1,1,1,1,1,1],
+		popu:vec![("Heart of Hero",SPIRIT,1),
+				  ("Heart of Villain",SPIRIT,1),
+				  ("Heart of Doubt",SPIRIT,1),
+				  ("Heart of Darkness",SPIRIT,1)
+		]
+	});
+	
 	Dungeon {
 		id: ID_ABBYSS,
 		name: "The Abbyss",
 		xy: [-40,40],
 		diff: 1000.0,
-		affinity: FALLEN,
-		scenes: vec![
-			Place { name: "The Dark Clouds",							scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
-					engenG: [1,1,2,2,2,3,3,3,3,4],
-					engenA: [1,1,2,2,2,3,3,3,4,4],
-					popu:vec![("Wraith",UNDEAD,1000),
-							  ("Ancient Ghost",UNDEAD,1000),
-							  ("Ghost",UNDEAD,1000),
-							  ("Forsaken Spirit",SPIRIT,100),
-					],
-			},
-			Place { name: "Dark Night of the Soul",						scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
-					engenG: [1,1,1,2,2,2,3,3,3,4],
-					engenA: [1,1,1,1,2,2,2,2,3,3],
-					popu:vec![("Wraith",UNDEAD,1000),
-							  ("Ancient Ghost",UNDEAD,1000),
-							  ("Wyrm",SPIRIT,1000),
-							  ("Forsaken Spirit",SPIRIT,100),
-					],
-			},
-			Place { name: "Benthic Layer",								scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
-					engenG: [1,1,1,2,2,2,3,3,3,4],
-					engenA: [2,3,3,3,3,4,4,4,4,4],
-					popu:vec![("Beast of the Deep",BEAST,1000),
-							  ("Bottom Feeder",HUMAN,1000),
-							  ("Ancient Ghost",UNDEAD,1000),
-							  ("Forsaken Spirit",SPIRIT,100),
-					],
-			},
-			Place { name: "Benthic Layer",								scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
-					engenG: [1,1,1,2,2,2,3,3,3,4],
-					engenA: [2,3,3,3,3,4,4,4,4,4],
-					popu:vec![("Beast of the Deep",BEAST,1000),
-							  ("Bottom Feeder",HUMAN,1000),
-							  ("Ancient Ghost",UNDEAD,1000),
-							  ("Forsaken Spirit",SPIRIT,100),
-					],
-			},
-			
-		],	
+		affinity: VOID,
+		scenes: scenes_of_the_abbyss,	
 		denizens: vec![
 			ghost_an().rename("Wraith")
 					  .diff_lvl(10).bm_change(2.0).attack_change(2.0),
@@ -1560,6 +1577,14 @@ pub fn abbyss() -> Dungeon {
 				   .re_type(BEAST).diff_lvl(20).magic_up(100.0),
 			loser().rename("Bottom Feeder")
 				   .diff_lvl(40),
+			warrior().rename("Heart of Hero").re_type(ANGEL)
+					 .diff_lvl(50).speed_change(0.5),
+			necromancer_lord().rename("Heart of Villain").re_type(ANGEL)
+							  .diff_lvl(20),
+			goblin_dem().rename("Heart of Doubt").re_type(ANGEL)
+					.diff_lvl(80).speed_change(0.2),
+			ghost_an().rename("Heart of Darkness").re_type(ANGEL)
+					  .diff_lvl(20)
 		],
 						
 		afterstory: ABBYSS,
