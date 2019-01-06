@@ -47,7 +47,7 @@ pub const ISEKAIN:usize = 19;
 //Opens and plays a song. If isekai_deguchi tells us to stop or buffer is empty
 //The function returns true if it needs to play again and false if not.
 pub fn play_song_rod(gone:(bool,usize),
-					 postman:&mut Receiver<(bool,usize)>,
+					 postman:&mut Receiver<((bool,usize),bool)>,
 					 silent_postman:&mut Receiver<bool>)->(bool,usize) {
 	let mut go = gone;
 	let mut silence = false;
@@ -93,7 +93,10 @@ pub fn play_song_rod(gone:(bool,usize),
 		
 		while go.0 & !sink.empty() & !silence {
 			std::thread::sleep(Duration::from_millis(500));
-			go =  isekai_deguchi(go.clone(),postman);
+			
+			let ketsuron =  isekai_deguchi((go.clone(),false),postman);
+			go = ketsuron.0;
+			
 			silence = isekai_urusai(silence,silent_postman);
 		};
 		if !go.0 | silence {
@@ -114,7 +117,7 @@ pub fn play_song_rod(gone:(bool,usize),
 //It should be easy to make a generic version for all copy types, but I don't need to.
 //Message bool is the original value of the variable.
 //isekai deguchi can cause problems if the returned bool is not reused in the next message.
-pub fn isekai_deguchi (message:(bool,usize), postman:&mut Receiver<(bool,usize)>)->(bool,usize) {
+pub fn isekai_deguchi (message:((bool,usize),bool), postman:&mut Receiver<((bool,usize),bool)>)->((bool,usize),bool) {
 	match postman.try_recv() {
 		Ok(answer) => answer,
 		Err(_) => (message),

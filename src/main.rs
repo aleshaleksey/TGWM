@@ -202,8 +202,8 @@ pub fn main() {
 	
 	//Sends preliminary battle information to brain
 	let (mut thought_sender_to_brain2, mut thought_receiver_to_brain2):
-	(SyncSender<(Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)>,
-	Receiver<(Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)>)
+	(SyncSender<((Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>),bool)>,
+	Receiver<((Vec<Vec<[u8;28]>>,Vec<(Lifeform,usize,[Option<[usize;2]>;2])>),bool)>)
 	= std::sync::mpsc::sync_channel(1);
 	
 	//sends the brain's conclusion back to the main thread.
@@ -367,19 +367,27 @@ pub fn main() {
 	
 	// Set up the jukebox thread.
 	//play while in battle, but not otherwise. (Also set silence = false)
-	b_muse_sender.clone().send((false,to_play));
+	b_muse_sender.clone().send(((false,to_play),false));
 	muse_silence_sender.clone().send(false);
 	
 	//spawn thread.
 	let assets2 = assets.clone();
+	
 	let music_thread = thread::spawn(move||{
 		//initalise flow variable to avoid error upon unwrapping of b_muse_reciever.
 		let mut go = (false,to_play);
+		let mut kill = false;
 		let mut silence = false;
-		//loop (check if music is needed and play if true.
-		loop {
+		//loop (check if music is needed and play if true).
+		'player:loop {
 			//check if music is needed (b_muse_sender status)
-			go = isekai_deguchi(go.clone(),&mut b_muse_receiver);
+			let ketsuron = isekai_deguchi((go,kill).clone(),&mut b_muse_receiver);
+			go = ketsuron.0;
+			kill = ketsuron.1;
+			
+			//Break the thread, if the end is night.
+			if kill {break 'player;};
+			
 			silence = isekai_urusai(silence, &mut muse_silence_receiver);
 			//if needed loop (playback and check if play again.
 			while go.0 & !silence {
@@ -422,7 +430,7 @@ pub fn main() {
 		//loop globally looking for battles (ie lore has been sent)
 		'battle:loop {
 			match thought_receiver_to_brain2.try_recv() {
-				Ok(scenario) => {
+				Ok((scenario,true)) => {
 					let (lore,mut enc) = scenario;
 					println!("enc.len() = {}, in brain",enc.len());				   
 					//Initiate variables that live in this thread. and Borrow bits of lore.
@@ -476,6 +484,9 @@ pub fn main() {
 							
 						};
 					};
+				},
+				Ok((scenario,false)) => {
+					break 'battle;
 				},
 				_ 				   => {
 					thread::sleep(std::time::Duration::from_millis(10));
@@ -846,7 +857,7 @@ pub fn main() {
 					to_play = isekai_index(&party,&encounter,&dungeons,&p_loc,dungeon_pointer,&idungeon);
 					
 					//send signal to player to start playing.
-					b_muse_sender.try_send((true,to_play));
+					b_muse_sender.try_send(((true,to_play),false));
 					
 					//println!("The moose must dream.");
 					let cpu_n = num_cpus::get();
@@ -931,7 +942,7 @@ pub fn main() {
 					
 					//Send the base encounter information to the brain.
 					// And allow initiation of battle map.
-					thought_sender_to_brain2.send((lore,encounter.clone()));
+					thought_sender_to_brain2.send(((lore,encounter.clone()),true));
 					lore_empty = false;
 
 					let e=PT::now();
@@ -983,7 +994,7 @@ pub fn main() {
 					
 					//send another signal to player to start playing,
 					//just in case.
-					b_muse_sender.try_send((true,to_play));
+					b_muse_sender.try_send(((true,to_play),false));
 				
 				}else if !x {
 					//println!("Got into general battle round circuit.");
@@ -1041,10 +1052,10 @@ pub fn main() {
 							//set p_scape as needed.
 							//Switch of music player unless you're in a dungeon.
 							if idungeon.is_none() {
-								b_muse_sender.try_send((false,to_play));
+								b_muse_sender.try_send(((false,to_play),false));
 								p_scape = p_loc.scape;
 							}else if (dungeon_pointer<2) | (dungeon_pointer>dungeons[idungeon.unwrap()].scenes.len()+1) {
-								b_muse_sender.try_send((false,to_play));
+								b_muse_sender.try_send(((false,to_play),false));
 								p_scape = p_loc.scape;
 							}else{
 								p_scape = dungeons[idungeon.unwrap()].scenes[dungeon_pointer-2].scape;
@@ -1127,7 +1138,32 @@ pub fn main() {
 					};
 				};
 			},
-			GUIBox::MainQuit(x) => {if x {break 'main;};},
+			GUIBox::MainQuit(x) => {
+				if x {
+					println!("Quitting main loop.");
+					thought_sender_to_brain2.send(((Vec::new(),Vec::new()),false));
+					b_muse_sender.send(((false,to_play),true));
+					stories = Vec::new();
+					my_stories= MyStories::new();
+					my_dungeons = MyDungeons::new();
+					my_kills = KillList::new();
+					p_names_m = Vec::new();
+					p_names = Vec::new();
+					party = Vec::new();
+					sages = Vec::new();
+					gui_box = GUIBox::Uninitiated;
+					gui_box_previous = GUIBox::Uninitiated;
+					encounter = Vec::new();
+					enemies = Vec::new();
+					aftermath = (ghost(),ghost(),Vec::new());
+					sprite_boxer = GraphicsBox::None;
+					wo = FlowCWin::new();
+					gui_box = GUIBox::Uninitiated;
+					ipath = None;
+					println!("Important variables reset. Quitting.");
+					break 'main;
+				};
+			},
 			_ => {},
 		};
 	}
