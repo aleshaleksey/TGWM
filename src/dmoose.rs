@@ -1535,6 +1535,15 @@ pub fn abbyss() -> Dungeon {
 							  ("Forsaken Spirit",SPIRIT,100),
 					],
 			},
+			Place { name: "Benthic Layer",								scape: VOID,		xy: [-40,40],		affinity: UNDEAD,
+					engenG: [1,1,1,2,2,2,3,3,3,4],
+					engenA: [2,3,3,3,3,4,4,4,4,4],
+					popu:vec![("Beast of the Deep",BEAST,1000),
+							  ("Bottom Feeder",HUMAN,1000),
+							  ("Ancient Ghost",UNDEAD,1000),
+							  ("Forsaken Spirit",SPIRIT,100),
+					],
+			},
 			
 		],	
 		denizens: vec![
@@ -1717,6 +1726,11 @@ you find yourself at the place where the branches and the roots converge.
 If it would be those seeds from which the next age would grow?
 ";
 
-const ABBYSS:&str = "By means of a certain sorcery, you opened a portal leading into the void. \
-...And falling through the void you fall into a deeper void that lies at the heart of the world.
+const ABBYSS:&str = "It is a well known fact that the void is emptiness. \
+Nothing but dark, deep emptiness between the hemispheres of the broken world. \
+And those who fall into the abbyss will fall forever through the emptiness. \
+But at the heart of the void, there is a deeper, darker emptiness. \
+By means of a certain sorcery, you opened a portal leading there. \
+...And falling through the void you fall into a deeper void that lies at the heart of the world... \
+...What did you see on your journey, magical traveller?
 ";
