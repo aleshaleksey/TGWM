@@ -66,6 +66,7 @@ pub const ID_WILD_HUNT:u32 = 18;
 pub const ID_WITCH_MAZE:u32 = 19;
 pub const ID_WOOD_WINTER:u32 = 20;
 pub const ID_ABBYSS:u32 = 21;
+pub const ID_UNIQUE_TEST:u32 = 22;
 
 pub fn malek_grove()-> Dungeon {
 	Dungeon {
@@ -222,7 +223,7 @@ pub fn monster_hall()-> Dungeon {
 }
 
 pub fn citadel_of_spirit(player:Lifeform)-> Dungeon {
-	
+
 	let player = player.clone();
 
 	Dungeon {
@@ -584,7 +585,7 @@ pub fn white_temple()-> Dungeon {
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("Sage's Afterimage",ANGEL,1000)],
 			},
-		],		
+		],
 		denizens: vec![
 						warrior().clone().hp_change(2.0).wm_change(2.0).defence_change(2.0).spellist(vec![S_HASTE]).rename("Marble Knight"),
 						ghost_an().clone().diff_lvl(5),
@@ -595,7 +596,7 @@ pub fn white_temple()-> Dungeon {
 						sage_forsaken().clone().diff_lvl(4).rename("Sage's Afterimage"),
 				  ],
 		afterstory: WHITE_TEMPLE,
-	}			
+	}
 }
 
 
@@ -654,8 +655,8 @@ pub fn stairway()-> Dungeon {
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("the Star of Madness",ANGEL,1000)],
 			}
-			
-		],		
+
+		],
 		denizens: vec![
 						beast_serpent().clone(),
 						fallen().clone(),
@@ -663,9 +664,9 @@ pub fn stairway()-> Dungeon {
 								.spellist(vec![S_TIMESTOP,S_LIGHTNING,S_LIFESTEALER,S_CURSE,S_SUMMON_REAPER]),
 						sage_forsaken().clone(),
 						warrior().clone().diff_lvl(40).speed_change(0.2).re_type(ANGEL)
-								 .spellist(vec![S_GREATER_CURE,S_GREATER_EXORCISM,S_SACRED_LIGHT]).rename("Saint"),	 
+								 .spellist(vec![S_GREATER_CURE,S_GREATER_EXORCISM,S_SACRED_LIGHT]).rename("Saint"),
 						warrior().clone().hp_change(5.0).attack_change(10.0).speed_change(2.0)
-								 .spellist(Vec::new()).re_type(ANGEL).rename("Heaven's Sword"),		 
+								 .spellist(Vec::new()).re_type(ANGEL).rename("Heaven's Sword"),
 						warrior().clone().hp_change(10.0).attack_change(2.0).defence_change(10.0)
 								 .spellist(Vec::new()).re_type(ANGEL).rename("Heaven's Shield"),
 						beast_great().clone().hp_change(2.0).wm_change(2.0).bm_change(5.0)
@@ -676,7 +677,7 @@ pub fn stairway()-> Dungeon {
 								  .spellist(vec![S_EMBER,S_FIRE,S_FIREBALL,S_INFERNO,S_LIFESTEALER,S_TIMESTOP,S_SACRED_EXORCISM])
 						],
 		afterstory: STAIRWAY,
-	}			
+	}
 }
 
 
@@ -739,8 +740,8 @@ pub fn witch_maze()-> Dungeon {
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("the Lost Witch",WITCH,1000)],
 			},
-			
-		],		
+
+		],
 		denizens: vec![
 						beast_green().clone(),
 						ghost().clone(),
@@ -752,7 +753,7 @@ pub fn witch_maze()-> Dungeon {
 						witch().clone().speed_change(0.2).diff_lvl(40).spellist(vec![S_EMBER,S_CURE,S_SPARK,S_INFERNO,S_TIMESTOP]).rename("the Lost Witch"),
 						],
 		afterstory: WITCH_MAZE,
-	}			
+	}
 }
 
 pub fn way_down()-> Dungeon {
@@ -794,8 +795,8 @@ pub fn way_down()-> Dungeon {
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("the Emptiness",ANGEL,1000)],
 			},
-			
-		],		
+
+		],
 		denizens: vec![
 						titan().clone().defence_change(1.5).wm_change(1.5).spellist(vec![S_EXORCISM]).rename("Guardian Titan"),
 						ghost().clone().hp_change(3.0).rename("Lost Soul"),
@@ -803,7 +804,7 @@ pub fn way_down()-> Dungeon {
 						fallen().clone(),
 						ghost_an().clone().hp_change(2.0),
 						ghost_an().clone().hp_change(3.0).wm_change(2.0).re_type(SPIRIT).spellist(vec![S_LIGHT,S_LIGHTNING,S_GREATER_EXORCISM]).rename("Guardian Spirit"),
-						ghost_an().clone().hp_change(2.0).diff_lvl(10).re_type(EVIL).rename("the Emptiness"),						
+						ghost_an().clone().hp_change(2.0).diff_lvl(10).re_type(EVIL).rename("the Emptiness"),
 					  ],
 		afterstory: WAY_DOWN,
 	}
@@ -828,7 +829,7 @@ pub fn wild_hunt()-> Dungeon {
 							  ("Great Beast",SPIRIT,1000),
 							  ("Wild Herald",SPIRIT,1000),
 							  ("Wildman",SPIRIT,1000)],
-			};hunting],		
+			};hunting],
 		denizens: vec![
 						goblin_dem().clone().diff_lvl(40).speed_change(0.7).re_type(SPIRIT).rename("Wildman"),
 						goblin_dem().clone().diff_lvl(30).speed_change(0.7).attack_change(4.0).re_type(SPIRIT).rename("Bloodhound"),
@@ -836,8 +837,8 @@ pub fn wild_hunt()-> Dungeon {
 						bandit_lord().clone().diff_lvl(20).re_type(SPIRIT).rename("Wild Tracker"),
 						bandit().clone().diff_lvl(40).spellist(vec![S_SLOW]).re_type(SPIRIT).rename("Wild Herald"),
 						beast_green().clone().diff_lvl(20).spellist(vec![S_EXORCISM]).re_type(SPIRIT),
-						beast_great().clone().diff_lvl(20).spellist(vec![S_CURE,S_LIGHTNING,S_EXORCISM]).re_type(SPIRIT),		
-						wonderer().clone().diff_lvl(50).spellist(vec![S_HASTE,S_CRYSTALLISE,S_GREATER_EXORCISM,S_BOW_OF_TRAVELLER]).re_type(SPIRIT).rename("Artemis"),				
+						beast_great().clone().diff_lvl(20).spellist(vec![S_CURE,S_LIGHTNING,S_EXORCISM]).re_type(SPIRIT),
+						wonderer().clone().diff_lvl(50).spellist(vec![S_HASTE,S_CRYSTALLISE,S_GREATER_EXORCISM,S_BOW_OF_TRAVELLER]).re_type(SPIRIT).rename("Artemis"),
 					  ],
 		afterstory: WILD_HUNT,
 	};
@@ -850,7 +851,7 @@ pub fn wild_hunt()-> Dungeon {
 }
 
 pub fn tower_of_bones()-> Dungeon {
-	
+
 	Dungeon {
 		id: ID_TOWER_OF_BONES,
 		name: "Tower of Bones",
@@ -864,37 +865,37 @@ pub fn tower_of_bones()-> Dungeon {
 					popu:vec![("Serpent's Bones",BONE,1000),
 							  ("Skeletal Knight Lord",UNDEAD,1000),
 							  ("Giant's Bones",GIANT,1000)],
-			},	
+			},
 			Place { name: "First Level",					scape: CITY,		xy: [-40,-10],		affinity: UNDEAD,
 					engenG: [2,3,3,4,4,4,4,4,4,4],
 					engenA: [4,4,4,4,4,4,4,4,4,4],
 					popu:vec![("Scholar's Bones",UNDEAD,1000),
 							  ("Skeletal Knight Lord",UNDEAD,1000)],
-			},	
+			},
 			Place { name: "Second Level",					scape: CITY,		xy: [-40,-10],		affinity: UNDEAD,
 					engenG: [2,3,3,4,4,4,4,4,4,4],
 					engenA: [2,2,2,2,2,2,2,2,2,2],
 					popu:vec![("Hero's Bones",UNDEAD,1000),
 							  ("Villain's Bones",UNDEAD,1000)],
-			},	
+			},
 			Place { name: "Third Level",					scape: CITY,		xy: [-40,-10],		affinity: UNDEAD,
 					engenG: [2,3,3,4,4,4,4,4,4,4],
 					engenA: [2,2,2,2,2,2,2,2,2,2],
 					popu:vec![("Hero's Bones",UNDEAD,1000),
 							  ("Villain's Bones",UNDEAD,1000)],
-			},	
+			},
 			Place { name: "Fourth Level",					scape: CITY,		xy: [-40,-10],		affinity: UNDEAD,
 					engenG: [4,4,4,4,4,4,4,4,4,4],
 					engenA: [4,4,4,4,4,4,4,4,4,4],
 					popu:vec![("Royal Skeleton",UNDEAD,1000),
 							  ("Slave's Bones",UNDEAD,1000)],
-			},	
+			},
 			Place { name: "The Top",					scape: CITY,		xy: [-40,-10],		affinity: UNDEAD,
 					engenG: [1,1,1,1,1,1,1,1,1,1],
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("Bones of the Tower",UNDEAD,1000)],
 			},
-		],	
+		],
 		denizens: vec![
 						skeleton_kn().clone().diff_lvl(10).hp_change(5.0).rename("Serpent's Bones"),
 						skeleton_kn().clone().diff_lvl(5).attack_change(2.0).spellist(vec![S_ABYSSAL_DARKNESS]).rename("Skeletal Knight Lord"),
@@ -911,7 +912,7 @@ pub fn tower_of_bones()-> Dungeon {
 }
 
 pub fn tower_of_flesh()-> Dungeon {
-	
+
 	Dungeon {
 		id: ID_TOWER_OF_FLESH,
 		name: "Tower of Flesh",
@@ -923,7 +924,7 @@ pub fn tower_of_flesh()-> Dungeon {
 					engenG: [1,1,1,1,1,1,1,1,1,1],
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("Beast of Flesh",UNDEAD,1000)],
-			},	
+			},
 			Place { name: "First Atrium",						scape: CITY,		xy: [-40,-30],		affinity: UNDEAD,
 					engenG: [4,4,4,4,4,4,4,4,4,4],
 					engenA: [4,4,4,4,4,4,4,4,4,4],
@@ -949,7 +950,7 @@ pub fn tower_of_flesh()-> Dungeon {
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("The Tower's Flesh",UNDEAD,1000)],
 			},
-		],	
+		],
 		denizens: vec![
 						beast_great().clone().hp_change(5.0).re_type(UNDEAD).spellist(vec![S_LIFESTEALER]).rename("Beast of Flesh"),
 						goblin_dem().clone().hp_change(5.0).re_type(UNDEAD).rename("Walking Dead"),
@@ -996,13 +997,13 @@ pub fn tower_of_soul(party:&Vec<(Lifeform,usize)>) -> Dungeon {
 					engenA: [4,4,4,4,4,4,4,4,4,4],
 					popu:vec![("Sinner's Ghost",UNDEAD,1000),
 							  ("Angel's Ghost",SPIRIT,1000)],
-			},	
+			},
 			Place { name: "The Inescapable Circle",						scape: TIME,		xy: [-60,-20],		affinity: UNDEAD,
 					engenG: [1,1,1,1,1,1,1,1,1,1],
 					engenA: [1,1,1,1,1,1,1,1,1,1],
 					popu:vec![("Tower of Soul",UNDEAD,1000)],
-			},				
-		],	
+			},
+		],
 		denizens: vec![
 						loser().clone().mirror(party[0].0.clone()).diff_lvl(-5).re_type(UNDEAD).rename("Shadow of Thyself"),
 						ghost().clone().diff_lvl(10).rename("Phantasm"),
@@ -1090,8 +1091,8 @@ pub fn hall_of_stone() -> Dungeon {
 					popu:vec![("King of Ancients",SPIRIT,500)
 					],
 			},
-			
-		],	
+
+		],
 		denizens: vec![
 						goblin_sco().diff_lvl(10).spellist(vec![S_HASTE,S_EMBER]),
 						goblin_sco().rename("Green Beret").diff_lvl(20).spellist(vec![S_HASTE,S_SPARK,S_DAGGER_OF_FAWN]),
@@ -1168,7 +1169,7 @@ pub fn the_path() -> Dungeon {
 					popu:vec![("Lost Soul",EVIL,2000),
 					],
 			},
-		],	
+		],
 		denizens: vec![
 						dark_apprentice().diff_lvl(10).speed_change(0.6),
 						white_witch(),
@@ -1181,7 +1182,7 @@ pub fn the_path() -> Dungeon {
 						goblin_sco().diff_lvl(10).speed_change(0.6),
 						loser().rename("Lost Soul").hp_change(20.0).attack_change(5.0).re_type(UNDEAD),
 		],
-						
+
 		afterstory: THE_PATH,
 	}
 }
@@ -1213,13 +1214,13 @@ pub fn on_the_prairie() -> Dungeon {
 					popu:vec![("Settler",UNDEAD,1000),
 					],
 			},
-		],	
+		],
 		denizens: vec![
 						skeleton_kn().hp_change(4.0).rename("Livestock"),
 						beast_great().hp_change(1.5).rename("Dog"),
 						ghost().rename("Settler").hp_change(4.0).spellist(vec![S_FIRE,S_CURSE,S_LIGHT,S_DARKNESS]),
 		],
-						
+
 		afterstory: ON_THE_PRAIRIE,
 	}
 }
@@ -1282,22 +1283,22 @@ pub fn ice_palace() -> Dungeon {
 					popu:vec![("Aurora",SPIRIT,1000),
 					],
 			},
-		],	
+		],
 		denizens: vec![
 						ghost().rename("Southern Guard").re_type(SPIRIT).diff_lvl(20).speed_change(0.4).spellist(vec![S_LESSER_CRYSTALLISE,S_SLOW]),
 						ghost().rename("Northern Guard").re_type(SPIRIT).diff_lvl(20).speed_change(0.4).spellist(vec![S_CRYSTALLISE,S_HASTE]),
 						ghost().rename("Eastern Guard").re_type(SPIRIT).diff_lvl(20).speed_change(0.4).spellist(vec![S_SPARK,S_DARKNESS]),
 						ghost().rename("Western Guard").re_type(SPIRIT).diff_lvl(20).speed_change(0.4).spellist(vec![S_SPARK,S_LIGHT]),
-						
+
 						ghost().rename("Sculptor of the North Star").re_type(SPIRIT).diff_lvl(20).speed_change(0.4)
 							 .spellist(vec![S_CRYSTALLISE,S_SACRED_LIGHT,S_ABYSSAL_DARKNESS]),
 						warrior().rename("Sculpture of Hero").re_type(SPIRIT).diff_lvl(20).speed_change(0.4).spellist(vec![S_LESSER_CRYSTALLISE,S_SLOW]),
 						titan().rename("Sculpture of Villain").re_type(SPIRIT).diff_lvl(10).speed_change(0.4).spellist(vec![S_LESSER_CRYSTALLISE,S_SLOW]),
-						
+
 						ghost().rename("Snowflake").re_type(SPIRIT).diff_lvl(5).spellist(vec![S_LESSER_CRYSTALLISE]),
 						wonderer().rename("Guest of the North").diff_lvl(20).speed_change(0.5).spellist(vec![S_CURE,S_SPARK,S_FIRE]),
 						white_witch().diff_lvl(5),
-						
+
 						beast_green().diff_lvl(10),
 						beast_red(),
 						beast_great(),
@@ -1305,14 +1306,14 @@ pub fn ice_palace() -> Dungeon {
 						ghost().diff_lvl(10),
 						white_queen().rename("The Northern Light").hp_change(2.0).defence_change(2.0).diff_lvl(4),
 		],
-						
+
 		afterstory: ICE_PALACE,
 	}
 }
 
 
 pub fn petrified_shrine() -> Dungeon {
-	
+
 	Dungeon {
 		id: ID_PETRIFIED_SHRINE,
 		name: "Petrified Shrine",
@@ -1357,23 +1358,23 @@ pub fn petrified_shrine() -> Dungeon {
 							  ("Last Elf",UNDEAD,1000),
 					],
 			},
-			
-		],	
+
+		],
 		denizens: vec![
 					alien().rename("Forgotten Beast").re_type(BEAST)
 						   .magic_up(100.0).hp_change(2.0).bm_change(1.5).spellist(vec![S_SPARK,S_SLOW,S_DAGGER_OF_FAWN]),
-						   
+
 					white_queen().rename("Petrified Fairy").spellist(vec![S_LESSER_CRYSTALLISE,S_SLOW]),
 					beast_red().rename("Wisp of Fire").bm_change(2.0).wm_change(2.0).re_type(SPIRIT).spellist(vec![S_FIREBALL,S_FIRE]),
-					
+
 					warrior().rename("Petrified Elf").re_type(GIANT).speed_change(0.2).diff_lvl(40).spellist(vec![]),
 					sage_forsaken().rename("Elven Spirit").re_type(SPIRIT).speed_change(3.0).hp_change(2.5),
-					
+
 					beast_great().rename("Primal Great Beast").speed_change(0.3).diff_lvl(30).spellist(vec![S_JOVIAN_LIGHTNING,S_GREATER_EXORCISM,S_SPARK]),
 					beast_red().rename("Primal Red Beast").speed_change(0.2).diff_lvl(40).spellist(vec![S_INFERNO,S_FIREBALL,S_EMBER,S_SACRED_EXORCISM]),
 					beast_green().rename("Primal Green Beast").speed_change(0.2).diff_lvl(50).spellist(vec![S_SACRED_CURE,S_TIMESTOP,S_CURSE]),
 					beast_serpent().rename("Primal Serpent").speed_change(0.4).diff_lvl(20).spellist(vec![S_LIGHTNING,S_LIFESTEALER]),
-					
+
 					sage_forsaken().rename("First Elf").re_type(ELF).speed_change(1.0).hp_change(5.5).bm_change(2.0).wm_change(4.0).mp_change(2.0)
 								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_SACRED_CURE,S_SACRED_EXORCISM,S_EMBER]),
 					sage_forsaken().rename("True Elf").re_type(ELF).speed_change(2.0).hp_change(3.5).bm_change(3.0).wm_change(3.0).mp_change(2.0)
@@ -1381,14 +1382,14 @@ pub fn petrified_shrine() -> Dungeon {
 					sage_forsaken().rename("Last Elf").re_type(ELF).speed_change(3.0).hp_change(1.5).bm_change(4.0).wm_change(2.0).mp_change(2.0)
 								   .spellist(vec![S_GREATER_TELEPORT,S_TIMESTOP,S_CURE,S_SUMMON_REAPER,S_EMBER]),
 		],
-						
+
 		afterstory: PETRIFIED,
 	}
-	
+
 }
 
 pub fn woods_of_winter() -> Dungeon {
-	
+
 	Dungeon {
 		id: ID_WOOD_WINTER,
 		name: "The Woods of Ages",
@@ -1468,8 +1469,8 @@ pub fn woods_of_winter() -> Dungeon {
 					popu:vec![("Traveller",SPIRIT,1000),
 					],
 			},
-			
-		],	
+
+		],
 		denizens: vec![
 			ghost_an().rename("Wraith").diff_lvl(10).bm_change(2.0).attack_change(2.0),
 			necromancer_lord().diff_lvl(10).bm_change(2.0).attack_change(2.0),
@@ -1489,18 +1490,18 @@ pub fn woods_of_winter() -> Dungeon {
 			skeleton_kn().rename("Ancient Velociraptor").diff_lvl(40).re_type(BEAST),
 			alien().rename("Traveller").diff_lvl(40).speed_change(0.4).magic_up(800.0).mp_change(4.0)
 									   .spellist(vec![S_TIMESTOP,S_CURE,S_CURSE,S_INFERNO,S_TRUE_CRYSTALLISE]),
-			
-			
+
+
 		],
-						
+
 		afterstory: WOODS_WINTER,
 	}
-	
+
 }
 
 
 pub fn abbyss() -> Dungeon {
-	
+
 	let benthithity = rand::thread_rng().gen_range(1,11);
 	let benthic_layer = Place
 	{
@@ -1516,7 +1517,7 @@ pub fn abbyss() -> Dungeon {
 				  ("Forsaken Spirit",SPIRIT,100),
 		],
 	};
-	
+
 	let mut scenes_of_the_abbyss = vec![
 		Place { name: "The Dark Clouds",							scape: VOID,		xy: [-40,40],		affinity: EVIL,
 				engenG: [1,1,2,2,2,3,3,3,3,4],
@@ -1537,11 +1538,11 @@ pub fn abbyss() -> Dungeon {
 				],
 		}
 	];
-	
+
 	for _ in 0..benthithity {
 		scenes_of_the_abbyss.push(benthic_layer.clone());
 	};
-	
+
 	scenes_of_the_abbyss.push(Place{
 		name: "The Abbyss",
 		scape: VOID,
@@ -1550,19 +1551,19 @@ pub fn abbyss() -> Dungeon {
 		engenG: [4,4,4,4,4,4,4,4,4,4],
 		engenA: [1,1,1,1,1,1,1,1,1,1],
 		popu:vec![("Heart of Hero",SPIRIT,1),
-				  ("Heart of Villain",SPIRIT,1),
+				  ("Heart of Dog",SPIRIT,1),
 				  ("Heart of Doubt",SPIRIT,1),
 				  ("Heart of Darkness",SPIRIT,1)
 		]
 	});
-	
+
 	Dungeon {
 		id: ID_ABBYSS,
 		name: "The Abbyss",
 		xy: [-40,40],
 		diff: 1000.0,
 		affinity: VOID,
-		scenes: scenes_of_the_abbyss,	
+		scenes: scenes_of_the_abbyss,
 		denizens: vec![
 			ghost_an().rename("Wraith")
 					  .diff_lvl(10).bm_change(2.0).attack_change(2.0),
@@ -1579,17 +1580,47 @@ pub fn abbyss() -> Dungeon {
 				   .diff_lvl(40),
 			warrior().rename("Heart of Hero").re_type(ANGEL)
 					 .diff_lvl(50).speed_change(0.5),
-			necromancer_lord().rename("Heart of Villain").re_type(ANGEL)
+			beast_great().rename("Heart of Dog").re_type(ANGEL)
 							  .diff_lvl(20),
 			goblin_dem().rename("Heart of Doubt").re_type(ANGEL)
 					.diff_lvl(80).speed_change(0.2),
 			ghost_an().rename("Heart of Darkness").re_type(ANGEL)
 					  .diff_lvl(20)
 		],
-						
+
 		afterstory: ABBYSS,
 	}
-	
+
+}
+
+pub fn unique() -> Dungeon {
+
+	Dungeon {
+		id: ID_UNIQUE_TEST,
+		name: "Conspirator Camp",
+		xy: [0,0],
+		diff: 20.0,
+		affinity: UNDEAD,
+		scenes: vec![
+			Place { name: "Conspirator Camp",							scape: STEPPE,		xy: [0,0],		affinity: RADIANT,
+					engenG: [4,4,4,4,4,4,4,4,4,4],
+					engenA: [4,4,4,4,4,4,4,4,4,4],
+					popu:vec![("Fate",WITCH,3),
+							  ("Wind",SPIRIT,4),
+							  ("Diametric",ANGEL,2),
+							  ("Destiny",EVIL,1),
+					],
+			},
+		],
+		denizens: vec![
+						goblin_witch().rename("Fate"),
+						white_witch().rename("Wind"),
+						fallen().rename("Diametric"),
+						sage_forsaken().rename("Destiny"),
+		],
+
+		afterstory: UNIQUE_TEST,
+	}
 }
 
 
@@ -1732,7 +1763,7 @@ const ICE_PALACE:&str = "...What lies at the end of the world? A desert of snow 
  blanketed by a wall of unending storms...
  ...It is the winter itself that builds the walls surrounding its palace and weaves the dreams of summer. \
  ";
- 
+
 const PETRIFIED:&str = "...It was here that elvenkind willed itself into existence...
 ...It was here that elvenkind lost its will...
 ...Now only their creations, left alone for all eternity, wonder this place, unable to find the will that was lost by their creators.
@@ -1741,10 +1772,10 @@ const PETRIFIED:&str = "...It was here that elvenkind willed itself into existen
 
 const WOODS_WINTER:&str = "...You travel deeper and deeper into the woods, \
 and upon each tree you pass hang the fruit of the age that bore it. \
-...Sweet fruits... 
-Bitter fruits... 
-Healthful fruits... 
-Poisonous fruits... 
+...Sweet fruits...
+Bitter fruits...
+Healthful fruits...
+Poisonous fruits...
 Having travelled to the depth of the Woods of Ages, \
 you find yourself at the place where the branches and the roots converge.
 ...What if instead of the fruits of your wishes, you could reap the sweet and healthful fruits? \
@@ -1759,3 +1790,5 @@ By means of a certain sorcery, you opened a portal leading there. \
 ...And falling through the void you fall into a deeper void that lies at the heart of the world... \
 ...What did you see on your journey, magical traveller?
 ";
+
+const UNIQUE_TEST:&str = "What they were doing here, we will never know.";

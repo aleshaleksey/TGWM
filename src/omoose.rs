@@ -25,12 +25,12 @@ extern crate std;
 			 MINDLESS,MOORLAND,MOOSE,RADIANT,RUIN,STEPPE,SPIRIT,
 			 TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH,WHITE,NONE,
 			 ANY,GROUP,GROUPS,SAME,SELF,SINGLE,TARGET,ALL,BOB,NON,PARTY,
-			 
+
 			 S_LESSER_CURE,S_CURE,S_GREATER_CURE,S_SACRED_CURE,S_INFERNO,S_FIREBALL,S_FIRE,S_EMBER,
 			 S_LESSER_CRYSTALLISE,S_CRYSTALLISE,S_TRUE_CRYSTALLISE,S_EXORCISM,S_GREATER_EXORCISM,S_SACRED_EXORCISM,
 			 S_SUMMON_REAPER,S_TELEPORT,S_GREATER_TELEPORT,S_LIGHT,S_SACRED_LIGHT,S_DARKNESS,S_ABYSSAL_DARKNESS,
 			 S_SLOW,S_HASTE,S_APOCALYPSE,S_GENESIS,S_SPARK,S_LIGHTNING,S_JOVIAN_LIGHTNING,S_TIMESTOP,
-			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};	
+			 S_CURSE,S_LIFESTEALER,S_DAGGER_OF_FAWN,S_BOW_OF_TRAVELLER,S_SWORD_OF_PERSEUS};
 
 use bmoose;
 use lmoose;
@@ -56,14 +56,14 @@ pub fn play_song_rod(gone:(bool,usize),
 		None	  => {return go},
 	};
     let sink = rodio::Sink::new(&device);
-    
+
     //assign songs vector.
     let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("as").unwrap();
-        
+
     //make vector of songs
     let mut songs:Vec<String> = Vec::with_capacity(18);
     for _ in 0..19 {songs.push(assets.join("notes/a.wav").to_str().unwrap().to_owned());}
-    
+
     //insert built in terrain-specific themes
     songs[1] = assets.join("notes/rat.wav").to_str().unwrap().to_owned();
     songs[2] = assets.join("notes/grim.wav").to_str().unwrap().to_owned();
@@ -77,10 +77,10 @@ pub fn play_song_rod(gone:(bool,usize),
     songs[16] = assets.join("notes/mo.wav").to_str().unwrap().to_owned();
     songs[17] = assets.join("notes/vo.wav").to_str().unwrap().to_owned();
     songs[18] = assets.join("notes/ru.wav").to_str().unwrap().to_owned();
-    
+
     //Read dukebox config file
     parse_music_config(&mut songs);
-	
+
 	for (i,x) in songs.iter().enumerate() {println!("{}: {}",i,x);}
 
 	//loop the music until told to stop.
@@ -90,13 +90,13 @@ pub fn play_song_rod(gone:(bool,usize),
 			_	  => {return go},
 		};
 		sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
-		
+
 		while go.0 & !sink.empty() & !silence {
 			std::thread::sleep(Duration::from_millis(500));
-			
+
 			let ketsuron =  isekai_deguchi((go.clone(),false),postman);
 			go = ketsuron.0;
-			
+
 			silence = isekai_urusai(silence,silent_postman);
 		};
 		if !go.0 | silence {
@@ -104,7 +104,7 @@ pub fn play_song_rod(gone:(bool,usize),
 			drop(sink);
 			return go
 		};
-		
+
 		sink.sleep_until_end();
 	}
     drop(sink);
@@ -165,8 +165,8 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 							MOORLAND => 16, // 16 written
 							VOID => 17, // 17 written
 							RUIN => 18, // 18 written
-							_ => 0,	
-						}		
+							_ => 0,
+						}
 					}
 			}, //5
 		}
@@ -187,32 +187,32 @@ pub fn isekai_index (party:&Vec<(lmoose::Lifeform,usize)>,
 				MOORLAND => 16, // 16
 				VOID => 17, // 17
 				RUIN => 18, // 18
-				_ => 0,	
-			}		
+				_ => 0,
+			}
 		}
-	}					 				 
+	}
 }
 
 // Read the notes.mqcfg file and if valid files exist, they go into the vector.
 // Does not do a good check for corruption of config file.
 pub fn parse_music_config(songs:&mut Vec<String>) {
-	
+
 	//initialise directories.
 	let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("as").unwrap();
 	let note_path = assets.join("notes/notes.mqcfg");
-	
+
 		//Try to open the playlist file, and if isn't there, create it.
 	let mut cfgf:File;
 	match File::open(&note_path) {
 		Ok(f) => {cfgf = f;},
 		_	  => {return;},
 	};
-	
+
 	let mut playlist_string = String::new();
 	let mut song_string = String::new();
-	
+
 	cfgf.read_to_string(&mut playlist_string);
-	
+
 	for (i,mut x) in playlist_string.lines().enumerate() {
 		let mut format = true;
 		let mut no_of_split:usize = 0;
@@ -239,14 +239,14 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
 
 //The actual module ends here.
 
-////NB uses cpal 0.8 and does not currently work properly. 
+////NB uses cpal 0.8 and does not currently work properly.
 ////The event stream cannot be dropped, the device cannot be deactivated.
 ////Thy cluster is ravished.
 //#[allow(non_snake_case)]
 //pub fn play_song(P:&Path,){
 	//let reader = hound::WavReader::open(&P).unwrap();
 	//let spec = reader.spec();
-	
+
 	//let device = cpal::default_output_device().expect("Failed to get default output device");
     //let supformat:cpal::SupportedFormat = device.supported_input_formats().unwrap()
 											  //.filter(|f| matches_format(f, &spec))
@@ -258,13 +258,13 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
 		//sample_rate: cpal::SampleRate(spec.sample_rate*spec.channels as u32),
 		//data_type: supformat.data_type,
 	//};
-    
+
     //println!("opened {:?}",P);
-	
+
     //let event_loop = cpal::EventLoop::new();
     //let stream_id = event_loop.build_output_stream(&device, &format).unwrap();
     //event_loop.play_stream(stream_id.clone());
-	
+
 	//let r_samples = reader.into_samples();
 	//let mut vc = Vec::with_capacity(1000000);
 	//for x in r_samples {
@@ -275,10 +275,10 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
 	//let _started = false;
 	//let _stream_id2 = stream_id.clone();
 	//let len2:usize = len;
-	
+
 	//let _t0 = std::thread::spawn(move||{
 		//event_loop.run(move |stream_id2, data| {
-			
+
 				//if len<1 {
 					//drop(stream_id2);
 				//}else{
@@ -325,7 +325,7 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
 
 ////auxillary function from cpal-hound example for the cpal function, does the job.
 //fn matches_format(format: &cpal::SupportedFormat, spec: &hound::WavSpec) -> bool {
-    //if (format.min_sample_rate > cpal::SampleRate(spec.sample_rate)) 
+    //if (format.min_sample_rate > cpal::SampleRate(spec.sample_rate))
      //& (format.max_sample_rate < cpal::SampleRate(spec.sample_rate)) {
         //return false
     //}
@@ -348,4 +348,3 @@ pub fn parse_music_config(songs:&mut Vec<String>) {
     //// play back the file in this format.
     //true
 //}
-

@@ -1,6 +1,3 @@
-
-
-
 /// "xmoose.rs" module contains "special effects and graphics".
 /// Anything where a widget is used
 /// to store anything wherre theer are moving parts.

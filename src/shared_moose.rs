@@ -26,7 +26,7 @@ pub fn lhas<T:PartialOrd>(a:&Vec<T>, b:&T)->bool{
 			ihaz=true;
 			return ihaz}
 		else{continue}
-	}
+	};
 	ihaz
 }
 
@@ -181,21 +181,21 @@ pub fn spell_targets_to_indices(to_hit:&Vec<(bool,bool)>,targets:&mut Vec<usize>
 	}
 }
 
-pub fn arcana_index_from_spell_id(spell_list: &Vec<Spell>, id: i8) ->Option<usize> {	
+pub fn arcana_index_from_spell_id(spell_list: &Vec<Spell>, id: i8) ->Option<usize> {
 	for i in 0..spell_list.len(){
 		if spell_list[i].id==id {return Some(i)}
 	}
 	None
 }
 
-pub fn arcana_index_from_spell_name(spell_list: &Vec<Spell>, name: &str) ->Option<usize> {	
+pub fn arcana_index_from_spell_name(spell_list: &Vec<Spell>, name: &str) ->Option<usize> {
 	for i in 0..spell_list.len(){
 		if spell_list[i].name==name {return Some(i)}
 	}
 	None
 }
 
-pub fn arcana_type_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) ->Option<u8> {	
+pub fn arcana_type_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) ->Option<u8> {
 	for x in spell_list{
 		if x.id==id {return Some(x.Type)}
 	}
@@ -203,7 +203,7 @@ pub fn arcana_type_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) ->Opti
 }
 
 //A little unsafe
-pub fn arcana_name_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) -> String {	
+pub fn arcana_name_from_spell_id<'a> (spell_list: &'a Vec<Spell>, id: i8) -> String {
 	for x in spell_list{
 		if x.id==id {return x.name.to_owned()}
 	}
@@ -226,7 +226,7 @@ pub fn exp_calc(xx: &Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, i:usize)->f32{
 	let kachi = xx[i].0.HP*(xx[i].0.Attack+xx[i].0.Defence)
 		+xx[i].0.MP*(xx[i].0.BM+xx[i].0.WM)
 		+xx[i].0.Speed*(xx[i].0.HP+xx[i].0.MP);
-	
+
 	//Baxter to the soap factory.
 	for i in xx.iter(){
 		let baxter = i.0.HP*(i.0.Attack+i.0.Defence)
@@ -285,7 +285,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 				mut coords: &mut [i32;2],
 				my_stories:&mut MyStories,
 				my_dungeons:&mut MyDungeons,
-				my_kills:&mut KillList,){	
+				my_kills:&mut KillList,){
 	println!("filename: {}",file_name);
 	//Initiate raw data constructs.
 	let mut rlb = Vec::with_capacity(8000);
@@ -307,7 +307,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	let mut loadtxt= File::open(to_open_b).unwrap();
 	loadb.read_to_end(&mut rlb);
 	loadtxt.read_to_string(&mut rltxt);
-	
+
 	//NB old files will not have a plot file initially, so for compat.
 	//this is written to taken that into account.
 	match File::open(to_open_s) {
@@ -332,7 +332,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 			*my_stories = MyStories::new();
 		},
 	};
-	
+
 	//NB old files will not have a plot file initially, so for compat.
 	//this is written to taken that into account.
 	match File::open(to_open_d) {
@@ -359,7 +359,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	};
 
 	let mut kill_n_vector:Vec<u64> = Vec::new();
-	
+
 	let kill_n:usize = match File::open(to_open_k) {
 		Ok(mut fp) => {
 			println!("There are kills");
@@ -389,16 +389,16 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	// reformat text file from &str to String.
 	let rrltxt:Vec<&str> = rltxt.split("\n").collect();
 	for i in 0..rrltxt.len(){ltxt.push(rrltxt[i].to_owned())};
-		
+
 	//reset party, party location and party names.
 	*p_names = Vec::with_capacity(5);
-	*party = Vec::with_capacity(5);		
+	*party = Vec::with_capacity(5);
 	*coords = [0,0];
-	
+
     let mut indtrack:usize=0;
 //reconstitute party number u8->u64
 	let p_no=(rlb.remove(0)) as usize;
-	for _ in 0..p_no{		
+	for _ in 0..p_no{
 //reconstitute Exp.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
@@ -410,7 +410,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 //reconstitute MP.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let mp=un64_f64(unbyte64(temp)) as f32;		
+		let mp=un64_f64(unbyte64(temp)) as f32;
 //reconstitute HP.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
@@ -422,19 +422,19 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 //reconstitute attack.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let attack=un64_f64(unbyte64(temp)) as f32;		
+		let attack=un64_f64(unbyte64(temp)) as f32;
 //reconstitute defence.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let defence=un64_f64(unbyte64(temp)) as f32;			
+		let defence=un64_f64(unbyte64(temp)) as f32;
 //reconstitute wm.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let wm=un64_f64(unbyte64(temp)) as f32;	
+		let wm=un64_f64(unbyte64(temp)) as f32;
 //reconstitute bm.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let bm=un64_f64(unbyte64(temp)) as f32;	
+		let bm=un64_f64(unbyte64(temp)) as f32;
 //reconstitute spell list length.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
@@ -443,7 +443,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 //reconstitute inventory length.
 		let mut temp:[u8;8]=[0;8];
 		for i in 0..8{temp[i]=rlb.remove(0)};
-		let inv_len=unbyteus(temp);		
+		let inv_len=unbyteus(temp);
 //reconstitute Alive? Unclean?
 		let temp=rlb.remove(0);
 		let alive=if temp==0{false}else{true};
@@ -452,7 +452,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 //reconstitute longitude
 		let mut temp:[u8;4]=[0;4];
 		for i in 0..4{temp[i]=rlb.remove(0)};
-		let lox=unbyte32(temp);	
+		let lox=unbyte32(temp);
 //reconstitute latitude
 		let mut temp:[u8;4]=[0;4];
 		for i in 0..4{temp[i]=rlb.remove(0)};
@@ -501,7 +501,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 		indtrack+=sp_len;
 		//implement inventory later.
 //export from iterator.
-		
+
 		//write final coords, names, party members and their location.
 		*coords = [loy,lox];
 		p_names.push(ltxt[true_name].clone());
@@ -532,18 +532,18 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 					Inventory: linventory,
 					Gold: lgp,
 					id: lid,
-					},0))	
+					},0))
 	};
-	
+
 	//reconstitude kill list (very hackable file).
 	let mut killist:Vec<(String,u64)> = Vec::with_capacity(kill_n);
 	for i in 0..(kill_n) {
 		killist.push((ltxt[i+indtrack].clone(),kill_n_vector[i]));
 	};
-	*my_kills = KillList::new();		
+	*my_kills = KillList::new();
 	my_kills.replace_kills(killist);
 	println!("Killist reconstituted: {:?}",my_kills);
-		
+
 	*pl = place_loader(&world,[coords[1],coords[0]]);
 	*pl = (world.len()-1-pl.0,pl.1);
 	//*pl = (pl.0,pl.1);
@@ -559,7 +559,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		s:&MyStories,
 		d:&MyDungeons,
 		k:&KillList){
-	
+
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");
 	let mut f1 = dir.join(s_name.clone()+".msqrtxt");
@@ -567,14 +567,14 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 	let mut fs = dir.join(s_name.clone()+".msqrp");
 	let mut fd = dir.join(s_name.clone()+".msqrd");
 	let mut fk = dir.join(s_name+".msqrk");
-	
-	//Need to "safetify" this.		
+
+	//Need to "safetify" this.
 	let mut stxt = File::create(&f1).unwrap();
 	let mut sfile = File::create(&f2).unwrap();
 	let mut splot = File::create(&fs).unwrap();
 	let mut sdung = File::create(&fd).unwrap();
 	let mut skill = File::create(&fk).unwrap();
-	
+
 	//Write plot completion file.
 	if s.len()>0 {
 		let finlen = s.len()*8;  //8 bytes per entry.
@@ -588,10 +588,10 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 				finlen,
 			)
 		};
-	
+
 		splot.write_all(&sids).expect("Tried to save plot, but lost it.");
-	};	
-	
+	};
+
 	//Write dungeon completion file.
 	if d.len()>0 {
 		let finlen = d.len()*16;  //[u32;4]=4*4=16 bytes per entry.
@@ -605,10 +605,10 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 				finlen,
 			)
 		};
-	
+
 		sdung.write_all(&dids).expect("Tried to save dungeons, but couldn't get out.");
 	};
-	
+
 	//Write kill list (number) file.
 	let klen = k.len();
 	let kills = k.take_kills();
@@ -616,9 +616,9 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		let klen = k.len();
 		let mut kill_numbers = Vec::with_capacity(klen+1);
 		kill_numbers.push(klen as u64); //Important step.
-		
+
 		for x in kills.iter() {kill_numbers.push(x.1);};
-		
+
 		let finlen = k.len()*8+8;  //u64 therefore 8 bytes per entry. First entry is the length as u64 (another 8 bytes).
 		let ids_pointer = unsafe {transmute::<*mut u64,*mut u8>(kill_numbers.as_mut_ptr())};
 		forget(kill_numbers);
@@ -629,9 +629,9 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 				finlen,
 			)
 		};
-	
+
 		skill.write_all(&kill_numbers).expect("Tried to save kills, but didn't survive.");
-	};					
+	};
 
 	let n_party:u8=xx.len() as u8;
 	sfile.write_all(&[n_party]);
@@ -655,7 +655,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		let loy:[u8;4]=byteri32(p.xy[1]);
 		let lgp:[u8;8]=byterus(xx[i].0.Gold);
 		let lid:[u8;8]=byterus(xx[i].0.id);
-		
+
 		sfile.write_all(&exp).expect("error writing sfile");
 		sfile.write_all(&expu).expect("error writing sfile");
 		sfile.write_all(&mp).expect("error writing sfile");
@@ -673,7 +673,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		sfile.write_all(&loy).expect("error writing sfile");
 		sfile.write_all(&lgp).expect("error writing sfile");
 		sfile.write_all(&lid).expect("error writing sfile");
-		
+
 		//write bits and bobs as txt.
 		stxt.write(&nx[i].as_bytes()).expect("error writing stxt");
 		stxt.write("\n".as_bytes()).expect("error writing stxt");
@@ -706,7 +706,7 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 			stxt.write("\n".as_bytes()).expect("error writing stxt killist");
 		};
 	};
-	
+
 }
 
 //Various game related functions.
@@ -761,7 +761,7 @@ pub fn sidekick_maker(mut party: &mut Vec<(Lifeform,usize)>, mut p_names: &mut V
 
 //engenA (generates battle variable y).
 fn engenA()->Vec<usize> {
-	
+
 	println!("Entering engenA");
     let ngroups=rand::thread_rng().gen_range(0,10);
     let ngroups=[1,1,1,2,2,2,3,3,3,4][ngroups];
@@ -788,46 +788,109 @@ fn engenA_dun(locus: &Place)->Vec<usize> {
     gsizes
 }
 
+//A function to increment unique monsters.
+//Also double checks whether monster is incrementable.
+fn engen_unique_monster_incrementer(mon:&str,counter:&mut Vec<(&str,u8,i32)>,B:&Place) -> bool {
+
+	for i in 0..counter.len() {
+		if (B.popu[i].0==mon) & (counter[i].0==mon) & (B.popu[i].2>counter[i].2) {
+			counter[i].2+= 1;
+			return true;
+		};
+	};
+	false
+}
+
+//A function to stop running in circles if all populations of near-unique monsters are exhausted.
+//If true, all populations are exhausted.
+fn engen_futility_break(mon_type:u8,counter:&Vec<(&str,u8,i32)>,B:&Place) -> bool {
+
+	let mut rem_species:i8 = 0;
+	for (pop,count) in B.popu.iter().zip(counter.iter()) {
+		if count.1==mon_type {rem_species+= 1;};
+		if (pop.2<=count.2) & (count.1==mon_type) {rem_species-= 1;};
+	};
+	if rem_species==0 {true}else{false}
+}
+
 //engenB (generates battle variable x).
+//NB, currently not a very efficient function. Luckily doesn't really need to be?
 fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lifeform,usize)>{
 	println!("Entering engenB. Locale: {}. Populatations {}. engenA: {:?}",B.name,B.popu.len(),A);
     let mut enemies: Vec<(Lifeform,usize)> = Vec::new();
     let mut totapop = 0;
     let mut tomoty: Vec<u8> = Vec::new();
     let mut tomo: Vec<&str> = Vec::new();
-    let mut mon_type:u8 = GOBLIN;
-    let n_groups = A.len();
-     println!("EngenB initiated");
-     //generate the thread_gen max value and the type it corresponds to.
-    for l in 0..B.popu.len() {
-		let subpop=vec!(B.popu[l].0; B.popu[l].2 as usize);
-		let subtyp=vec!(B.popu[l].1; B.popu[l].2 as usize);
-        totapop +=B.popu[l].2;
+
+    //Generate a vector of counters of population sizes.
+	//As well as pools for type and monster name.
+    let mut used_pops:Vec<(&str,u8,i32)> = Vec::with_capacity(B.popu.len());
+
+    for (name,typ,population) in B.popu.iter() {
+		used_pops.push((name,*typ,0));
+		let subpop = vec!(name; *population as usize);
+		let subtyp = vec!(*typ; *population as usize);
+        totapop += *population;
         tomo.extend(subpop);
         tomoty.extend(subtyp);
-    };
+	};
+
     println!("threadgen value obtained.tomo: {}. tomoty: {}.",tomo.len(),tomoty.len());
     //generate group type and govern inner loops.
-    for i in 0..n_groups{
+    'everything: for i in 0..A.len(){
         //generate type for group [i]
-        let i_type=rand::thread_rng().gen_range(0,totapop)  as usize;
-        mon_type=tomoty[i_type];
+        let i_type=rand::thread_rng().gen_range(0,totapop) as usize;
+        let mon_type = tomoty[i_type];
+
         //generate each entity in group [i]. NEED TO:select monsters.
         println!("A: {:?}",A);
-        for k in 0..A[i]{
-			let mut enemy_n: &str = "";
+        'outer: for _ in 0..A[i] {
 			let mut k_name:usize = 0;
 			//Make sure that all monsters are of the same type, this will get complex.
-			loop{
-			    k_name=rand::thread_rng().gen_range(0,totapop) as usize;
-			    if tomoty[k_name]==mon_type{break}else{}
-			    println!("Post cleansing tomoty length: {}",tomoty.len());	   
+			let mut extinction = false;
+
+			'inner: loop{
+				if totapop>0 {
+			    	k_name=rand::thread_rng().gen_range(0,totapop) as usize;
+				}else{
+					break 'everything;
+				};
+				println!("i={}.Mon_name: {}. Mon_type = {}. index={}",i,tomo[k_name],tomoty[k_name],k_name);
+				//NB: extinction and futility should be mutually exclusive.
+			    if tomoty[k_name]==mon_type {
+					//If the monster is of the type we are interested in for this group.
+					//Sanity checks for unique monsters.
+					extinction = engen_unique_monster_incrementer(tomo[k_name],&mut used_pops,B);
+					let futility = engen_futility_break(mon_type, &used_pops, B);
+					println!("Extinction = {}, futility = {}",extinction,futility);
+					//let futility = engen_futility_break(&used_pops,B);
+
+					if extinction {
+						break 'inner;
+					}else if futility {
+						break 'outer;
+					};
+			    }else if !lhas(&tomoty,&mon_type){
+					//If the type we are interested in has been exhausted from the monster list.
+					println!("Extinct: {}",tomoty[k_name]);
+					break 'outer;
+				};
+
+			    println!("Post cleansing tomoty length: {}",tomoty.len());
 			};
-			enemy_n = tomo[k_name];
-			let enemy:Lifeform = bestiary[vvwhich_ln(&bestiary,enemy_n)[0]].clone();
-			enemies.push((enemy,i+1))
+
+			//Do not add enemy to group if it is "extinct".
+			//NB, if a place has zero populations, weirdness may occur.
+			if extinction {
+				let enemy:Lifeform = bestiary[vvwhich_ln(&bestiary,tomo[k_name])[0]].clone();
+				enemies.push((enemy,i+1));
+				tomoty.remove(k_name);
+				tomo.remove(k_name);
+				totapop-= 1;
+			};
 		};
     };
+
 	println!("Exiting engenB");
     enemies
 }
@@ -836,7 +899,7 @@ fn engenB<'a,'b>(A:&'a Vec<usize>,B:&'b Place,bestiary:&Vec<Lifeform>)->Vec<(Lif
 fn engen_story_marker(){}
 fn engen_story(content:&Content) -> Vec<(Lifeform,usize)> {
 	let mut enemies:Vec<(Lifeform,usize)> = Vec::with_capacity(23);
-	
+
 	for x in content.actors.iter(){
 		enemies.push((x.1.clone(),x.2));
 	};
@@ -848,7 +911,7 @@ fn engen_story(content:&Content) -> Vec<(Lifeform,usize)> {
 pub fn lvl_upg (mut party:&mut Vec<(Lifeform,usize)>,
 			r:usize,
 			mut t_e_c_i_ll:&mut [bool;8]) {
-	
+
 	let i:usize = r/10;
 	let mut expble:f32 = party[i].0.Exp-party[i].0.ExpUsed;
 	println!("Exp to use:{}",expble);
@@ -931,7 +994,7 @@ pub fn character_dl_mod(mut character: &mut Lifeform, dl: isize) {
 			"Warrior"=>vec![S_DARKNESS],
 			"Wonderer"=>vec![S_EMBER,S_DARKNESS,S_SLOW],
 			_=>vec![],
-		};	
+		};
 	}else{
 		character.Spellist = match character.name {
 			"Witch"=>vec![S_CURE,S_LIGHT,S_EMBER,S_EXORCISM],
