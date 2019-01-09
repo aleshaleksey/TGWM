@@ -1,5 +1,7 @@
 # TGWM (Tales of the Great White Moose)[<img src="https://api.travis-ci.org/aleshaleksey/TGWM.svg?branch=master">](https://travis-ci.org/aleshaleksey/TGWM)
 
+**NB:** Currently compiles (but not with travis) and runs with rust-1.28.0. Compiles and crashes before event loop is build with rust-1.31.1.
+
 A flat RPG written in rust as an etude in using the language.
 
 Aim
