@@ -41,7 +41,7 @@ use omoose::{parse_music_config,ISEKAIN};
 use smoose::{MyStories,Story,Sage};
 use smoose::{sage_generator,sage_poller};
 use smoose::*;
-			
+
 use inflector::Inflector;
 use rand::Rng;
 
@@ -63,27 +63,27 @@ use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Size
 use xmoose::{border_crawler_a,border_crawler_b,border_crawler_c,border_crawler_d,
 			sprite_box_decrement,sprite_approach,spell_setter,sync_s,sync_t,
 			shake_pos_a,cosp,sinp};
-			  
+
 use cmoose::{FlowCWin,GraphicsBox,Landscapes,GUIBox};
-									  
+
 use cmoose::GraphicsBox::Attack;
 
 use tales_of_the_great_white_moose::{MAX_JOIN_EXIT,MAX_LEAVE_EXIT,
 									 MAX_GIVE_EXIT,MAX_TAKE_EXIT,
 									 MIN_GIVE_EXIT,MIN_TAKE_EXIT,FIGHT_EXIT};
 
-use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};	
-			  
+use lmoose::{Spell,Lifeform,Place,Dungeon,warrior,witch,wonderer,loser};
+
 use lmoose::{ANGEL,BEAST,CITY,DEATH,DESERT,EVIL,FIRE,FOREST,GOBLIN,GRASSLAND,
 		     HEALING,HIGHLAND,HOLY,HUMAN,ICE,LIGHTNING,MOORLAND,RADIANT,RUIN,
-		     STEPPE,SPIRIT,TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH};			 
-			 
+		     STEPPE,SPIRIT,TELEPORTATION,TIME,TUNDRA,UNDEAD,VOID,WATER,WITCH};
+
 use dmoose::{malek_grove,monster_hall,citadel_of_spirit,elven_lake_ruins,malachia_pubcrawl,lost_lighthouse,
 			door_to_darkness,white_temple,stairway,witch_maze,way_down,wild_hunt,tower_of_bones,tower_of_flesh,
 			tower_of_soul,hall_of_stone,the_path,on_the_prairie,ice_palace,petrified_shrine,woods_of_winter,
 			abbyss,unique};
-			 
-//General constacts.			 
+
+//General constacts.
 const VOID_TEXT:&str = "You cannot travel through the void.";
 const VOID_TEXT_ESC:&str = "You cannot escape the void by conventional means.";
 const BLANK_THREAD:&str = "";
@@ -101,7 +101,7 @@ const AI_MEM_MAX:f64 = 32_000_000_000.0;
 const AI_MEM_DEFAULT:usize = 500_000_000;
 const ECLAIR_BALL:f64 = 25.0;
 pub const FPS:f32 = 20.0; //Frame rate, will make this variable later.
-pub const FPSU:usize = 20; 
+pub const FPSU:usize = 20;
 
 
 
@@ -135,18 +135,18 @@ fn font_size_chooser_button(w:f64) -> u32 {
 	if 		w>=1080.0 {40}
 	else if w>=800.0  {32}
 	else if w>=640.0  {24}
-	else			  {16}	
+	else			  {16}
 }
 
 fn font_size_chooser_button_b(w:f64) -> u32 {
 	if 		w>=800.0  {20}
-	else			  {16}	
+	else			  {16}
 }
 
 //Function to set the text in the comm_box.
 #[allow(unused_variables)]
 pub fn set_comm_text(mut comm_text:&mut String, ui: &mut conrod::UiCell, ids: & Ids)	{
-	
+
 	let font_size = font_size_chooser_button_b(ui.w_of(ids.master).unwrap_or(800.0));
 	*comm_text = comm_text.to_owned().trim_left().to_owned().trim_right().to_owned();
 	widget::Text::new(comm_text)
@@ -173,10 +173,10 @@ fn set_middle_label(ui: &mut conrod::UiCell, ids: & Ids,text:&str,wh:&[f64;2]){
 //function to pick a random scenery image for a battle background.
 pub fn scenery_setter(landscapes:&Landscapes, locale:u8, centre_w:&mut f64, centre_h:&mut f64)->usize {
 	println!("scenery setter locale = {}",locale);
-	
+
 	*centre_w = rand::thread_rng().gen_range(0.0,400.0);
 	*centre_h = rand::thread_rng().gen_range(0.0,400.0);
-	
+
 	match locale {
 		ICE => {rand::thread_rng().gen_range(0,landscapes.ice.len())},
 		TUNDRA => {rand::thread_rng().gen_range(0,landscapes.tundra.len())},
@@ -190,13 +190,13 @@ pub fn scenery_setter(landscapes:&Landscapes, locale:u8, centre_w:&mut f64, cent
 		MOORLAND => {rand::thread_rng().gen_range(0,landscapes.moorland.len())},
 		VOID => {0},
 		RUIN => {rand::thread_rng().gen_range(0,landscapes.ruin.len())},
-		_ => 0,	
+		_ => 0,
 	}
 }
 
 //function to check if scenery index exceeds number of pictures and needs to be regened.
 fn scenery_l_checker(landscapes:&Landscapes, locale:u8)->usize {
-	
+
 	match locale {
 		ICE => landscapes.ice.len(),
 		TUNDRA => landscapes.tundra.len(),
@@ -210,7 +210,7 @@ fn scenery_l_checker(landscapes:&Landscapes, locale:u8)->usize {
 		MOORLAND => landscapes.moorland.len(),
 		VOID => landscapes.void.len(),
 		RUIN => landscapes.ruin.len(),
-		_ => 0,	
+		_ => 0,
 	}
 }
 
@@ -220,16 +220,16 @@ fn set_battle_background(ui: &mut conrod::UiCell, ids: &mut Ids,
 						 locale:u8,
 						 i:usize,
 						 centre_w:&mut f64, centre_h:&mut f64) {
-							 
+
 	//println!("scenery setter locale = {}",locale);
-	let mut wh = ui.wh_of(ids.middle_column).unwrap();	
+	let mut wh = ui.wh_of(ids.middle_column).unwrap();
 	wh = [wh[0]-6.0,wh[1]-6.0];
 	let mut pic_wh = landscapes.ice[0].1;
 	*centre_w = if wh[0] > pic_wh[0] + *centre_w {*centre_w-(pic_wh[0]+*centre_w-wh[0])}else{*centre_w};
 	*centre_h = if wh[1] > pic_wh[1] + *centre_h {*centre_h-(pic_wh[1]+*centre_w-wh[1])}else{*centre_h};
-	
+
 	if (pic_wh[0]<wh[0]) | (pic_wh[1]<wh[1]) {
-		let snap:conrod::Rect = conrod::Rect::from_xy_dim([wh[0]/2.0+*centre_w,wh[1]/2.0+*centre_h],wh);			 
+		let snap:conrod::Rect = conrod::Rect::from_xy_dim([wh[0]/2.0+*centre_w,wh[1]/2.0+*centre_h],wh);
 		let widget = match locale {
 			ICE => conrod::widget::Image::new(landscapes.ice[i].0)
 										   .wh(wh)
@@ -267,11 +267,11 @@ fn set_battle_background(ui: &mut conrod::UiCell, ids: &mut Ids,
 			RUIN => conrod::widget::Image::new(landscapes.ruin[i].0)
 										   .wh(wh)
 										   .bottom_left_of(ids.middle_column),
-			_ => conrod::widget::Image::new(landscapes.void[0].0).wh(wh).bottom_left_of(ids.middle_column),	
+			_ => conrod::widget::Image::new(landscapes.void[0].0).wh(wh).bottom_left_of(ids.middle_column),
 		};
 		widget.set(ids.battle_background,ui);
 	}else{
-		let snap:conrod::Rect = conrod::Rect::from_xy_dim([wh[0]/2.0+*centre_w,wh[1]/2.0+*centre_h],wh);			 
+		let snap:conrod::Rect = conrod::Rect::from_xy_dim([wh[0]/2.0+*centre_w,wh[1]/2.0+*centre_h],wh);
 		let widget = match locale {
 			ICE => conrod::widget::Image::new(landscapes.ice[i].0)
 										   .wh(wh)
@@ -321,7 +321,7 @@ fn set_battle_background(ui: &mut conrod::UiCell, ids: &mut Ids,
 										   .wh(wh)
 										   .bottom_left_of(ids.middle_column)
 										   .source_rectangle(snap.clone()),
-			_ => conrod::widget::Image::new(landscapes.void[0].0).wh(wh).bottom_left_of(ids.middle_column),	
+			_ => conrod::widget::Image::new(landscapes.void[0].0).wh(wh).bottom_left_of(ids.middle_column),
 		};
 		widget.set(ids.battle_background,ui);
 	};
@@ -331,14 +331,14 @@ fn set_battle_background(ui: &mut conrod::UiCell, ids: &mut Ids,
 fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 
 	let mut wh = ui.wh_of(ids.middle_column).unwrap();
-	let mut centre:conrod::Point = ui.xy_of(ids.middle_column).unwrap();	
+	let mut centre:conrod::Point = ui.xy_of(ids.middle_column).unwrap();
 	wh = [wh[0]-6.0,wh[1]-6.0];
-	
-	
+
+
 	let mut mat = widget::Matrix::new((wh[0]/75.0) as usize,(wh[1]/75.0) as usize)
 					.wh(wh)
 					.middle_of(ids.middle_column);
-					
+
 	let mut mat_a = mat.clone()
 					   .set(ids.battle_background_time_a, ui);
 	let mut mat_b = mat.clone()
@@ -347,21 +347,21 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 					   .set(ids.battle_background_time_c, ui);
 	let mut mat_d = mat.clone()
 					   .set(ids.battle_background_time_d, ui);
-					
+
 	let mut start_point = [0.0,0.0];
 	let mut end_point = [0.0,0.0];
-	
+
 	let max_h = centre[1] + wh[1]/2.0;
 	let min_h = centre[1] - wh[1]/2.0;
 	let max_w = centre[0] + wh[0]/2.0;
 	let min_w = centre[0] - wh[0]/2.0;
-	
+
 	while let Some(elem) = mat_a.next(ui) {
 		border_crawler_a(centre.clone(),wh.clone(),
 						 timer,1,
 						 &mut start_point,&mut end_point,
 						 elem.col+1,elem.row+1,
-						 max_h,min_h,max_w,min_w);		
+						 max_h,min_h,max_w,min_w);
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
@@ -372,7 +372,7 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 						 timer,1,
 						 &mut start_point,&mut end_point,
 						 elem.col+1,elem.row+1,
-						 max_h,min_h,max_w,min_w);		
+						 max_h,min_h,max_w,min_w);
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
@@ -383,7 +383,7 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 						 timer,1,
 						 &mut start_point,&mut end_point,
 						 elem.col+1,elem.row+1,
-						 max_h,min_h,max_w,min_w);		
+						 max_h,min_h,max_w,min_w);
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
@@ -394,13 +394,13 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 						 timer,1,
 						 &mut start_point,&mut end_point,
 						 elem.col+1,elem.row+1,
-						 max_h,min_h,max_w,min_w);		
+						 max_h,min_h,max_w,min_w);
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
 																			1.0)),ui);
 	}
-	
+
 }
 
 
@@ -410,21 +410,21 @@ fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: 
 						mut party: &mut Vec<(Lifeform,usize)>,
 						mut to_cast: &mut String,
 						battle_ifast: usize) {
-	
+
 	//place scroll bar on spells_can canvas.
 	widget::Scrollbar::y_axis(ids.spells_can).auto_hide(true).set(ids.spells_can_scroll, ui);
-	
+
 	let mut spm_wh:[f64;2] = ui.wh_of(ids.spells_can).unwrap();
 	spm_wh = [spm_wh[0]-6.0,spm_wh[1]];
 	let butt_wh:[f64;2] = [spm_wh[1],50.0];
 	let w_mc:f64 = ui.w_of(ids.master).unwrap_or(1080.0);
-	
+
 	//place button matrix of spells on spells_can canvas.
 	let mut spell_menu = conrod::widget::Matrix::new(1,party[battle_ifast].0.Spellist.len())
 			.mid_top_of(ids.spells_can)
 			.wh([spm_wh[0],(party[battle_ifast].0.Spellist.len()*50) as f64])
 			.set(ids.spells_mtrx, ui);
-	
+
 	//activate spell buttons.
 	while let Some(spell) = spell_menu.next(ui) {
 		let r  = spell.row;
@@ -528,7 +528,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 		comm_text = format!("{}",e);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 5;};
-	
+
 	(out,comm_text)
 }
 
@@ -555,7 +555,7 @@ fn set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,com
 		//comm_text = format!("You pressed \"{}\".",e);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 5;};
-	
+
 	(out,comm_text)
 }
 
@@ -573,7 +573,7 @@ fn set_mutant_menu_uni (ui: &mut conrod::UiCell, ids: &mut Ids,e:&str) -> (usize
 										  .middle_of(ids.mut5_box)
 										  .set(ids.mut5_but,ui){
 		out = 5;
-	};	
+	};
 	(out,comm_text)
 }
 
@@ -602,7 +602,7 @@ fn set_mutant_menu_tri (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,e:&
 										  .middle_of(ids.mut5_box)
 										  .set(ids.mut5_but,ui){
 		out = 5;
-	};	
+	};
 	(out,comm_text)
 }
 
@@ -652,19 +652,19 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				sprite_boxer:&mut GraphicsBox,
 				sprite_pos: &mut [[f64;2];25],
 				mtrxp: [f64;2]) {
-					
-	//println!("Inside blv");				
-	let mut map_size = ui.wh_of(ids.middle_column).unwrap();	
+
+	//println!("Inside blv");
+	let mut map_size = ui.wh_of(ids.middle_column).unwrap();
 	while let Some(mut renegade) = mtrx.next(ui) {
 		let r = renegade.row as usize;
 		if r < group.len() {
-			
+
 			//get absolute position of thingies.
 			sprite_pos[group[r].1] = [mtrxp[0]+renegade.rel_x,mtrxp[1]+renegade.rel_y];
-			
+
 			let rel_pos = 5.0*shake_pos_a(timer,shaking_timer,shaking_dam[group[r].1]);
 			renegade.rel_x += rel_pos;
-			
+
 			//If attacker is attackingm modify the position.
 			match *sprite_boxer {
 				Attack(ref mut x) => {
@@ -676,13 +676,13 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				},
 				_ => {},
 			};
-					
+
 			if group[r].1==battle_ifast {
 				pos_bif.0 = *sp;
 				pos_bif.1[0] = renegade.rel_x;
 				pos_bif.1[1] = renegade.rel_y;
 			};
-			
+
 			let x = format!("{}",group[r].0.name);
 			//let y = &x.iwpl();
 			let b = widget::Button::image( if group[r].0.HP_shade/group[r].0.HP>0.0 {mon_faces[group[r].0.id][0]}else{mon_faces[group[r].0.id][2]} )
@@ -710,7 +710,7 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		};
 		//println!("finished element {}",r);
 	};
-	//println!("Exiting blv");					
+	//println!("Exiting blv");
 }
 
 
@@ -734,21 +734,21 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				sprite_boxer:&mut GraphicsBox,
 				sprite_pos: &mut [[f64;2];25],
 				mtrxp: [f64;2]) {
-	
+
 	//Set the button sin the button matrix.
 	while let Some(mut renegade) = mtrx.next(ui) {
-		
+
 		let c = renegade.col as usize;
 		//Don't try to set monster buttons for monsters that don't exist.
-		if c < group.len() {			
-			
+		if c < group.len() {
+
 			//get absolute position of thingies.
 			sprite_pos[group[c].1] = [mtrxp[0]+renegade.rel_x,mtrxp[1]+renegade.rel_y];
-			
+
 			//If hit, shake the button to show damage.
 			let rel_pos = 5.0*shake_pos_a(timer,shaking_timer,shaking_dam[group[c].1]);
-			renegade.rel_x += rel_pos; 
-			
+			renegade.rel_x += rel_pos;
+
 			//If attacker is attackingm modify the position.
 			match *sprite_boxer {
 				Attack(ref mut x) => {
@@ -760,14 +760,14 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				},
 				_ => {},
 			};
-			
-			//If turn of this one, put the circle marker here.			
+
+			//If turn of this one, put the circle marker here.
 			if group[c].1==battle_ifast {
 				pos_bif.0 = *sp;
 				pos_bif.1[0] = renegade.rel_x;
 				pos_bif.1[1] = renegade.rel_y;
 			};
-			
+
 			//set the monster, name and all.
 			let x = format!("{}",group[c].0.name);
 			let y = &x.x_chr_pl2(12);
@@ -779,8 +779,8 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 											.label_font_size(font_size)
 											.label_y(conrod::position::Relative::Scalar(bh/2.0+4.0))
 											.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
-			
-			//depending on phase of player turn, decide what to do on click. 
+
+			//depending on phase of player turn, decide what to do on click.
 			for _click in renegade.set(b,ui) {
 				if !yt_adcwpe_bw[0] { //If just started
 					//println!("d1");
@@ -799,11 +799,11 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 					*sel_targets = vec![group[c].1];
 				};
 			};
-			//println!("e");				
+			//println!("e");
 		};
 		//println!("finished element {}",c);
 	};
-	//println!("Exiting blh");					
+	//println!("Exiting blh");
 }
 
 
@@ -828,7 +828,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				  shaking_timer: &mut usize,
 				  battle_ifast: usize,
 				  pause: bool) {
-					  
+
 	//println!("Inside set_battle_map");
 
 	//get measurements of middle column and hence make width and height.
@@ -837,17 +837,17 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let factor = if wh_mc[0]/760.0 > wh_mc[1]/540.0 {wh_mc[1]/540.0}else{wh_mc[0]/760.0};
 	let base_h:f64 = mon_facesz[0][1] as f64 * factor;
 	let base_w:f64 = mon_facesz[0][0] as f64 * factor;
-	
+
 	let font_size = font_size_chooser(&wh_mc);
-	
-	let pad_w:f64 = base_h/5.0; 
+
+	let pad_w:f64 = base_h/5.0;
 	let pad_h:f64 = base_w/2.5;
 	let bh:f64 = base_h + pad_h;
 	let bh2:f64 = base_h + pad_h/2.0;
 	let bw:f64 = base_w + pad_w;
 	let mut pos_bif:(Option<conrod::Point>,[conrod::position::Scalar;2]) = (None,[0.0,0.0]);
 	let mut spare_point:Option<conrod::Point> = None;
-	
+
 	//set up variables:
 	let enc_l = encounter.len();
 	let mut enc_c:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
@@ -855,27 +855,27 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let mut enc_e:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
 	let mut enc_s:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
 	let mut enc_w:Vec<(Lifeform,usize)> = Vec::with_capacity(5);
-	
+
 	//Assign groups, but only if they're there (not 255)
 	for i in 0..encounter.len() {
-		if in_battle_record[in_battle_record.len()-1][i+6] != 255 {	
+		if in_battle_record[in_battle_record.len()-1][i+6] != 255 {
 			match encounter[i].1 {
 				0 => enc_c.push((encounter[i].0.clone(),i)),
 				1 => enc_n.push((encounter[i].0.clone(),i)),
 				2 => enc_e.push((encounter[i].0.clone(),i)),
 				3 => enc_s.push((encounter[i].0.clone(),i)),
 				_ => enc_w.push((encounter[i].0.clone(),i)),
-			};	
+			};
 		};
 	};
-	
+
 	let enc_cl = enc_c.len(); let enc_clf:f64 = enc_cl as f64;
 	let enc_nl = enc_n.len(); let enc_nlf:f64 = enc_nl as f64;
 	let enc_el = enc_e.len(); let enc_elf:f64 = enc_el as f64;
 	let enc_sl = enc_s.len(); let enc_slf:f64 = enc_sl as f64;
 	let enc_wl = enc_w.len(); let enc_wlf:f64 = enc_wl as f64;
 	//create canvases for all four parties.
-	
+
 	//println!("Inside set_battle_map A length of enc_c = {}",enc_cl);
 	//set up obligatory matrices and canvases.
 	canvas_border(widget::Canvas::new().middle_of(ids.middle_column)
@@ -884,23 +884,23 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						 //.label_color(color::YELLOW)
 						 //.label("Party"),
 				  Some(0.0)).set(ids.partyc_can,ui);
-		
+
 	let mut enc_c_matrix = widget::Matrix::new(enc_cl,1)
 			.wh([bw*enc_clf,base_h])
 			.mid_bottom_of(ids.partyc_can)
 			.cell_padding(pad_w,0.0)
 			.set(ids.partyc_mtrx, ui);
-			
+
 	let wh_enc_cm = ui.xy_of(ids.partyc_mtrx).unwrap_or([0.0,0.0]);
-			
+
 	//println!("Inside set_battle_map B");
-	//NB: Party canvas is inlined directly. After all, why not.		
+	//NB: Party canvas is inlined directly. After all, why not.
 	while let Some(mut renegade) = enc_c_matrix.next(ui) {
 		let c = renegade.col as usize;
 		if c<enc_c.len(){
 			//NB CURRENTLY ONLY REL POS. THIS NEEDS FIXED.
 			sprite_pos[enc_c[c].1] = [renegade.rel_x+wh_enc_cm[0],renegade.rel_y+wh_enc_cm[1]];
-			
+
 			//If attacker is attackingm modify the position.
 			match *sprite_boxer {
 					Attack(ref mut x) => {
@@ -912,16 +912,16 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 					},
 					_ => {},
 				};
-			
+
 			let rel_pos = 5.0*shake_pos_a(timer,*shaking_timer,shaking_dam[enc_c[c].1]);
-			renegade.rel_x += rel_pos; 
-			
+			renegade.rel_x += rel_pos;
+
 			if enc_c[c].1==battle_ifast {
 				pos_bif.0 = ui.xy_of(ids.partyc_mtrx);
 				pos_bif.1[0] = renegade.rel_x;
 				pos_bif.1[1] = renegade.rel_y;
 			};
-			
+
 			let x = format!("\n{}",p_names[c]);
 			let y = &x.x_chr_pl(8);
 			let b = widget::Button::image( if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 {mon_faces[enc_c[c].0.id][0]}else{mon_faces[enc_c[c].0.id][2]} )
@@ -932,7 +932,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 									.label_font_size(font_size)
 									.label_y(conrod::position::Relative::Scalar(bh/2.0))
 									.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
-			
+
 			for _click in renegade.set(b,ui) {
 				if !yt_adcwpe_bw[0] {
 					*comm_text = format!("{} is {}.",p_names[c],sm_rets(&enc_c[c].0));
@@ -950,7 +950,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			};
 		};
 	};
-	
+
 	//println!("Inside set_battle_map C");
 	if enc_nl>0 {
 		canvas_border(widget::Canvas::new()
@@ -965,12 +965,12 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemyn_can)
 			.cell_padding(pad_w,0.0)
 			.set(ids.enemyn_mtrx, ui);
-			
+
 		//println!("enc_nl={}",enc_nl);
 		//println!("enc_n.len={}",enc_n.len());
 		spare_point = ui.xy_of(ids.enemyn_mtrx);
 		let point = ui.xy_of(ids.enemyn_mtrx).unwrap_or([0.0;2]);
-			
+
 		battle_line_h(ids,ui,mon_faces,enc_n_matrix,
 					  &enc_n,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
@@ -989,12 +989,12 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemye_can)
 			.cell_padding(pad_w,pad_h/4.0)
 			.set(ids.enemye_mtrx, ui);
-			
+
 		spare_point = ui.xy_of(ids.enemye_mtrx);
 		let point = ui.xy_of(ids.enemye_mtrx).unwrap_or([0.0;2]);
-		
+
 		//println!("enc_el={}",enc_el);
-		
+
 		battle_line_v(ids,ui,mon_faces,enc_e_matrix,
 					  &enc_e,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
@@ -1013,12 +1013,12 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemys_can)
 			.cell_padding(pad_w,0.0)
 			.set(ids.enemys_mtrx, ui);
-			
+
 		spare_point= ui.xy_of(ids.enemys_mtrx);
 		let point = ui.xy_of(ids.enemys_mtrx).unwrap_or([0.0;2]);
-		
+
 		//println!("enc_sl={}",enc_sl);
-		//println!("enc_s.len={}",enc_s.len());	
+		//println!("enc_s.len={}",enc_s.len());
 		battle_line_h(ids,ui,mon_faces,enc_s_matrix,
 					  &enc_s,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
@@ -1037,37 +1037,37 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			.mid_bottom_of(ids.enemyw_can)
 			.cell_padding(pad_w,pad_h/4.0)
 			.set(ids.enemyw_mtrx, ui);
-			
+
 		spare_point = ui.xy_of(ids.enemyw_mtrx);
 		let point = ui.xy_of(ids.enemyw_mtrx).unwrap_or([0.0;2]);
-		
+
 		//println!("enc_wl={}",enc_wl);
-		
+
 		battle_line_v(ids,ui,mon_faces,enc_w_matrix,
 					  &enc_w,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
 					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
 	};
-	
+
 	//Set the wondering circle if target has not been murderified and game is not paused.
 	//println!("Inside set_battle_map D");
 	if (encounter[battle_ifast].0.HP_shade>0.0) & !pause {
-		set_marker_of_go(ids,ui,pos_bif,timer,battle_ifast,encounter,base_h);	
-	};	 
-	
+		set_marker_of_go(ids,ui,pos_bif,timer,battle_ifast,encounter,base_h);
+	};
+
 	//Set spell effects if needs be.
 	spell_setter(ids,ui,sprite_boxer,sprite_pos);
-	
+
 	//decrement sprite box.
 	sprite_box_decrement(sprite_boxer,wo,timer,shaking_timer,shaking_dam);
-	//println!("Exiting set_battle_map C"); 
+	//println!("Exiting set_battle_map C");
 	//println!("{:?}",sprite_boxer);
 }
 
 
 
 //function to set two circles which circle the Lifeform whose turn it is,
-//with a speed proportional to the lifeform speed. 
+//with a speed proportional to the lifeform speed.
 //Uses parabolic trig function- faster than normal trig..
 fn set_marker_of_go_marker(){}
 fn set_marker_of_go(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
@@ -1076,12 +1076,12 @@ fn set_marker_of_go(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 					battle_ifast: usize,
 					encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 					size:f64) {
-	
+
 	//At speed of 50, the period of rotation will equal 2 seconds.
-	//There may be a problem with odd vs even numbers (now fixed).					
+	//There may be a problem with odd vs even numbers (now fixed).
 	let half_period:usize = (FPS * 50.0/encounter[battle_ifast].0.Speed_shade) as usize*2;
 	let period:usize = half_period*2;
-						
+
 	conrod::widget::RoundedRectangle::fill_with([10.0,10.0],5.0,colour_of_monster(encounter[battle_ifast].0.Type).with_alpha(0.3))
 									 .x(pos_bif.0.clone().unwrap()[0]+pos_bif.1[0]+size*0.62*sinp(timer,period))
 									 .y(pos_bif.0.clone().unwrap()[1]+pos_bif.1[1]+size*0.62*cosp(timer,period))
@@ -1106,25 +1106,25 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				timer:usize,
 				freeze_timer:&mut usize,
 				comm_text:&mut String)->GUIBox<'a> {
-	
+
 	//NB! Middle column must exist!
 	let xy = ui.xy_of(ids.middle_column).unwrap();
 	let wh = ui.wh_of(ids.middle_column).unwrap();
-										 
+
 	//set the buttons.
 	let xy_sage = [xy[0]+wh[0]/4.0,xy[1]];
 	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
 								 .xy(xy_sage)
 								 .color(BACKGR_COLOUR)
 								 .set(ids.sage_menu,ui);
-								 
+
 	//set the dialog.
 	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW)
 											  .top_left_of(ids.sage_menu);
-	
-	//Decidde which part of the sage to use.										  
+
+	//Decidde which part of the sage to use.
 	let strings:[&str;6] = match stage {
 		GREETING1 => {sage.get_first_q1()},
 		GREETING2 => {sage.get_first_q2()},
@@ -1144,25 +1144,25 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 			sage.get_post_spell()
 		},
 		_		 => {sage.get_post_goodbye()},
-	};		
-	
+	};
+
 	let buy_spells = if (stage==GREETING2) | (stage==GREETING1) {"I want to learn a spell."}else{""};
-	
-	//Initialise buttons.										  
+
+	//Initialise buttons.
 	let b1 = button.clone().label(strings[0]).set(ids.sage_dialog_but_1,ui);
 	let b2 = button.clone().label(strings[1]).down_from(ids.sage_dialog_but_1,0.0).set(ids.sage_dialog_but_2,ui);
 	let b3 = button.clone().label(strings[2]).down_from(ids.sage_dialog_but_2,0.0).set(ids.sage_dialog_but_3,ui);
 	let b4 = button.clone().label(strings[3]).down_from(ids.sage_dialog_but_3,0.0).set(ids.sage_dialog_but_4,ui);
 	let b5 = button.clone().label(buy_spells).down_from(ids.sage_dialog_but_4,0.0).set(ids.sage_dialog_but_5,ui);
 	let b6 = button.clone().label(strings[4]).down_from(ids.sage_dialog_but_5,0.0).set(ids.sage_dialog_but_6,ui);
-	
+
 	if stage != GOODBYE {
 		//Set sage's picture.
 		let xy_sage = [xy[0]-wh[0]/4.0,xy[1]];
 		conrod::widget::Image::new(*sage.face).wh(SAGE_SIVE)
 										 .xy(xy_sage)
 										 .set(ids.sage_shadow,ui);
-		
+
 		if (stage != SPELL1) & (stage != GREETING1) {
 			*comm_text = strings[5].to_owned()
 		}else if stage==GREETING1 {
@@ -1171,7 +1171,7 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	}else{
 		*comm_text = format!("{}\n***Press Enter to Continue***",strings[5]);
 	};
-	
+
 	//Functionalise buttons.
 	if stage != GOODBYE {
 		for _click in b1 {
@@ -1212,7 +1212,7 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 			};
 		};
 	};
-	
+
 	gui_box
 }
 
@@ -1243,11 +1243,11 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 				timer:usize,
 				freeze_timer:&mut usize,
 				comm_text:&mut String)->GUIBox<'a> {
-					
+
 	//NB! Middle column must exist!
 	let xy = ui.xy_of(ids.middle_column).unwrap();
 	let wh = ui.wh_of(ids.middle_column).unwrap();
-	
+
 	//Put all the ids in one box.
 	//working off the assumption that sage screen and story
 	//screen will never be seen together.
@@ -1258,7 +1258,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 							   ids.story_shadow3,
 							   ids.story_shadow4,
 							   ids.story_shadow5];
-	
+
 	//if the exit code for the first part is 0 (no exit recorded)
 	//use content, else use the appropriate conclusion
 	//as determined by the conclusion variable.
@@ -1270,7 +1270,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		conclude = true;
 		story.try_get_completion_cont(conclusion)
 	};
-						   
+
 	//get number of actors:
 	let mut offset:f64 = (content.actors.len()-1) as f64*50.0;
 	for (i,x) in content.actors.iter().enumerate() {
@@ -1281,28 +1281,28 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 			offset-= 100.0;
 		};
 	};
-	
+
 	//set the button canvas.
 	let xy_answers = [xy[0]+wh[0]/4.0,xy[1]-BORDER];
 	conrod::widget::Canvas::new().wh([wh[0]/2.0-BORDER*2.0,wh[1]-BORDER*2.0])
 								 .xy(xy_answers)
 								 .color(BACKGR_COLOUR)
 								 .set(ids.sage_menu,ui);
-								 
+
 	//create button. Needs ids.sage_menu to be set.
 	let wh_button = [wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0];
 	let mut offset:f64 = (wh[1]-wh_button[1])/2.0;
-	
+
 	let button = conrod::widget::Button::new().wh(wh_button)
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW);
-	
+
 	//set comm_text
 	*comm_text = content.phrases_by_key.get(&stage_in).unwrap().1.to_owned();
-	
+
 	//get the codes for the button dialogs.
 	let next_gen:&Vec<u16> = &content.phrases_by_key.get(&stage_in).unwrap().0;
-	
+
 	//create button id list.
 	let button_indices = vec![ids.sage_dialog_but_1,
 							  ids.sage_dialog_but_2,
@@ -1310,22 +1310,22 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 							  ids.sage_dialog_but_4,
 							  ids.sage_dialog_but_5,
 							  ids.sage_dialog_but_6];
-	
-	//set buttons.						  
+
+	//set buttons.
 	for (i,x) in next_gen.iter().enumerate() {
 		if i<6 {
 			for _click in button.clone().label(&content.phrases_by_key.get(x).unwrap().1)
 										.label_font_size(13)
 									    .xy([xy_answers[0],xy_answers[1]+offset])
 									    .set(button_indices[i],ui){
-				
-				//On click get the next part of the dialog.							
+
+				//On click get the next part of the dialog.
 				println!("Button {} is pressed",i);
 				let next_x = content.phrases_by_key.get(x).unwrap().0[0];
 				println!("Button {} is pressed, ext_x = {}",i,next_x);
 				if lhas(&content.exit_nodes,&next_x) {
 					println!("We're getting to an exit node: MyStories = {:?}",my_stories);
-					
+
 					my_stories.insert_exit_code(story.id,next_x,conclude);
 					*freeze_timer = timer;
 					*pause = true;
@@ -1336,15 +1336,15 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 			offset-= wh_button[1];
 		};
 	};
-	
-	//This is a hack and probably not very efficient.	
+
+	//This is a hack and probably not very efficient.
 	if !*pause & lhas(&content.exit_nodes,&stage_in) {
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
 		my_stories.insert_exit_code(story.id,stage_in,conclude);
 		println!("We're getting to an exit node: MyStories = {:?}",my_stories);
 		*pause = true;
 	};
-	
+
 	//Various types of stroy content exits.
 	if (stage_in==FIGHT_EXIT) & lhas(&content.exit_nodes,&stage_in) {
 		println!("We're getting to an exit node666: MyStories = {:?}",my_stories);
@@ -1375,8 +1375,8 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		content.item_from_party(party);
 		println!("We're getting to a leave exit node: MyStories = {:?}",my_stories);
 	};
-	
-	gui_box		
+
+	gui_box
 }
 
 //Put the world map where it's meant to be.
@@ -1401,30 +1401,30 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						timer:usize,
 						mut tt_e_c_i_ll: &mut [bool;8],
 						mut provisional_loc: &mut (usize,usize)) {
-		
+
 	*tt_e_c_i_ll = [true,tt_e_c_i_ll[1],false,false,false,tt_e_c_i_ll[5],tt_e_c_i_ll[6],false];
-	
+
 	//get number of rows. and the map size.
 	let world_len = world.len();
 	let wml = world_len-1;
 	let mut map_size = ui.wh_of(ids.middle_column).unwrap();
 	map_size = [map_size[0]-6.0,map_size[1]-6.0];
-	
+
 	let mut world_matrix = widget::Matrix::new(world_len,19)
 		.wh(map_size)
 		.middle_of(ids.middle_column)
 		.set(ids.global_map_matrix, ui);
-		
+
 	let mut button = widget::Button::new();
 	let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
-	
+
 	//Kind of fixed.
 	while let Some(mut square) = world_matrix.next(ui) {
 		let (r, c) = (square.row as usize, square.col as usize);
 		//if !tt_e_c_i_ll[0]{println!("{:?}",(r,c));};
 		let butt_col = map_sq_colour(&world[wml-c][r]);
 		let butt_txc = map_tx_colour(&world[wml-c][r]);
-		
+
 		//Set grid button.
 		let grid_button = if &(c,r)==pl {
 			square.set(button.clone().color(butt_col.with_luminance(sync_t(timer)))
@@ -1437,13 +1437,13 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 									// .label_color(butt_txc)
 									,ui)
 		};
-	
+
 		//Functionalise: Just teleport to clicked square.
 		for _click in grid_button {
 			//println!("Hey! {:?}", world[wml-c][r]);
 			*pl = (c,r);
 			*p_loc = world[wml-c][r].clone();
-			
+
 			if rand_enc(p_loc) {
 				*gui_box = GUIBox::GameFight(true);
 				*gui_box_previous = GUIBox::GameTravel;
@@ -1453,7 +1453,7 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 				*gui_box_previous = GUIBox::GameTravelTeleport;
 				*gui_box = GUIBox::GameTravel;
 			};
-				
+
 			set_comm_text(comm_text,ui,ids);
 			tt_e_c_i_ll[1] = true;
 		};
@@ -1480,50 +1480,50 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						timer:usize,
 						mut tt_e_c_i_ll: &mut [bool;8],
 						mut provisional_loc: &mut (usize,usize)) {
-		
+
 		//set tteci[0] to true.
 		*tt_e_c_i_ll = [true,tt_e_c_i_ll[1],false,false,false,tt_e_c_i_ll[5],tt_e_c_i_ll[6],false];
-		
+
 		//get number of rows. and the map size.
 		let world_len = world.len();
 		let wml = world_len-1;
-		
+
 		let mut map_size = ui.wh_of(ids.middle_column).unwrap();
 		let mut bp = ui.xy_of(ids.middle_column).unwrap();
-	
+
 		map_size = [map_size[0]-6.0,map_size[1]-6.0];
 		let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
 		bp = [bp[0]-(map_size[0]-square_size[0])/2.0,bp[1]-(map_size[1]-square_size[1])/2.0];
-		
+
 		widget::Image::new(*map)
 			.middle_of(ids.middle_column)
 			.wh(map_size)
 			.set(ids.global_map_image, ui);
-		
+
 		//initiate the five buttons.
 		let (c,r) = pl.clone();
 		let butt_col = color::BLACK.with_alpha(0.0);
 		let butt_txc = map_tx_colour(&world[wml-c][r]);
-		
+
 		//initiate the invisible buttons.
 		let mut button_n = widget::Button::new().wh(square_size).color(butt_col);
-		
+
 		//initate pulse variable
 		let s_sync = sync_s(timer);
-						   
+
 		let mut button_c = widget::Button::image(mon_faces[party[0].0.id][0])
 										.wh([square_size[0]*s_sync,square_size[0]*s_sync])
 										.hover_image(mon_faces[party[0].0.id][1])
 										.press_image(mon_faces[party[0].0.id][1]);
-						   
-		button_c = reposition_geography_button(button_c,c,r,wml,&square_size,&bp);	
-		
+
+		button_c = reposition_geography_button(button_c,c,r,wml,&square_size,&bp);
+
 		for _click in button_c.set(ids.center_button,ui) {
 			//println!("Hey! {:?}", world[wml-c][r]);
 			*comm_text = format!("You are here: {}", world[wml-c][r]);
 			set_comm_text(comm_text,ui,ids);
 		}
-		
+
 		set_geographical_button('N',
 								ids,ui,button_n.clone(),
 								world,
@@ -1531,7 +1531,7 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 								wml,pl,provisional_loc,
 								comm_text,
 								tt_e_c_i_ll);
-								
+
 		set_geographical_button('S',
 								ids,ui,button_n.clone(),
 								world,
@@ -1539,7 +1539,7 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 								wml,pl,provisional_loc,
 								comm_text,
 								tt_e_c_i_ll);
-								
+
 		set_geographical_button('E',
 								ids,ui,button_n.clone(),
 								world,
@@ -1547,7 +1547,7 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 								wml,pl,provisional_loc,
 								comm_text,
 								tt_e_c_i_ll);
-								
+
 		set_geographical_button('W',
 								ids,ui,button_n,
 								world,
@@ -1555,7 +1555,7 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 								wml,pl,provisional_loc,
 								comm_text,
 								tt_e_c_i_ll);
-								
+
 }
 
 // set the invisible buttons.
@@ -1570,9 +1570,9 @@ fn set_geographical_button<'a>(dir:char,
 						   provisional_loc:&mut(usize,usize),
 						   comm_text: &mut String,
 						   tt_e_c_i_ll:&mut [bool;8]) {
-	
+
 	let (a,b) = geographical_button(wml,pl.0,pl.1,dir);
-		
+
 	let butt_txc = map_tx_colour(&world[wml-a][b]);
 	let butt_col = color::BLACK.with_alpha(0.0);
 
@@ -1582,7 +1582,7 @@ fn set_geographical_button<'a>(dir:char,
 					   .border_color(butt_col)
 			           .bottom_left_of(ids.middle_column);
 	button = reposition_geography_button(button,a,b,wml,&square_size,&bp);
-	
+
 	let button_id = match dir {
 		'N' => {ids.north_button},
 		'S' => {ids.south_button},
@@ -1590,17 +1590,17 @@ fn set_geographical_button<'a>(dir:char,
 		'W' => {ids.west_button},
 		 _	=> {ids.north_button},
 	};
-	
-	for _click in button.set(button_id,ui) { 
+
+	for _click in button.set(button_id,ui) {
 				//println!("Hey! {:?}", world[wml-c][r]);
 		*comm_text = if world[wml-a][b].scape==VOID{
-			format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)	
+			format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT)
 		}else if world[wml-pl.0][pl.1].scape==VOID {
 			format!("Ho! You can see: {}{}", world[wml-a][b],VOID_TEXT_ESC)
 		}else{
-			format!("Ho! You can see: {}", world[wml-a][b])					
+			format!("Ho! You can see: {}", world[wml-a][b])
 		};
-		*provisional_loc = (a,b);	
+		*provisional_loc = (a,b);
 		set_comm_text(comm_text,ui,ids);
 		tt_e_c_i_ll[1] = true;
 	}
@@ -1610,7 +1610,7 @@ fn set_geographical_button<'a>(dir:char,
 fn geographical_button(wml:usize,c:usize,r:usize,direction:char) -> (usize,usize) {
 	let new_c:usize;
 	let new_r:usize;
-	
+
 	if direction=='N' {
 		new_c = c;
 		new_r = if r<2 {0}else{r-1};
@@ -1634,7 +1634,7 @@ fn reposition_geography_button<T:Positionable> (button_c:T,
 								wml:usize,
 								sq_size:&[f64;2],
 								base_pos:&[f64;2]) -> T  {
-	
+
 	button_c.xy([base_pos[0]+sq_size[0]*(c) as f64, base_pos[1]+sq_size[1]*(18-r) as f64])
 }
 
@@ -1685,16 +1685,16 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 					  wo: &mut FlowCWin,
 					  faces:&Vec<[conrod::image::Id;3]>,
 					  landscapes:&Landscapes) {
-	// main canvas					  
+	// main canvas
 	widget::Canvas::new().floating(true)
 						 .color(color::BLACK)
 						 .wh_of(ids.middle_column)
 						 .middle_of(ids.middle_column)
 						 .set(ids.options_canvas,ui);
-	
+
 	let wh_mc = ui.wh_of(ids.middle_column).unwrap();
 	let font_size = font_size_chooser(&wh_mc);
-	
+
 	// tabs for each set of options.
 	widget::Tabs::new(&[(ids.opt_antlers,"Antlers"),(ids.opt_graphics,"Graphics Options"),(ids.opt_music,"Sound Options")])
 				 //.color(color::BLACK)
@@ -1706,17 +1706,17 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 				 .wh_of(ids.middle_column)
 				 .middle_of(ids.options_canvas)
 				 .set(ids.opt_can_tabs,ui);
-			 
+
 	let mut wh_muse = ui.wh_of(ids.opt_can_tabs).unwrap();
 	let win_wh = ui.wh_of(ids.master).unwrap();
 	wh_muse = [wh_muse[0]-BORDER*2.0,wh_muse[1]-BORDER*2.0-50.0];
 	let mut xy_muse = ui.xy_of(ids.opt_antlers).unwrap();
 	let mut wh_butt = ui.wh_of(ids.ng_button).unwrap();
 	wh_butt[0] = wh_muse[0]/2.0-BORDER;
-	
+
 	let opt_button = widget::Button::new().color(color::DARK_RED)
 									   .label_font_size(font_size_chooser_button_b(win_wh[0]));
-	
+
 	//*****SET SOUND OPTIONS*******
 	// Try update song list manually, if some git messes with onfig file.
 	for _click in opt_button.clone().wh(wh_butt)
@@ -1724,38 +1724,38 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 									.label("Update Playlist")
 									.set(ids.update_song_list_button,ui) {
 		println!("Updating song list!");
-		parse_music_config(song_list);									      
+		parse_music_config(song_list);
 	}
 	let silence_label = if wo.silence {"Enable Sound"}else{"Disable Sound"};
-	
+
 	// Toggle mute button
 	for _click in opt_button.clone().wh(wh_butt)
 									.right_from(ids.update_song_list_button,0.0)
 									.label(silence_label)
 									.set(ids.toggle_sound_button,ui) {
 		print!("Toggling sound. past silence = {}, ",wo.silence);
-		wo.silence = !wo.silence; 
+		wo.silence = !wo.silence;
 		println!("present silence = {}.",wo.silence);
-		silent_sender.try_send(wo.silence);								      
+		silent_sender.try_send(wo.silence);
 	}
-	
+
 	//Canvas for matrix of song buttons
 	widget::Canvas::new().wh([wh_muse[0]-BORDER*2.0,wh_muse[1]-wh_butt[1]-BORDER*2.0])
 						 .down_from(ids.update_song_list_button,0.0)
 						 .scroll_kids_vertically()
 						 .border(BORDER)
 						 .border_color(BORDER_COLOUR)
-						 .set(ids.song_list_can,ui);				  
+						 .set(ids.song_list_can,ui);
 	let slcs = ui.wh_of(ids.song_list_can).unwrap();
-	
+
 	//widget::Scrollbar::y_axis(ids.song_list_can).auto_hide(true).set(ids.songl_scroll, ui);
-	
+
 	//song matrix
 	let mut song_matrix = widget::Matrix::new(1,song_list.len())
 										.mid_top_of(ids.song_list_can)
 										.wh([slcs[0]-BORDER*2.0,50.0*song_list.len() as f64])
 										.set(ids.song_list, ui);
-	
+
 	//set elements of song matrix (ie buttons for changing the themes.
 	while let Some(case) = song_matrix.next(ui) {
 		let i = case.row;
@@ -1764,7 +1764,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 									.label(&text)
 									.color(color::DARK_RED);
 		for _click in case.set(song_button,ui) {
-			
+
 			println!("Enter function to launch file browser to find a song. What a drag");
 			*ipath = Some((i,song_list[i].clone()));
 			wo.mub_path = if song_list[i]=="Standard" {
@@ -1774,10 +1774,10 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 			};
 		};
 	}
-	
+
 	//*****SET GRAPHICS OPTIONS*****
 	//Set interface brightness text
-	
+
 	widget::Text::new(&format!("Set interface brightness: {:.2}",wo.ifc))
 									.color(color::GREEN.with_luminance(0.66))
 									.top_left_of(ids.opt_graphics)
@@ -1792,10 +1792,10 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 					  ids.opt_interface_brightness_text,
 					  &mut var, 1.0,-1.0,
 					  BUTTON_COLOUR);
-	wo.ifc = var;					
-	
-	//set background brightness adjustment text.	
-	  
+	wo.ifc = var;
+
+	//set background brightness adjustment text.
+
 	widget::Text::new(&format!("Background brightness: {:.2}",wo.bgc))
 									.color(color::GREEN.with_luminance(0.66))
 									.font_size(font_size)
@@ -1812,7 +1812,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 					  BUTTON_COLOUR);
 	wo.bgc = var2;
 
-	// Reset Background brightness (and reload)	
+	// Reset Background brightness (and reload)
 	for _click in opt_button.clone()
 						    .wh(wh_butt)
 						    .down_from(ids.opt_background_brightness_slider,2.0)
@@ -1820,19 +1820,19 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						    .set(ids.opt_reload_backgrounds_default,ui) {
 		print!("Reload backgrounds to default pressed");
 		wo.bgc = 0.0;
-		wo.update_bgc = true;				      
+		wo.update_bgc = true;
 	}
 	// Reload Backgrounds (with new settings).
-	
+
 	for _click in opt_button.clone()
 						    .wh(wh_butt)
 						    .right_from(ids.opt_reload_backgrounds_default,0.0)
 						    .label("Reload")
 						    .set(ids.opt_reload_backgrounds,ui) {
 		print!("Reload backgrounds to new value pressed");
-		wo.update_bgc = true;									      
+		wo.update_bgc = true;
 	}
-	
+
 	// Set Sample images.
 	if landscapes.grassland.get(0).is_some() & !wo.update_bgc {
 		widget::Image::new(landscapes.grassland[0].0)
@@ -1845,17 +1845,17 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 					  .wh([wh_muse[0]/8.0,wh_muse[1]/8.0])
 					  .bottom_right_with_margins_on(ids.opt_graphics,wh_muse[1]/4.0,wh_muse[0]/4.0)
 					  .set(ids.opt_sample_sprite,ui);
-		
+
 	};
-					  		
-	//******SET AI OPTIONS*********			
+
+	//******SET AI OPTIONS*********
 	widget::Text::new(&format!("Adjust Maximum memoy for AI (currently {} MB)",wo.ai_mem/1_000_000))
 				  .color(color::GREEN.with_luminance(0.66))
 				  .font_size(font_size)
 				  .top_left_with_margin_on(ids.opt_antlers,BORDER)
 				  .left_justify()
 				  .set(ids.opt_antlers_unimp,ui);
-				  
+
 	for slide in conrod::widget::Slider::new(wo.ai_mem as f64,AI_MEM_MIN,AI_MEM_MAX)
 									   .w(wh_muse[0]-4.0*BORDER).h(SLIDE_H)
 									   .color(BUTTON_COLOUR)
@@ -1863,18 +1863,18 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 									   .border_color(BORDER_COLOUR)
 									   .down_from(ids.opt_antlers_unimp,BORDER)
 									   .set(ids.opt_antlers_slider,ui) {
-		wo.ai_mem = slide as usize;										   
+		wo.ai_mem = slide as usize;
 	};
-	
+
 	for _click in opt_button.clone()
 						    .wh(wh_butt)
 						    .down_from(ids.opt_antlers_slider,3.0)
 						    .label("Reset Limit")
 						    .set(ids.opt_antlers_reset_but,ui) {
 		print!("Reset memory pressed.");
-		wo.ai_mem = AI_MEM_DEFAULT;									      
+		wo.ai_mem = AI_MEM_DEFAULT;
 	}
-	
+
 }
 
 //Set slider (for options brightnessess.
@@ -1886,21 +1886,21 @@ fn set_h_slider_f32 (ui: &mut conrod::UiCell,
 					 var:&mut f32,
 					 max:f64,min:f64,
 					 slide_col: color::Colour) {
-	
+
 	let mut wh = ui.wh_of(id_template).unwrap();
-	
+
 	wh[0] = wh[0]/2.0-BORDER*2.0;
-	
+
 	let mut slide = conrod::widget::Slider::new(*var as f64,min,max)
 										   .w(wh[0]).h(SLIDE_H)
 										   .color(slide_col)
 										   .border(BORDER)
 										   .border_color(BORDER_COLOUR)
 										   .down_from(id_anchor,BORDER);
-												   
+
 	for slide in slide.set(id_slide,ui){
 		*var = slide as f32;
-	}; 
+	};
 }
 
 
@@ -1913,10 +1913,10 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 					 ipath:&mut Option<(usize,String)>,
 					 song_list: &mut Vec<String>,
 					 wo: &mut FlowCWin) {
-						 
+
 	let (i,song) = ipath.clone().unwrap_or((0,"Standard".to_owned()));
-	
-	
+
+
 	//set file browser canvas.
 	widget::Canvas::new().wh_of(ids.options_canvas)
 						 .middle_of(ids.options_canvas)
@@ -1924,14 +1924,14 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 						 .border_color(BORDER_COLOUR)
 						 .pad(BORDER)
 						 .set(ids.file_browser_can,ui);
-	
+
 	let mut sap = ui.wh_of(ids.file_browser_can).unwrap();
-	
+
 	let mut b_wh = ui.wh_of(ids.op_button).unwrap();
-	
+
 	sap = [sap[0]-BORDER*2.0,sap[1]-BORDER*2.0-b_wh[1]-50.0];
-	b_wh = [sap[0]/4.0,b_wh[1]];					 
-	
+	b_wh = [sap[0]/4.0,b_wh[1]];
+
 	//Set button for restoring default song for that theme.
 	for _click in widget::Button::new().color(BUTTON_COLOUR)
 									   .wh(b_wh)
@@ -1941,17 +1941,17 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 		*ipath = None;
 		defaultise_song_in_list(song_list,i);
 	};
-		
-	
+
+
 	//set move out of folder. NB, this will crash in windows. (Not any more)
 	for _click in widget::Button::new().color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Cancel")
 									   .left_from(ids.fb_standard_but,0.0)
 									   .set(ids.fb_cancel_but,ui) {
-		*ipath = None;		
+		*ipath = None;
 	};
-	
+
 	//set move out of folder.
 	for _click in widget::Button::new().color(BUTTON_COLOUR)
 									   .wh(b_wh)
@@ -1965,16 +1965,16 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 					Some(dad) => dad.to_owned(),
 					_		  => PathBuf::from(Component::RootDir.as_os_str()),
 				}},
-		};					   
+		};
 		println!("Gonna climb down the tree. Wherever that it.")
 	};
-	
+
 		//Make text to display current root directory.
 	let path = format!("Current Path: {}",wo.mub_path.as_os_str().to_str().unwrap_or("unknown"));
 	widget::Text::new(&path).color(BORDER_COLOUR)
 						    .top_left_of(ids.file_browser_can)
 						    .set(ids.fb_display_current,ui);
-	
+
 	//set file browser onto appropriate canvas.
 	for event in widget::FileNavigator::with_extension(&wo.mub_path, &["flac","ogg","wav"])
                 .color(color::BLACK)
@@ -1993,7 +1993,7 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 							wo.new_selection = Some(x[0].to_str().unwrap_or("").to_owned());
 						};
 					 },
-				_ => {},			
+				_ => {},
 				},
 			widget::file_navigator::Event::DoubleClick(_,x) => match x.len() {
 				1 => {
@@ -2007,24 +2007,24 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 					 },
 				_ => {},
 				},
-			_  => {},			
+			_  => {},
 		};
 	}
-	
+
 	//set select new track button (or enter folder).
 	for _click in widget::Button::new().color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Select")
 									   .left_from(ids.fb_back_but,0.0)
-									   .set(ids.fb_select_but,ui) {									   
+									   .set(ids.fb_select_but,ui) {
 		println!("Gonna select this shit. Whatever this it.");
 		if wo.new_selection.is_some() {
 			*ipath = None;
 			write_music_config(wo.new_selection.clone().unwrap_or("".to_owned()),song_list,i);
 		};
 	};
-	
-	
+
+
 }
 
 //function to set a dungeon's afterstory.
@@ -2058,9 +2058,9 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 
 	let p_len:usize = party.len();
 	let stats:usize = 10;
-			
-	let mut map_size = ui.wh_of(ids.middle_column).unwrap();	
-		
+
+	let mut map_size = ui.wh_of(ids.middle_column).unwrap();
+
 	//A vector for storing the strings to go in the party description.
 	let mut trait_vector:Vec<String> = Vec::with_capacity(p_len*stats);
 	let hat_vector = vec![format!("{} the {}",p_names[0],party[0].0.name),
@@ -2072,9 +2072,9 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 												  "White Magic ".to_owned(),
 												  "Black Magic ".to_owned(),
 												  "Spell List ".to_owned()];
-												  
+
 	let mut weener_lengths:Vec<f64> = Vec::with_capacity(p_len*stats);
-	
+
 	//Extends said vector for each extra party member.
 	for i in 0..p_len{
 		trait_vector.push(format!("{} the {}",p_names[i],party[i].0.name));
@@ -2088,19 +2088,19 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 										   (party[i].0.WM/250.0) as f64,
 										   (party[i].0.BM/250.0) as f64]);
 		trait_vector.push("".to_owned());
-		
+
 		if tt_e_c_i_ll[6] & ((party[i].0.Exp-party[i].0.ExpUsed)>=10.0) {
 			weener_lengths.push(1.0)
 		}else{
 			weener_lengths.push(0.0)
 		};
 		weener_lengths.push(0.0);
-		
+
 	};
 	trait_vector.push("".to_owned());
-	
+
 	let matrix_height = 40.0*((p_len*stats) as f64);
-	
+
 	widget::Canvas::new().flow_right(&[
 		((ids.party_stats_c1),(widget::Canvas::new().length_weight(1.0)
 								.color(BACKGR_COLOUR)
@@ -2112,7 +2112,7 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 	  .top_left_of(ids.middle_column)
 	  .scroll_kids_vertically()
 	  .set(ids.party_stats,ui);
-			
+
 	//set stat names and stats widgets into the display
 	//make the two halfs.
 	let mut party_matrix_a = widget::Matrix::new(1,p_len*stats)
@@ -2125,10 +2125,10 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 			.top_left_of(ids.party_stats_c2)
 			//.scroll_kids_vertically()
 			.set(ids.party_stats_b, ui);
-	
+
 	//initialise a guest variable for spell list setter. SHOULD REALLY USE A CONSTANT INSTEAD.
-	let mut party_no_for_spl:usize = 9;		
-	
+	let mut party_no_for_spl:usize = 9;
+
 	//Set character names.
 	//(NB, this can be done through matrix, but looks better this way.
 	//Downside; can only hold 5 players max (not currently a problem).
@@ -2137,7 +2137,7 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 	let mut t_xy = ui.xy_of(ids.party_stats_a).unwrap();
 	let mc_xy = ui.xy_of(ids.middle_column).unwrap();
 	t_xy = [mc_xy[0],t_xy[1]+matrix_height/2.0-10.0];
-	
+
 	let m_w:f64 = ui.w_of(ids.master).unwrap_or(1080.0);
 	for i in 0..p_len {
 		widget::Text::new(&trait_vector[stats*i]).color(color::GREEN)
@@ -2148,10 +2148,10 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 										 .set(*ids_vec[i],ui);
 		t_xy[1]-= 40.0*stats as f64;
 	}
-	
+
 	// Set the stat bars
-	if !tt_e_c_i_ll[6] {	
-		//functionalise widgets for non level up scenario.	
+	if !tt_e_c_i_ll[6] {
+		//functionalise widgets for non level up scenario.
 		while let Some(mut stat_box) = party_matrix_b.next(ui) {
 			let r = stat_box.row as usize;
 			if r%stats==0 {
@@ -2181,8 +2181,8 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 															(p_len*stats) as conrod::Scalar,
 															(-w/2.0 + (w as conrod::Scalar/2.0))+baseline,
 															(w/2.0 + (w as conrod::Scalar/2.0))+baseline);
-															
-				
+
+
 				let ween_col:Colour = if ((party[r/10].0.Exp-party[r/10].0.ExpUsed)>=10.0) & ((r+2)%10==0) {
 					color::GREY.with_luminance(sync_t(timer*3/2))
 				}else if (party[r/10].0.Exp-party[r/10].0.ExpUsed)>=10.0 {
@@ -2216,8 +2216,8 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 			}
 		}
 	};
-			
-	//Set the labels and party names.		
+
+	//Set the labels and party names.
 	while let Some(mut stat_box) = party_matrix_a.next(ui) {
 		let r = stat_box.row as usize;
 		if r%stats==0 {
@@ -2256,9 +2256,9 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 						 ui);
 		};
 	};
-	
-	
-	//set spell list if permitted	
+
+
+	//set spell list if permitted
 	if tt_e_c_i_ll[7] & tt_e_c_i_ll[6] {
 		set_spell_list_learnable(ui,ids,comm_text,party,tt_e_c_i_ll,spl,p_names,*chosen_hero,m_w);
 	}else if tt_e_c_i_ll[7] {
@@ -2275,8 +2275,8 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 				   p_names:&Vec<String>,
 				   i: usize,
 				   w: f64) { //nb i is "chosen_hero"
-	
-	//set up some variables for canvas size.				   
+
+	//set up some variables for canvas size.
 	let mut matrix_rows:usize = 1;
 	let rows:usize = if party[i].0.Spellist.len()==0 {
 		1
@@ -2286,15 +2286,15 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	}else{
 		matrix_rows = 9;
 		party[i].0.Spellist.len()+1
-	};	
-	
+	};
+
 	//calculate canvas sized based on spb length and window size.
 	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
 	let mrf64:f64 = 50.0*(matrix_rows as f64);
-	
+
 	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
 	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
-	
+
 	//make canvas for spell_list.
 	if party[i].0.Spellist.len()>9 {
 		widget::Canvas::new()
@@ -2319,14 +2319,14 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 			.border_color(BORDER_COLOUR)
 			.set(ids.spell_list_can,ui);
 	};
-	
-	//make matrix containing spell list.	
+
+	//make matrix containing spell list.
 	let mut spell_list = widget::Matrix::new(1,rows)
 					   .w(wh_m[0]-2.0*BORDER)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
 					   .set(ids.spell_list,ui);
-					   
+
 	//Write spell list if character has spells. Write sorry otherwise.
 	if party[i].0.Spellist.len()>0 {
 		while let Some(spell) = spell_list.next(ui) {
@@ -2353,8 +2353,8 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
 			spell.set(x,ui);
-		};	
-	};	   
+		};
+	};
 }
 
 fn set_spell_list_sage_marker(){}
@@ -2369,15 +2369,15 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 				   spl: &Vec<Spell>,
 				   p_names:&Vec<String>,
 				   w: f64)->GUIBox<'a> {
-					   
+
 	//make a list of spells that the player has enough exp to learn.
 	//sage spells and learnable spells should have the same order.
 	let mut learnable_spells:Vec<&str> = Vec::new();
-	
+
 	for x in spl.iter(){
 		if lhas(&sage.spells,&x.id) {learnable_spells.push(x.name);};
 	 };
-	
+
 	let mut matrix_rows:usize = 1;
 	let rows:usize = if learnable_spells.len()==0 {
 		1
@@ -2387,15 +2387,15 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 	}else{
 		matrix_rows = 9;
 		learnable_spells.len()+1
-	};				   
-	
+	};
+
 	//make canvas for spell_list.
 	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
 	let mrf64:f64 = 50.0*(matrix_rows as f64);
-	
+
 	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
 	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
-	
+
 	//Set canvas, slightly different, depending on spell number.
 	if learnable_spells.len()>9 {
 		widget::Scrollbar::y_axis(ids.spell_list_can).auto_hide(true).set(ids.coml_scroll, ui);
@@ -2421,13 +2421,13 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 		.set(ids.spell_list_can,ui);
 	};
 
-	//make matrix containing spell list.	
+	//make matrix containing spell list.
 	let mut spell_list = widget::Matrix::new(1,rows)
 					   .w(wh_m[0]-BORDER*2.0)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
 					   .set(ids.spell_list,ui);
-					   
+
 	//Write spell list if character has spells. Write sorry otherwise.
 	if learnable_spells.len()>0 {
 		while let Some(spell) = spell_list.next(ui) {
@@ -2442,13 +2442,13 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()];
 				//Button label.
 				let label:String = format!("{} ({}gp)",learnable_spells[snow-1],cost);
-				
+
 				let x = widget::Button::new().label(learnable_spells[snow-1])
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
-											 
+
 				for _click in spell.set(x,ui) {
-					
+
 					//determine which character's can learn the sage's spells.
 					let mut both_have = true;
 					let mut haves:Vec<bool> = Vec::new();
@@ -2459,7 +2459,7 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 						haves.push(have);
 						if !have {both_have = false;};
 					};
-					
+
 					if both_have {
 						*comm_text = format!("Everyone already knows this spell...");
 					}else if cost > party[0].0.Gold {
@@ -2480,10 +2480,10 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
 			spell.set(x,ui);
-		};	
-	};	
-	
-	gui_box   
+		};
+	};
+
+	gui_box
 }
 
 fn set_spell_list_learnable_marker(){}
@@ -2497,15 +2497,15 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 				   p_names:&Vec<String>,
 				   i: usize,
 				   w: f64) { //nb i is "chosen_hero"
-					   
+
 	//make a list of spells that the player has enough exp to learn.
 	let mut learnable_spells:Vec<&str> = Vec::new();
-	
+
 	for x in spl.iter(){
 		if (x.MP <= party[i].0.Exp - party[i].0.ExpUsed)
 		 & !lhas(&party[i].0.Spellist,&x.id) {learnable_spells.push(x.name);};
 	 };
-	
+
 	let mut matrix_rows:usize = 1;
 	let rows:usize = if learnable_spells.len()==0 {
 		1
@@ -2515,15 +2515,15 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 	}else{
 		matrix_rows = 9;
 		learnable_spells.len()+1
-	};				   
-	
+	};
+
 	//make canvas for spell_list.
 	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
 	let mrf64:f64 = 50.0*(matrix_rows as f64);
-	
+
 	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
 	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
-	
+
 	if learnable_spells.len()>9 {
 		widget::Scrollbar::y_axis(ids.spell_list_can).auto_hide(true).set(ids.coml_scroll, ui);
 		widget::Canvas::new()
@@ -2548,13 +2548,13 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 		.set(ids.spell_list_can,ui);
 	};
 
-	//make matrix containing spell list.	
+	//make matrix containing spell list.
 	let mut spell_list = widget::Matrix::new(1,rows)
 					   .w(wh_m[0]-BORDER*2.0)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
 					   .set(ids.spell_list,ui);
-					   
+
 	//Write spell list if character has spells. Write sorry otherwise.
 	if learnable_spells.len()>0 {
 		while let Some(spell) = spell_list.next(ui) {
@@ -2584,8 +2584,8 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
 			spell.set(x,ui);
-		};	
-	};	   
+		};
+	};
 }
 
 //set global spell list when choosing a global spell to cast.
@@ -2597,11 +2597,11 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				   spl: &Vec<Spell>,
 				   p_names:&Vec<String>,
 				   w: f64)->Option<(usize,usize)> { //nb i is "chosen_hero"
-	
+
 	//get the joined length of the people's party's spellists.
 	let joined_lengths = party.iter().fold(0,|acc,x| acc + x.0.Spellist.len());
-	
-	//set up some variables for canvas size			   
+
+	//set up some variables for canvas size
 	let mut matrix_rows:usize = 1;
 	let rows:usize = if joined_lengths==0 {
 		1
@@ -2611,17 +2611,17 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 	}else{
 		matrix_rows = 9;
 		joined_lengths+1
-	};	
-	
+	};
+
 	//calculate canvas sized based on spb length and window size.
 	let mut wh_m = ui.wh_of(ids.middle_column).unwrap_or([600.0,400.0]);
 	let mrf64:f64 = 50.0*(matrix_rows as f64);
-	
+
 	if wh_m[0]>400.0 {wh_m[0] = 400.0;};
 	if wh_m[1]>mrf64 {wh_m[1] = mrf64;};
-	
-	
-	
+
+
+
 	//make canvas for spell_list.
 	if joined_lengths>9 {
 		widget::Canvas::new()
@@ -2646,17 +2646,17 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 			.border_color(BORDER_COLOUR)
 			.set(ids.spell_list_can,ui);
 	};
-	
-	//make matrix containing spell list.	
+
+	//make matrix containing spell list.
 	let mut spell_list = widget::Matrix::new(1,rows)
 					   .w(wh_m[0]-2.0*BORDER)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
 					   .set(ids.spell_list,ui);
-				   
+
 	//Write spell list if character has spells. Write sorry otherwise.
 	if joined_lengths>0 {
-		
+
 		//make a joined spell lsit (at some point shouel make a once only version).
 		let mut joined_list:Vec<(i8,usize,usize)> = Vec::with_capacity(joined_lengths);
 		for i in 0..party.len() {
@@ -2664,7 +2664,7 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				joined_list.push((*spell,i,n));
 			};
 		};
-		
+
 		if let Some(spell) = spell_list.next(ui) {
 			let title:String = "Party Spellbook".to_owned();
 			spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
@@ -2689,9 +2689,9 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
 			spell.set(x,ui);
-		};	
+		};
 	};
-	return None	  
+	return None
 }
 
 //A function to set the matrix of the quest diary.
@@ -2712,27 +2712,27 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 				   my_stories:&MyStories,
 				   all_stories:&Vec<Story>,
 				   men_wh:&[f64;2]){
-	
+
 	let width:f64 = ui.w_of(ids.middle_column).unwrap()-BORDER*2.0;
 	let s_l = my_stories.len();
-	
+
 	//Iterator from my_stories, for easy setting.
 	let mut story_iter = my_stories.iter();
-	
+
 	//Set the diary matrix.
 	let mut story_matrix = widget::Matrix::new(1,s_l)
 			.w(width)
 			.h(men_wh[1]/10.0*(s_l as f64))
 			.mid_top_of(ids.middle_column)
 			.set(ids.quest_diary_matrix, ui);
-	
-		
+
+
 	let button = widget::Button::new().color(BUTTON_COLOUR)
 						.h(men_wh[1]/10.0)
 						.w(width)
 						.label_font_size(font_size_chooser_button_b(width));
-	
-	//NB, double/triple redundancy of Options.		
+
+	//NB, double/triple redundancy of Options.
 	while let Some(questlet) = story_matrix.next(ui) {
 		if let Some(q_id) = story_iter.next() {
 			let story = get_story_by_id(&all_stories,q_id.0);
@@ -2741,7 +2741,7 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 			}else{
 				"No quests on this page."
 			};
-			
+
 			for _click in questlet.set(button.clone().label(label),ui) {
 				println!("Story retrieved: {} (q_id={:?}",label,q_id);
 				*gui_box = GUIBox::GameInspectQuests(Some(q_id.0));
@@ -2767,26 +2767,26 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 				   my_dung:&MyDungeons,
 				   all_dung:&Vec<Dungeon>,
 				   men_wh:&[f64;2]){
-	
+
 	let width:f64 = ui.w_of(ids.middle_column).unwrap()-BORDER*2.0;
 	let d_l = my_dung.len();
-	
+
 	//Iterator over dungeons in my_dungeons.
 	let mut dung_iter = my_dung.iter();
-	
+
 	//Make dungeon matrix.
 	let mut dung_matrix = widget::Matrix::new(1,d_l)
 			.w(width)
 			.h(men_wh[1]/10.0*(d_l as f64))
 			.mid_top_of(ids.middle_column)
 			.set(ids.quest_diary_matrix, ui);
-			
+
 	let button = widget::Button::new().color(BUTTON_COLOUR)
 								.h(men_wh[1]/10.0)
 								.w(width)
 								.label_font_size(font_size_chooser_button_b(width));
-			
-	//Make dungeon name button.		
+
+	//Make dungeon name button.
 	while let Some(dunglet) = dung_matrix.next(ui) {
 		if let Some(dung) = dung_iter.next() {
 			let maybe_dungeon = get_dungeon_by_id(all_dung,*dung.0);
@@ -2795,7 +2795,7 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 			}else{
 				"No entry here."
 			};
-			
+
 			for _click in dunglet.set(button.clone().label(label),ui) {
 				println!("Dungeon retrieved: {}. (dung={:?})",label,dung);
 				*gui_box = GUIBox::GameInspectDungeons(Some(*dung.0));
@@ -2811,10 +2811,10 @@ fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 				   my_dungeons:&mut MyDungeons,
 				   dungeon:&Dungeon,
 				   gui_box:&mut GUIBox) {
-	
+
 	//Get current entry.
 	let current_entry = my_dungeons.try_get(dungeon.id);
-	
+
 	if current_entry.is_some() {
 		//Get basic contexts.
 		let wh = ui.wh_of(ids.middle_column).unwrap();
@@ -2831,14 +2831,14 @@ fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 			  .border_color(BORDER_COLOUR)
 			  .middle_of(ids.map_and_word)
 			  .set(ids.dungeon_diary_entry_canvas,ui);
-		
+
 		//Write text that dscribes the dungeon.
 		let mut entry_text:String = dungeon.name.to_owned();
 		for i in 0..(inner_entry[2]+1) {
 			entry_text.push('\n');
 			entry_text.push_str(&format!("{}",dungeon.scenes[i as usize]));
 		};
-		
+
 		if inner_entry[1]>0 {
 			entry_text.push_str("\n\nDungeon completed:\n");
 			for x in dungeon.afterstory.split("...") {
@@ -2846,7 +2846,7 @@ fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 				entry_text.push_str("\n\n");
 			};
 		};
-		
+
 		//Put the dungeon entry text on the canvas.
 		widget::Text::new(&entry_text)
 					.color(color::YELLOW)
@@ -2856,12 +2856,12 @@ fn display_dungeon_diary_entry(ref mut ui: &mut conrod::UiCell,
 					.top_left_of(ids.dungeon_diary_entry_canvas)
 					.padded_w_of(ids.dungeon_diary_entry_canvas,9.0)
 					.set(ids.dungeon_diary_entry,ui);
-		
+
 		//Switch of the displayed dungeon is needed.
 		for _ in ui.widget_input(ids.dungeon_diary_entry).clicks() {
 			*gui_box = GUIBox::GameInspectDungeons(None);
 		};
-					
+
 	}else{
 		//Don't set anything.
 	};
@@ -2876,16 +2876,16 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 				   my_stories:&MyStories,
 				   quest:&Story,
 				   gui_box:&mut GUIBox) {
-	
+
 	let current_entry = my_stories.get_by_id(quest.id);
-	
+
 	//Some crash prevention may be needed.
 	if current_entry.is_some() {
 		//Set up variables.
 		let inner_entry = current_entry.unwrap();
 		let font_size = font_size_chooser_button_b(ui.w_of(ids.master).unwrap_or(800.0));
 		let wh = ui.wh_of(ids.middle_column).unwrap();
-		
+
 		//if we have this quest in record
 		widget::Canvas::new()
 			  .floating(true)
@@ -2895,13 +2895,13 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 			  .border_color(BORDER_COLOUR)
 			  .middle_of(ids.map_and_word)
 			  .set(ids.quest_diary_entry_canvas,ui);
-		
+
 		//get the quest descriptions.
 		let mut descriptions = quest.content.get_descriptions(inner_entry.1);
 		descriptions.append(&mut quest.try_get_completion_cont(inner_entry.1).get_descriptions(inner_entry.2));
-		
+
 		let descriptions = descriptions.into_iter().map(|x|x.to_owned()+"\n").collect::<String>();
-		
+
 		//Put the quest entry text on the canvas.
 		widget::Text::new(&descriptions)
 					.color(color::YELLOW)
@@ -2911,7 +2911,7 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 					.mid_top_of(ids.quest_diary_entry_canvas)
 					.padded_w_of(ids.quest_diary_entry_canvas,9.0)
 					.set(ids.quest_diary_entry,ui);
-			  
+
 		//Switch of the displayed quest is needed.
 		for _ in ui.widget_input(ids.quest_diary_entry_canvas).clicks() {
 			*gui_box = GUIBox::GameInspectQuests(None);
@@ -2922,7 +2922,7 @@ fn display_quest_diary_entry(ref mut ui: &mut conrod::UiCell,
 	}else{
 		//Otherwise don't set anything.
 	};
-	
+
 }
 
 //set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,comm_text:String)
@@ -2956,17 +2956,24 @@ fn travel_void_and_encounter<'a>(mut pl:&mut (usize,usize),
 							   mut party:&mut Vec<(Lifeform,usize)>,
 							   mut enemies:&mut Vec<(Lifeform,usize)>,
 							   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
-							   mons:&Vec<Lifeform>){
-								 
+							   mons:&Vec<Lifeform>,
+							   dir:char){
+
 	//Check for voidwalking
 	*gui_box_previous = gui_box.clone();
 	if (world[wml][temp_pl.1].scape != VOID)
 	 & (world[world.len()-1-pl.0][pl.1].scape != VOID) {
 		*freeze_timer = timer;
 		*pl = temp_pl;
-		*p_loc = world[wml][pl.1].clone(); 
+		*p_loc = world[wml][pl.1].clone();
 		*coords = p_loc.xy;
-		*comm_text = format!("You journey north to {}...",p_loc.name);
+		let dir: String = match dir {
+			's' => "south".to_owned(),
+			'e' => "east".to_owned(),
+			'w' => "west".to_owned(),
+			_	=> "north".to_owned(),
+		};
+		*comm_text = format!("You journey {} to {}...",dir,p_loc.name);
 		if rand_enc(p_loc) {
 			*gui_box_previous = gui_box.clone();
 			*gui_box = GUIBox::GameFight(true);
@@ -2996,12 +3003,12 @@ pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
-	
+
 	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1<17 {(pl.0,pl.1+1)}else{(cross_pole(pl.0,world),18)};
 		let wml = world.len()-1-temp_pl.0;
-		
+
 		//check for voidwalking.
 		travel_void_and_encounter(pl, p_loc, world,
 							   wml,
@@ -3015,7 +3022,8 @@ pub fn travel_down<'a>(mut pl:&mut (usize,usize),
 							   party,
 							   enemies,
 							   encounter,
-							   mons);
+							   mons,
+							   's');
 	};
 	(gui_box,gui_box_previous)
 }
@@ -3034,12 +3042,12 @@ pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>) {
-	
+
 	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.1>0 {(pl.0,pl.1-1)}else{(cross_pole(pl.0,world),0)};
 		let wml = world.len()-1-temp_pl.0;
-		
+
 		//check for voidwalking.
 		travel_void_and_encounter(pl, p_loc, world,
 							   wml,
@@ -3053,7 +3061,8 @@ pub fn travel_up<'a>(mut pl:&mut (usize,usize),
 							   party,
 							   enemies,
 							   encounter,
-							   mons);
+							   mons,
+							   'n');
 	};
 	(gui_box,gui_box_previous)
 }
@@ -3072,12 +3081,12 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
-	
+
 	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0>0 {(pl.0-1,pl.1)}else{(world.len()-1,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
-		
+
 		//check for voidwalking.
 		travel_void_and_encounter(pl, p_loc, world,
 							   wml,
@@ -3091,7 +3100,8 @@ pub fn travel_left<'a>(mut pl:&mut (usize,usize),
 							   party,
 							   enemies,
 							   encounter,
-							   mons);
+							   mons,
+							   'w');
 	};
 	(gui_box,gui_box_previous)
 }
@@ -3111,12 +3121,12 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 				   mut enemies:&mut Vec<(Lifeform,usize)>,
 				   mut encounter:&mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
 				   mons:&Vec<Lifeform>)->(GUIBox<'a>,GUIBox<'a>){
-	
+
 	//check for sufficient delay to avoid "sprinting and skipping"
 	if timer > *freeze_timer+TRAVEL_DELAY {
 		let temp_pl:(usize,usize) = if pl.0<world.len()-1 {(pl.0+1,pl.1)}else{(0,pl.1)};
 		let wml = world.len()-1-temp_pl.0;
-		
+
 		//check for voidwalking.
 		travel_void_and_encounter(pl, p_loc, world,
 							   wml,
@@ -3130,7 +3140,8 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 							   party,
 							   enemies,
 							   encounter,
-							   mons);
+							   mons,
+							   'e');
 	};
 	(gui_box,gui_box_previous)
 }
@@ -3155,9 +3166,9 @@ fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: 
 							 gui_box_previous:  &'a mut GUIBox<'a>) {
 	let lon:usize = clicked.0;
 	let lat:usize = clicked.1;
-	
+
 	let wml = world.len()-1-lon;
-	
+
 	if comm_text.contains("\nTravel to ") {
 		*comm_text = format!("{}",comm_text);
 	}else{
@@ -3193,9 +3204,6 @@ fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: 
 		set_comm_text(&mut comm_text,ui,ids);
 		tt_e_c_i_ll[1] = false;
 	};
-		
-								 
-								 
 }
 
 
@@ -3222,7 +3230,7 @@ fn sm_retc(x:&Lifeform,t:usize)->conrod::color::Colour{
 
 
 pub fn correct_comm_text(mut comm_text:&mut String,pause:bool,gui_box:&mut GUIBox){
-	
+
 	if pause & gui_box.is_fight() {
 		if !comm_text.contains("***Press Enter to Continue***") {
 			*comm_text = format!("{}\n***Press Enter to Continue***",comm_text);
@@ -3286,7 +3294,7 @@ fn dungeon_updater (mut dungeons:&mut Vec<Dungeon>, party:&mut Vec<(Lifeform,usi
 							dungeons[id] = wild_hunt().clone();
 							println!("Wild hunting");
 						},
-						_   => {println!("Entering dungeon: It needn't update.")},				
+						_   => {println!("Entering dungeon: It needn't update.")},
 	};
 }
 
@@ -3301,9 +3309,9 @@ pub fn names_of(encounter:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)->Vec<Str
 fn start_game_pressed_a(ref mut ui: conrod::UiCell,
               ids: &mut Ids,
               mut comm_text:String) ->  (usize,bool) {
-				  
+
 	let mut ans_2:(usize,bool)=(0,false);
-    //Difficulty level setting!..Give message.   
+    //Difficulty level setting!..Give message.
 
 		set_comm_text(&mut "Which way would you do it?".to_owned(),ui,ids);
     //Difficulty level... Initiate buttons. NOT IMPLEMENTED I think?
@@ -3319,7 +3327,7 @@ fn start_game_pressed_a(ref mut ui: conrod::UiCell,
 								 .middle_of(ids.mut2_box)
 								 .set(ids.mut3_but,ui){
 		ans_2 = (1,true);
-		};	
+		};
     for _click in mut_but.clone().label("Well Done")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .middle_of(ids.mut3_box)
@@ -3347,17 +3355,17 @@ fn start_game_pressed_a(ref mut ui: conrod::UiCell,
 // filename should be checked beforehand.
 // now uses song_list as template instead of re-parsing file each time.
 fn write_music_config(filename:String,song_list: &mut Vec<String>, number:usize) {
-	
+
 	let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("as").unwrap();
 	let note_path = assets.join("notes/notes.mqcfg");
 	song_list[number] = filename;
-	
+
 	//Simplified attempt to write a new file.
 	//It so happens that on windows the more complete script does not want to dance.
 	let mut cfgf:File = File::create(&note_path).unwrap();
-	
+
 	let mut playlist_string:Vec<String> = Vec::with_capacity(ISEKAIN);
-	
+
 	for (i,x) in song_list.iter().enumerate() {
 		if x=="Standard" {
 			playlist_string.push(format!("{}:::",i));
@@ -3368,7 +3376,7 @@ fn write_music_config(filename:String,song_list: &mut Vec<String>, number:usize)
 			};
 		};
 	};
-	
+
 	//write everything to file.
 	cfgf.write_all(playlist_string.join("\n").as_bytes());
 }
@@ -3379,17 +3387,17 @@ fn write_music_config(filename:String,song_list: &mut Vec<String>, number:usize)
 // Instead it writes "i:::\n" for the given entry instead.
 // Seems to work correctly.
 fn defaultise_song_in_list(song_list: &mut Vec<String>,i_num:usize) {
-	
+
 	let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("as").unwrap();
 	let note_path = assets.join("notes/notes.mqcfg");
-	
+
 	song_list[i_num] = "Standard".to_owned();
-	
+
 	//Try to open the playlist file, and if isn't there, create it.
 	let mut cfgf:File = File::create(&note_path).unwrap();
-	
+
 	let mut playlist_string:Vec<String> = Vec::with_capacity(ISEKAIN);
-	
+
 	for (i,x) in song_list.iter().enumerate() {
 		if x=="Standard" {
 			playlist_string.push(format!("{}:::",i));
@@ -3412,14 +3420,14 @@ fn loader(
 		ui: &mut conrod::UiCell,
 		ids: &mut Ids,
 		men_wh: &[f64;2])->(Option<String>,usize){
-			
+
 	let mut to_load:(Option<String>,usize) = (None,0);
 	let mut in_to_load = String::new();
-			
+
 	//Input initial text.
 	*comm_text = "Pick a moose, any moose. And I will load it for you.".to_owned();
 	set_comm_text(&mut comm_text,ui,ids);
-	
+
 	let mut fname=String::new();
 	let mut saves:Vec<String>=Vec::new();
 	let dir=env::current_dir().unwrap().join("as/saves");
@@ -3434,7 +3442,7 @@ fn loader(
 			}else{};
 		}else{};
 	};
-	
+
 	//if no saved games, wait five seconds and declare it to the world.
 	let n_saves = saves.len();
 	if n_saves==0{
@@ -3450,21 +3458,21 @@ fn loader(
 		//run script to make menu of load game buttons and a loader for them.
 		let width:f64 = ui.w_of(ids.middle_column).unwrap()-BORDER*2.0;
 		let wm:f64 = ui.w_of(ids.master).unwrap();
-	
+
 		widget::Scrollbar::y_axis(ids.middle_column).auto_hide(true).set(ids.load_menu_scroll, ui);
 		let mut saves_matrix = widget::Matrix::new(1,n_saves)
 			.w(width)
 			.h(men_wh[1]/10.0*(n_saves as f64))
 			.mid_top_of(ids.middle_column)
-			.set(ids.load_menu, ui);	
-		
+			.set(ids.load_menu, ui);
+
 		let button = widget::Button::new().color(BUTTON_COLOUR)
 										  .h(men_wh[1]/10.0)
 										  .label_font_size(font_size_chooser_button_b(wm));
-		
+
         while let Some(save) = saves_matrix.next(ui) {
             let r = save.row as usize;
-            
+
             for _click in save.set(button.clone().label(&saves[r]),ui) {
 				println!("Hey! Loading {}", saves[r]);
 				in_to_load.push_str(&saves[r]);
@@ -3476,7 +3484,7 @@ fn loader(
 		to_load = (pre_to_load,42);
 	};
 	return to_load
-}	
+}
 
 //A function to confirm that the game was loaded.
 fn loaded_confirmed_marker(){}
@@ -3487,10 +3495,10 @@ fn loaded_confirmed(mut party:&mut Vec<(Lifeform,usize)>,
 				ids:&mut Ids) {
 	//Say that you've done your job and everything is loaded.
 	let extra:String = if p_names.len()>1 {format!(" {} the {} is with them.",p_names[1],party[1].0.name)}else{String::new()};
-	
+
 	*comm_text = format!("{} the {} has been loaded.{}",p_names[0],party[0].0.name,extra);
 	set_comm_text(&mut comm_text,ui,ids);
-	
+
 	println!("{}",&comm_text);
 }
 
@@ -3500,7 +3508,7 @@ fn rand_enc(p_loc:&Place)->bool{
 		let mut totapop=0;
 		for i in 0..p_loc.popu.len(){totapop+= p_loc.popu[i].2};
 		let limit= if totapop<30000{40000}else{totapop+10000};
-		if totapop<rand::thread_rng().gen_range(0,limit){false}else{true}		
+		if totapop<rand::thread_rng().gen_range(0,limit){false}else{true}
 }
 
 fn ingrids(xx:&Vec<(Lifeform,usize)>, ifast:usize)->([usize;5],Vec<usize>){
@@ -3519,7 +3527,7 @@ fn ingrids(xx:&Vec<(Lifeform,usize)>, ifast:usize)->([usize;5],Vec<usize>){
 			ingrids[fed]=xx[i].0.id;
 			is.push(i);
 			fed+=1
-		}else{};		
+		}else{};
 	};
 	(ingrids,is)
 }
@@ -3534,7 +3542,7 @@ trait wpl {
 }
 
 impl<'a> wpl for &'a str {
-	fn iwpl(self)->String {i_wpl(self)}	
+	fn iwpl(self)->String {i_wpl(self)}
 	fn x_chr_pl(self,lim:usize)->String {xchrpl(self,lim)}
 	fn x_chr_pl2(self,lim:usize)->String {xchrpl2(self,lim)}
 }
@@ -3570,7 +3578,7 @@ fn xchrpl2(text:&str, lim:usize)-> String {
 	let mut out_string = String::new();
 	let mut len_before:usize = 0;
 	let mut len_after:usize = 0;
-	
+
 	for (i,x) in text.split(' ').enumerate() {
 		len_after = len_before +x.clone().chars().count() + 1;
 		if len_after>lim {
@@ -3585,7 +3593,7 @@ fn xchrpl2(text:&str, lim:usize)-> String {
 	};
 	out_string
 }
-			
+
 fn dungeon_finder(p_loc: &mut Place, dungeons: &mut Vec<Dungeon>,party:&Vec<(Lifeform,usize)>) -> Option<usize> {
 	for i in 0..dungeons.len() {
 		if dungeons[i].xy==p_loc.xy {
@@ -3594,7 +3602,7 @@ fn dungeon_finder(p_loc: &mut Place, dungeons: &mut Vec<Dungeon>,party:&Vec<(Lif
 			};
 		};
 	}
-	None	
+	None
 }
 
 //A try to get the colours nicer. (Borrowed function from the support module)
@@ -3615,7 +3623,7 @@ pub fn gamma_to_gamma(s: Color) -> [u8;4] {
     }
     [f32_to_byte(component(c.0)),
      f32_to_byte(component(c.1)),
-     f32_to_byte(component(c.2)), 
+     f32_to_byte(component(c.2)),
      f32_to_byte(c.3)]
 }
 
@@ -3625,7 +3633,7 @@ pub fn gamma_to_gamma(s: Color) -> [u8;4] {
 	let c = s.to_rgb();
     [f32_to_byte(c.0),
      f32_to_byte(c.1),
-     f32_to_byte(c.2), 
+     f32_to_byte(c.2),
      f32_to_byte(c.3)]
 }
 
@@ -3653,10 +3661,10 @@ pub fn map_sq_col_img(square:&Place)-> [u8; 4] {
 //Function for redrawing the map nicely.
 //It might be very difficult to get this to run efficiently.
 pub fn refine_map(map: &mut Vec<[u8;4]>,xs:usize,ys:usize) {
-	
+
 	//arranged image. Outer is rows. inner is columns
 	let mut map_a:Vec<Vec<[u8;4]>> = vec![Vec::with_capacity(xs);ys];
-	
+
 	//transcribe map into a matrix.
 	let mut col:usize = 0;
 	let mut row:usize = 0;
@@ -3674,7 +3682,7 @@ pub fn refine_map(map: &mut Vec<[u8;4]>,xs:usize,ys:usize) {
 	for sm in SQUARES.iter().map(|x| *x) {
 		for y in sm..(ys-sm) { //iterate through rows.
 			for x in sm..(xs-sm) { //iterate through column values
-				
+
 				//Smooth corners.
 				if 		 (map_a[y][x-sm]==map_a[y-sm][x]) & (map_a[y-sm][x] != map_a[y][x]) {
 					map[y*xs+x] = map_a[y][x-sm]
@@ -3685,7 +3693,7 @@ pub fn refine_map(map: &mut Vec<[u8;4]>,xs:usize,ys:usize) {
 				}else if (map_a[y][x-sm]==map_a[y+sm][x]) & (map_a[y+sm][x] != map_a[y][x]) {
 					map[y*xs+x] = map_a[y][x-sm]
 				};
-				
+
 				//wave flat horizontals. I expect this to be inefficient.
 				if (map_a[y-1][x-sm]==map_a[y-1][x+sm])
 				 & (map_a[y][x-sm]==map_a[y][x+sm])
@@ -3694,7 +3702,7 @@ pub fn refine_map(map: &mut Vec<[u8;4]>,xs:usize,ys:usize) {
 						 map[(y+i)*xs+x] = map_a[y-1][x-sm];
 					 }
 				}
-				
+
 				//wave flat verticals. I expect this to be inefficient.
 				if (map_a[y-sm][x-1]==map_a[y+sm][x-1])
 				 & (map_a[y-sm][x]==map_a[y+sm][x])
@@ -3740,10 +3748,10 @@ widget_ids! {
 		battle_background_time_c,		//matrix for timescape
 		battle_background_time_d,		//matrix for timescape
 		dungeon_afterstory,				//text story to receive after background.
-		
-		
+
+
 		far_left_column,				//far left column containing main and play menu.
-				ng_button,				//Main menu buttons.		
+				ng_button,				//Main menu buttons.
 				lg_button,
 				sg_button,
 				gm_button,
@@ -3754,7 +3762,7 @@ widget_ids! {
 				explore_button,
 				cast_button,
 				party_button,
-				
+
 		map_and_word,					//Main part of screen
 			mid_label_can,				//label telling whether you are.
 				mid_label,
@@ -3822,7 +3830,7 @@ widget_ids! {
 				comm_scroll,
 		fight_menu_canvas,				//battle menu.
 			fight_menu_tab,				//I have no idea why I've kept this.
-				fight_menu,				
+				fight_menu,
 					fight_menu_buttons,
 							at_button,
 							de_button,
@@ -3834,7 +3842,7 @@ widget_ids! {
 						spells_can,
 							spells_can_scroll,
 							spells_mtrx,
-							
+
 		sage_shadow,
 		story_shadowa1,
 		story_shadowa2,
@@ -3853,7 +3861,7 @@ widget_ids! {
 				quit_true_but,
 			quit_false_can,
 				quit_false_but,
-				
+
 		options_canvas,
 			opt_can_tabs,
 			opt_music,
@@ -3878,7 +3886,7 @@ widget_ids! {
 				opt_antlers_text,
 				opt_antlers_slider,
 				opt_antlers_reset_but,
-				
+
 		file_browser_can, //File browser for dealing with swapping out of songs.
 			fb_navi,
 			fb_select_but,
@@ -3886,7 +3894,7 @@ widget_ids! {
 			fb_cancel_but,
 			fb_standard_but,
 			fb_display_current,
-			
+
 		eclair_matrix, //Set lightning.
 		eclair_matrix_two, //Set the lightning ends.
 		fire_matrix, //Set fire.
@@ -3897,7 +3905,7 @@ widget_ids! {
 		holy_matrix,
 		radiant_matrix,
 		time_matrix,
-				
+
 	}
 }
 
@@ -3969,7 +3977,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					my_dungeons:&mut MyDungeons,
 					my_kills:&mut KillList,
 					stories: &Vec<Story>,
-					mut sages: Vec<Sage<'a>>) 
+					mut sages: Vec<Sage<'a>>)
 //	->(bool,String,bool,[bool;7],usize,u8,i32,usize,Vec<Sage<'a>>)
 ->(GUIBox<'a>,GUIBox<'a>,Vec<Sage<'a>>)
 {
@@ -3977,27 +3985,27 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
 	let men_wh = [214.0,win_wh[1]];
 	let comm_text_bckup1:String = comm_text.clone();
-	
+
 	match gui_box.clone() {
-		
+
 		GUIBox::Main(init) => {
 			//Preliminarily set canvases.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			//If game is not started, or menu entered voluntarily, activate main menu.
 			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
-						
+
 			let mut qt_button:conrod::widget::button::TimesClicked;
-			
+
 			// If game is started and main menu active activate gm_button.
 			// Also set the default view (aka world map view).
 			//NB, sg and gm buttons' reaction directly depend on init.
 			if init {
 				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
 				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
-				
+
 				for _click in gm_button{
 					println!("Returning to game. Main menu be gone!.");
 					gui_box = GUIBox::GameTravel;
@@ -4006,10 +4014,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
-				};			
+				};
 			}else{
 				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
 				for _click in sg_button{
@@ -4019,7 +4027,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					set_comm_text(comm_text,ui,ids);
 				};
 			};
-			
+
 			//NB the remaining buttons' reactions are indy of init.
 			for _click in ng_button{
 				println!("New Game button pressed.");
@@ -4043,21 +4051,21 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box_previous = gui_box.clone();
 				gui_box = GUIBox::MainQuit(false);
 			};
-			set_comm_text(comm_text,ui,ids);	
+			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::MainNew((x,init)) => {
 			//not finished.
 			*mutm_box_vis = true;
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			let text_input = set_text_input(ui,ids,player_input);
-			
+
 			//Query mutmbox based on stage.
 			let answer:(usize,String) = match x {
-				0=> 
+				0=>
 				  { if init {
 					  *comm_text = "The game has already begun. \
 					  If you start again now, it will all be lost.".to_owned();
@@ -4114,12 +4122,12 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				5 => {	set_mutant_menu(ui,ids,"A warrior..","A witch..","A wonderer..","A loser..","Cancel")},
 				6 => {	let follower = if party.len()>1 {format!("a {}",party[1].0.name)}else{"no one".to_owned()};
 						let light_dark = if party[0].0.Attack>party[0].0.Defence {"of darkness"}else{"of light"};
-						*comm_text = format!("So, {}, you are a {} of {} followed by {}...",p_names[0],party[0].0.name,light_dark,follower);
+						*comm_text = format!("So, {}, you are a {} {} followed by {}...",p_names[0],party[0].0.name,light_dark,follower);
 						set_mutant_menu_bin(ui,ids,"Aye..","I don't want to do this.","Then let the adventure begin?".to_owned())
 				},
 				_ => {set_mutant_menu_bin(ui,ids,"Into the sunset!","I don't want to do this.","A new moose has begun!".to_owned())},
 			};
-			
+
 			//Get an answer to the previous question and advance things.
 			if answer.0==5 {
 				if !init {
@@ -4131,7 +4139,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box = GUIBox::Main(init);
 			}else{
 				match x {
-				
+
 					0 => {	if init & (answer.0==1) {
 							gui_box = GUIBox::MainNew((0,false));
 							*party = Vec::with_capacity(5);
@@ -4211,17 +4219,17 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					_ => {},
 				};
 			};
-			
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::MainLoad((x,init)) => {
 			//not finished.
 			*mutm_box_vis = true;
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			let answer:(usize,String) =  if init {
 				*comm_text = "The moose has already begun. \
 				If you load another now, it will all be lost.".to_owned();
@@ -4231,7 +4239,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				*to_load = loader(comm_text,ui,ids,&men_wh);
 				if a.0!=5 {(to_load.1,"".to_owned())}else{a}
 			};
-			
+
 			if init & (answer.0==1){
 				gui_box = GUIBox::MainLoad((0,false));
 				save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);
@@ -4251,17 +4259,17 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						my_dungeons,
 						my_kills);
 					loaded_confirmed(party,p_names,comm_text,ui,ids);
-					
+
 					*to_load = (None,1);
 					gui_box = GUIBox::GameTravel;
 					*mutm_box_vis = false;
-					
+
 					*dungeons = vec![malek_grove().clone(),monster_hall().clone(),citadel_of_spirit(party[0].0.clone()).clone(),elven_lake_ruins().clone(),
 								 malachia_pubcrawl().clone(),lost_lighthouse().clone(),door_to_darkness(&party).clone(),
 								 white_temple().clone(),stairway().clone(),witch_maze().clone(),way_down().clone(),wild_hunt().clone(),tower_of_bones().clone(),tower_of_flesh(),
 								 tower_of_soul(&party).clone(),hall_of_stone(),the_path(),ice_palace(),on_the_prairie(),
 								 petrified_shrine(),woods_of_winter(),abbyss(),unique()];
-								 
+
 					println!("Party on! {:?}",&party);
 				}else if answer.0==0 {
 					*comm_text = "Could not load this moose. Try another maybe?".to_owned();
@@ -4271,7 +4279,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box = GUIBox::Main(false);
 				*mutm_box_vis = false;
 			};
-			
+
 			set_comm_text(comm_text,ui,ids);
 		},
 		//Need to find a more elegant solution.
@@ -4280,19 +4288,19 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			//If game is not started, or menu entered voluntarily, activate main menu.
 			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
-						
+
 			let mut qt_button:conrod::widget::button::TimesClicked;
-			
+
 			// If game is started and main menu active activate gm_button.
 			// Also set the default view (aka world map view).
 			//NB, sg and gm buttons' reaction directly depend on init.
 			if init {
 				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
 				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
-				
+
 				for _click in gm_button{
 					println!("Returning to game. Main menu be gone!.");
 					gui_box = GUIBox::GameTravel;
@@ -4301,10 +4309,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
-					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);							
+					save(&party,&p_names,spl,&p_loc,my_stories,my_dungeons,my_kills);
 					*comm_text = format!("O holy salvation! {} was saved to disk...",p_names[0]);
 					set_comm_text(comm_text,ui,ids);
-				};			
+				};
 			}else{
 				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
 				for _click in sg_button{
@@ -4314,7 +4322,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					set_comm_text(comm_text,ui,ids);
 				};
 			};
-			
+
 			//NB the remaining buttons' reactions are indy of init.
 			for _click in ng_button{
 				println!("New Game button pressed.");
@@ -4337,21 +4345,21 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box_previous = gui_box.clone();
 				gui_box = GUIBox::MainQuit(false);
 			};
-			
+
 			set_options_canvas(ui,ids,ipath,gui_song_list,
 							   silent_sender,
 						       wo,
 							   mon_faces,
 							   landscapes);
-							   
+
 			if ipath.is_some() {
 				set_music_browser(ui,ids,ipath,gui_song_list,wo);
 			};
-			
-			
+
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::MainQuit(x) => {
 			let canvas = widget::Canvas::new().length_weight(1.0);
 			//draw quit canvas
@@ -4359,9 +4367,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				(ids.quit_true_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 				(ids.quit_false_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 			]).border(BORDER).border_color(BORDER_COLOUR).set(ids.master, ui);
-			
+
 			let mut button = widget::Button::new().label_font_size(font_size_chooser_button(win_wh[0]));
-			
+
 			for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
 								.w_of(ids.quit_true_can).h(200.0)
 								.border(BORDER)
@@ -4375,23 +4383,23 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 								.border_color(BORDER_COLOUR)
 								.mid_right_of(ids.quit_false_can).set(ids.quit_false_but,ui){
 				gui_box = gui_box_previous.clone();
-			};	 	
+			};
 		},
-		
+
 		GUIBox::GameTravel => {
 			//If game is started, activate play menu.
 			//Preliminarily set canvases.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
-			
+
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			let (travel_button,fight_button,explore_button,
 				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
-			
-			//If you've teleported, tells you that you have. 
-			if gui_box_previous==GUIBox::GameTravelTeleport { 
+
+			//If you've teleported, tells you that you have.
+			if gui_box_previous==GUIBox::GameTravelTeleport {
 				*comm_text = format!("You teleport to {}...", p_loc.name);
 			};
 
@@ -4413,8 +4421,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			for _click in cast_button{
 				//Prepare the sages!
 				if (*p_scape != VOID) & (*p_scape != TIME) {*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);};
-				sages = sage_generator(&mon_faces,&p_names);		
-				gui_box = GUIBox::GameCastPre; 			
+				sages = sage_generator(&mon_faces,&p_names);
+				gui_box = GUIBox::GameCastPre;
 				//Put a function to cast a spell here and then poll sages.
 			};
 			for _click in party_button{
@@ -4425,7 +4433,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				println!("Main manu button pressed..");
 				gui_box = GUIBox::Main(true);
 			};
-			
+
 			set_init_world_map2(ids,ui,
 						&mut gui_box,
 						&mut gui_box_previous,
@@ -4440,24 +4448,24 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						comm_text,
 						timer,
 						tt_e_c_i_ll,
-						provisional_loc);	
-						
+						provisional_loc);
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		//Travel by teleport.
 		GUIBox::GameTravelTeleport => {
 			//If game is started, activate play menu.
 			//Preliminarily set canvases.
 			*p_scape = p_loc.scape;
-			
+
 			*comm_text = "As you cast the spell, the world blurs before your eyes. Where do warp to?".to_owned();
-			
+
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
-			
+
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			set_init_world_map(ids,ui,
 						&mut gui_box,
 						&mut gui_box_previous,
@@ -4473,19 +4481,19 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						comm_text,
 						timer,
 						tt_e_c_i_ll,
-						provisional_loc);	
-						
+						provisional_loc);
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameExplore => {
 			//If explore screen shown, do explore stuff.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
-			
-			
-			
+
+
+
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				let lsc = scenery_l_checker(landscapes,*p_scape);
 				if lsc<=*scenery_index {
@@ -4497,7 +4505,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			
+
 			//insert old exploration scheme.
 			if idungeon.is_none() {
 				*comm_text = format!("You explore the nooks and crannies of {}, but find nothing of note.",p_loc.name);
@@ -4511,14 +4519,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			}else{
 				set_middle_label(ui,ids,dungeons[idungeon.unwrap()].name,&win_wh);
 				if *dungeon_pointer==0 {
-					
+
 					*mutm_box_vis = true;
 					let pressed = set_mutant_menu_bin(ui,ids,
 						"Lets do this!",
 						"I want to live.",
 						format!("{}\nEnter {}?",dungeons[idungeon.unwrap()],dungeons[idungeon.unwrap()].name)
 					);
-					
+
 					match pressed.0 {
 						1 => {
 								*dungeon_pointer = 1;
@@ -4533,9 +4541,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 								gui_box = GUIBox::GameTravel;
 							 },
 						_=>{},
-					};				
+					};
 				};
-				
+
 				if (*dungeon_pointer==0) & !*mutm_box_vis {
 					*comm_text = format!("You explore the nooks and crannies of {}, and make a discovery:\n{}",p_loc.name,dungeons[idungeon.unwrap()]);
 					if timer>*freeze_timer+63 {
@@ -4550,10 +4558,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						*dungeon_pointer = 2;
 						gui_box_previous = gui_box.clone();
 						gui_box = GUIBox::GameFight(true);
-						
+
 						dungeon_updater(dungeons,party,idungeon.unwrap());
 						my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
-						
+
 						encounter_starter_dun(party, enemies, encounter,
 									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
 									&dungeons[idungeon.unwrap()].denizens);
@@ -4563,9 +4571,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					*freeze_timer = timer;
 					gui_box_previous = gui_box.clone();
 					gui_box = GUIBox::GameFight(true);
-					
+
 					my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
-						
+
 					encounter_starter_dun(party, enemies, encounter,
 									&dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2],
 									&dungeons[idungeon.unwrap()].denizens);
@@ -4585,7 +4593,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					};
 				};
 			};
-			
+
 			if idungeon.is_some(){
 				if *dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
 					set_afterstory(ui,ids,dungeons[idungeon.unwrap()].afterstory,dungeon_pointer);
@@ -4595,58 +4603,58 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						*mutm_box_vis = false;
 						gui_box = GUIBox::GameTravel;
 						my_dungeons.update_status(&dungeons[idungeon.unwrap()],*dungeon_pointer);
-						
+
 						*dungeon_pointer = 0;
 						println!("in setter dungeon_pointer={}",dungeon_pointer);
 					};
 					//println!("Afterstory should have been set now!");
 				};
 			};
-			
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameCastPre => {
 			//not finished.
 			*mutm_box_vis = true;
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
-			
+
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			
+
 			//maybe_soell.0 is party member. maybe_spell.2 is spell
-			let maybe_spell:Option<(usize,usize)> = set_spell_list_global(ui,ids, 
+			let maybe_spell:Option<(usize,usize)> = set_spell_list_global(ui,ids,
 																  comm_text,
 																  party,
 																  spl,
 																  p_names,
 																  win_wh[0]);
-												  
+
 			if maybe_spell.is_some() {
 				//Horror show time!
 				let (mem,spell) = maybe_spell.unwrap();
 				gui_box = GUIBox::GameCastCast(
 					spl[arcana_index_from_spell_id(spl,party[mem].0.Spellist[spell]).unwrap()].clone());
 			};
-			
+
 			let exit = set_mutant_menu_uni(ui,ids,"Better Not...");
-			
+
 			if exit.0==5 {
 				gui_box = GUIBox::GameTravel;
 				*mutm_box_vis = false;
 				*comm_text = "You decide against casting anything and return to walking the world.".to_owned();
 			};
-			
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameCastCast(x) => {
 			//not finished.
 			*mutm_box_vis = true;
@@ -4654,17 +4662,17 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
 			*comm_text = format!("Cast {}?",x.name);
-			
+
 			//Set mutant menu to cast. Currently a pseudo function.
 			let exit = set_mutant_menu_bin(ui,ids,"Cast","Hmm..",comm_text.clone());
-			
+
 			if exit.0==1 {
 				*comm_text = format!("You cast {}!",x.name);
 				//Placeholder!
@@ -4694,56 +4702,56 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			};
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameCastSage(x,y) => {
-			
+
 			//not finished.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			
+
 			gui_box = set_sage(ui,ids,&x,party,p_names,spl,gui_box,y,win_wh[0],pause,timer,freeze_timer,comm_text);
-			
+
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameInspectParty(bool) => {
 			//If game is started, activate play menu.
 			//Preliminarily set canvases.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
 
-			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);	
+			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameInspectInventory(i) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
-				
+
 		},
-		
+
 		GUIBox::GameInspectQuests(q) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
-			
+
 			set_quest_diary(ui,ids,&mut gui_box,my_stories,stories,&men_wh);
-			
+
 			if q.is_some() {
 				let q = get_a_story(q.unwrap(),stories);
 				if q.is_some() {
@@ -4751,38 +4759,38 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				};
 			};
 		},
-		
+
 		GUIBox::GameInspectDungeons(d) => {
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			
+
 			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
-			
+
 			set_dungeon_diary(ui,ids,&mut gui_box,my_dungeons,dungeons,&men_wh);
-			
+
 			if d.is_some() {
 				let d = get_a_dungeon(d.unwrap(),dungeons);
-				
+
 				if d.is_some() {
 					display_dungeon_diary_entry(ui,ids,my_dungeons,d.unwrap(),&mut gui_box);
 				};
 			};
 		},
-		
+
 		GUIBox::GameStory(story,stage_in,stage_out) => {
 			//not finished.
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_buttonless_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
-			
+
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
 				set_timescape(ui,ids,timer);
 			};
-			
+
 			gui_box = set_story(ui,ids,
 						 &story,
 						 mons,
@@ -4801,11 +4809,11 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						 timer,
 						 freeze_timer,
 						 comm_text);
-			
+
 			correct_comm_text_simple(comm_text,*pause);
 			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::GameFight(tr) => {
 			//Prepare canvases.
 			//println!("In GUIbox fight");
@@ -4813,26 +4821,26 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_fight_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,true);
 			//println!("set_fight_canvas completed");
-			
+
 			//Set label conditionally on whether you'r outsid eor in a dungeon.
 			//Not the most superefficient, but the briefest.
 			if idungeon.is_some() & (*dungeon_pointer>1) {
 				set_middle_label(ui,ids,dungeons[idungeon.unwrap()].scenes[*dungeon_pointer-2].name,&win_wh);
 			}else{
-				set_middle_label(ui,ids,p_loc.name,&win_wh);	
+				set_middle_label(ui,ids,p_loc.name,&win_wh);
 			};
 			//println!("GameFight label set");
-			
+
 			//Generate buttons
 			let (attack_button,defend_button,cast_button,
 				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,&men_wh,&win_wh);
-			
+
 			//println!("GameFight buttons set");
-				 
+
 			if tr {
 				//println!("gmoose765");
 				*freeze_timer = timer;
-				
+
 				//scenery index is moved here.
 				*scenery_index = scenery_setter(&landscapes,*p_scape,centre_w,centre_h);
 				println!("p_scape = {}, scenery_index = {}",p_scape,scenery_index);
@@ -4877,7 +4885,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						yt_adcwpe_bw[6] = true;
 					};
 					if yt_adcwpe_bw[3] {
-						
+
 						set_battle_spell_menu_wrapper(ui,ids,
 														 bkg_colour.clone(),
 														 &men_wh,
@@ -4889,7 +4897,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 														 battle_ifast);
 					};
 				};
-				
+
 				//println!("GameFight about to set background");
 				//Background should be set before anything else. Or you will see zilch.
 				if (*p_scape != VOID) & (*p_scape != TIME) {
@@ -4898,7 +4906,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					set_timescape(ui,ids,timer);
 				};
 				//println!("GameFight background set");
-				
+
 				//println!("gmoose 1114-entering set_battle_map");
 				set_battle_map(ids,ui,
 							mon_faces,mon_facesz,
@@ -4924,9 +4932,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							*pause);
 				//println!("GameFight battlemap set");
 			};
-			set_comm_text(comm_text,ui,ids); 			
+			set_comm_text(comm_text,ui,ids);
 		},
-		
+
 		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
 		_					=> {},
 	};
@@ -4949,8 +4957,8 @@ fn set_main_canvas_marker(){}
 fn set_main_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&[f64;2],mutm_box_vis:bool,title:bool){
 
 	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
-	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
-												
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis);
+
 	widget::Canvas::new().flow_down(&[
 		(ids.body, widget::Canvas::new()
 			.flow_right(&[
@@ -4995,8 +5003,8 @@ fn set_fight_canvas_marker(){}
 fn set_fight_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: color::Colour, men_wh:&[f64;2], win_wh:&[f64;2],mutm_box_vis:bool,title:bool){
 
 	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
-	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
-												
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis);
+
 	widget::Canvas::new().flow_down(&[
 				//(ids.header, widget::Canvas::new().color(color::BLUE).pad_bottom(2.0)),
 				(ids.body, widget::Canvas::new()
@@ -5035,8 +5043,8 @@ fn set_buttonless_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: colo
 {
 
 	let (mut comm_box,mut map_column,right_menus_canvas) = generate_three_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh);
-	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis); 
-												
+	let (mut coml_box,mut mutm_minibox, mutm_box_l) = generate_mutm_canvases(ui,ids,bkg_colour.clone(),&men_wh,&win_wh,mutm_box_vis);
+
 	widget::Canvas::new().flow_down(&[
 		(ids.body, widget::Canvas::new()
 			.flow_right(&[
@@ -5079,15 +5087,15 @@ fn generate_main_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f
 	conrod::widget::button::TimesClicked)
 {
 	let main_menu_button = generate_main_menu_button(men_wh,win_wh);
-	
+
 	//If game is not started, or menu entered voluntarily, activate main menu.
-	let ng_button = main_menu_button.clone().label("New Moose").mid_top_of(ids.far_left_column).set(ids.ng_button,ui);		
+	let ng_button = main_menu_button.clone().label("New Moose").mid_top_of(ids.far_left_column).set(ids.ng_button,ui);
 	let lg_button = main_menu_button.clone().label("Load Moose").down_from(ids.ng_button,0.0).set(ids.lg_button,ui);
 	let sg_button = main_menu_button.clone().label("Save Moose").down_from(ids.lg_button,0.0).set(ids.sg_button,ui);
 	let op_button = main_menu_button.label("Options").down_from(ids.sg_button,0.0).set(ids.op_button,ui);
-	
+
 	(ng_button,lg_button,sg_button,op_button)
-	
+
 }
 
 //A function to generate the 6 game menu buttons.
@@ -5101,16 +5109,16 @@ fn generate_play_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f
 	conrod::widget::button::TimesClicked)
 {
 	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
-	
-	let travel_button = game_menu_button.clone().label("Travel").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);		
+
+	let travel_button = game_menu_button.clone().label("Travel").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);
 	let fight_button = game_menu_button.clone().label("Pick a Fight").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
-	let explore_button = game_menu_button.clone().label("Explore").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);			
+	let explore_button = game_menu_button.clone().label("Explore").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);
 	let cast_button = game_menu_button.clone().label("Cast a Spell").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
 	let party_button = game_menu_button.clone().label("Inspect Party").down_from(ids.cast_button,0.0).set(ids.party_button,ui);
 	let gm_button = game_menu_button.clone().label("Main Menu").down_from(ids.party_button,0.0).set(ids.gm_button,ui);
-	
+
 	(travel_button,fight_button,explore_button,cast_button,party_button,gm_button)
-	
+
 }
 
 fn generate_inspect_menu_buttons_marker(){}
@@ -5118,13 +5126,13 @@ fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
 								 men_wh:&[f64;2], win_wh:&[f64;2], gui_box:&mut GUIBox)
 {
 	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
-	
-	let inspect_button = game_menu_button.clone().label("Inspect Party").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);		
+
+	let inspect_button = game_menu_button.clone().label("Inspect Party").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);
 	let inventory_button = game_menu_button.clone().label("Inventory").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
-	let dungeon_d_button = game_menu_button.clone().label("Dungeon Diary").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);			
+	let dungeon_d_button = game_menu_button.clone().label("Dungeon Diary").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);
 	let quest_d_button = game_menu_button.clone().label("Quest Diary").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
 	let travel_button = game_menu_button.clone().label("Travel").down_from(ids.cast_button,0.0).set(ids.gm_button,ui);
-	
+
 	for _click in inspect_button {
 		*gui_box = GUIBox::GameInspectParty(false);
 		println!("Inspect Party button pressed (from inspect menu)");
@@ -5145,7 +5153,7 @@ fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
 		*gui_box = GUIBox::GameTravel;
 		println!("Travel button pressed (from inspect menu)");
 	};
-	
+
 }
 
 //A function to make the fight menu canvas
@@ -5159,7 +5167,7 @@ fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh
 	conrod::widget::button::TimesClicked,
 	conrod::widget::button::TimesClicked)
 {
-	
+
 	widget::Canvas::new()
 			.w_h(SIDE_MENU_W,men_wh[1])
 			//.color(color::DARK_BLUE)
@@ -5176,47 +5184,47 @@ fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh
 													BORDER_COLOUR)
 							.set(ids.fight_menu_buttons, ui);
 	//Fight menu buttons.
-	let attack_button = game_menu_button.clone().label("Attack").mid_top_of(ids.fight_menu).set(ids.at_button,ui);		
+	let attack_button = game_menu_button.clone().label("Attack").mid_top_of(ids.fight_menu).set(ids.at_button,ui);
 	let defend_button = game_menu_button.clone().label("Defend").down_from(ids.at_button,0.0).set(ids.de_button,ui);
 	let cast_button = game_menu_button.clone().label("Cast a spell").down_from(ids.de_button,0.0).set(ids.ca_button,ui);
 	let wait_button = game_menu_button.clone().label("Wait..").down_from(ids.ca_button,0.0).set(ids.wa_button,ui);
 	let panic_button = game_menu_button.clone().label("Panic!").down_from(ids.wa_button,0.0).set(ids.pa_button,ui);
 	let escape_button = game_menu_button.clone().label("Escape!").down_from(ids.pa_button,0.0).set(ids.es_button,ui);
-	
+
 	(attack_button,defend_button,cast_button,wait_button,panic_button,escape_button)
-	
+
 }
 
 fn set_battle_spell_menu_wrapper_marker(){}
 fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
 								 bkg_colour: color::Colour,
-								 men_wh:&[f64;2], 
+								 men_wh:&[f64;2],
 								 win_wh:&[f64;2],
 								 comm_text: &mut String,
 								 spl: &Vec<Spell>,
 								 party: &mut Vec<(Lifeform,usize)>,
 								 to_cast: &mut String,
 								 battle_ifast: usize)
-{	
+{
 	let but_h:f64 = men_wh[1]/10.0;
 	let short_l:f64 = men_wh[1]-but_h*6.0-BORDER*7.0;
-	
+
 	let mut battle_spell_menu = widget::Canvas::new().scroll_kids_vertically()
 								  .w_of(ids.es_button)
 								  .x(ui.xy_of(ids.es_button).unwrap()[0])
 								  .h(short_l)
 								  .down_from(ids.es_button,0.0);
-										 
+
 	//set the battle spell canvas...
 	battle_spell_menu.border(BORDER)
 			 .border_color(color::BLUE.with_luminance(0.66))
 			 .set(ids.spells_can,ui);
-			 
+
 	//...and enter the battle spell menu function.
 	set_battle_spell_menu(ui,ids,comm_text,
 						  spl,party,
 						  to_cast,
-						  battle_ifast);	
+						  battle_ifast);
 }
 
 
@@ -5224,13 +5232,13 @@ fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
 fn generate_main_menu_button_marker(){}
 fn generate_main_menu_button<'a>(men_wh:&[f64;2], win_wh:&'a [f64;2])
 -> conrod::widget::Button<'a, widget::button::Flat> {
-	
+
 	let but_h:f64 = men_wh[1]/10.0;
-	
+
 	widget::Button::new().color(color::DARK_RED)
 						 .w_h(men_wh[0]-BORDER*2.0,but_h)
 						 .label_font_size(font_size_chooser_button_b(win_wh[0]))
-	
+
 }
 
 //Generates the three canvases which are then set.
@@ -5244,7 +5252,7 @@ fn generate_three_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour
 											  .length_weight(0.5),
 									   Some(BORDER),
 									   BORDER_COLOUR);
-									
+
 	let mut map_column = canvas_bord_col(widget::Canvas::new()
 												.color(bkg_colour)
 												.scroll_kids_vertically()
@@ -5252,7 +5260,7 @@ fn generate_three_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour
 												.pad(BORDER),
 												Some(BORDER),
 												BORDER_COLOUR);
-												
+
 	let mut right_menus_canvas = widget::Canvas::new()
 										.length(SIDE_MENU_W)
 										.h(win_wh[1]-6.0)
@@ -5273,7 +5281,7 @@ fn generate_mutm_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour:
 									.border_color(BORDER_COLOUR)
 									.length(if !mutm_box_vis {0.0}else{36.0});
 
-									
+
 	let mutm_box_l:f64 = if mutm_box_vis {50.0}else{0.0};
 	let mut mutm_minibox = widget::Canvas::new().color(BACKGR_COLOUR).length(mutm_box_l);
 	(coml_box,mutm_minibox,mutm_box_l)
@@ -5281,7 +5289,7 @@ fn generate_mutm_canvases<'a>(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour:
 
 //To be used on occasion.
 fn set_text_input(ui: &mut conrod::UiCell, ids: &mut Ids,player_input:&mut String)-> Option<std::string::String>{
-	
+
 	widget::TextEdit::new(player_input)
 		.color(color::DARK_RED)
 		.font_size(24)

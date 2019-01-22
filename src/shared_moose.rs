@@ -228,15 +228,16 @@ pub fn exp_calc(xx: &Vec<(Lifeform,usize,[Option<[usize;2]>;2])>, i:usize)->f32{
 		+xx[i].0.Speed*(xx[i].0.HP+xx[i].0.MP);
 
 	//Baxter to the soap factory.
-	for i in xx.iter(){
-		let baxter = i.0.HP*(i.0.Attack+i.0.Defence)
-		+i.0.MP*(i.0.BM+i.0.WM)
-		+i.0.Speed*(i.0.HP+i.0.MP);
-		expgain+= baxter/kachi;
+	for mon in xx.iter(){
+		let baxter = mon.0.HP*(mon.0.Attack+mon.0.Defence)
+		+mon.0.MP*(mon.0.BM+mon.0.WM)
+		+mon.0.Speed*(mon.0.HP+mon.0.MP);
+
+		//Only add exp value if monster is not on your team.
+		if mon.1 != xx[i].1 {expgain+= baxter/kachi;};
 	};
-	expgain-= 2.0;
-	expgain = if expgain<0.0 {0.0}else{expgain};
-	expgain
+
+	if expgain<0.0 {0.0}else{expgain}
 }
 
 //Part of load game function.
