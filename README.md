@@ -1,6 +1,6 @@
 # TGWM (Tales of the Great White Moose)[<img src="https://api.travis-ci.org/aleshaleksey/TGWM.svg?branch=master">](https://travis-ci.org/aleshaleksey/TGWM)
 
-**NB:** Currently compiles (but not with travis) and runs with rust-1.28.0. Compiles and crashes before event loop is build with rust-1.31.1.
+**NB:** Currently compiles. Should compile and run on both 1.28.0 and 1.31.1 if the Cargo.lock files are deleted.
 
 A flat RPG written in rust as an etude in using the language.
 
@@ -71,7 +71,7 @@ small chance of winning or losing. In fact it's problematic in general and needs
 
 Notes on compiling
 ------------------
-Should compile on Rust 1.28.0, however, this will only work if all local crates are already upto date. It appears that as of January 2019, this can only compiled *de novo* with newer versions (Rust Stable works).
+It appears that Cargo does some funny things with different rust versions. Should compile and run with 1.31.1 if the Cargo.lock files in this repository are deleted (otherwise it compiles, but does not run). Should also work with rust 1.28.0, but that no longer seems to be able to access crates.io, so I am not sure whether or not it is possible to get it to work on 1.28.0.
 
 NB: for a clean, release version (on Windows) add " --release -C link-args="-Wl,--subsystem,windows" "
 
