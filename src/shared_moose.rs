@@ -275,6 +275,26 @@ pub fn sm_rets(x:&Lifeform)->String{
 	}
 }
 
+//Function to reset location, names, and other variables
+//when loading a game or starting a new game.
+pub fn reset_party_variables(party: &mut Vec<(Lifeform,usize)>,
+							 p_names: &mut Vec<String>,
+							 p_loc: &mut Place,
+							 pl: &mut (usize,usize),
+							 my_stories: &mut MyStories,
+							 my_kills: &mut KillList,
+							 my_dungeons: &mut MyDungeons,
+							 world:&Vec<[Place;19]>) {
+								   
+	*party = Vec::with_capacity(5);
+	*p_names = Vec::with_capacity(5);
+	*p_loc = world[8][6].clone();
+	*pl = (11,6);
+	*my_stories = MyStories::new();
+	*my_kills = KillList::new();
+	*my_dungeons = MyDungeons::new();
+}
+
 fn load_marker(){}
 //rewritten load function.
 //NB has some "illogical" stuff here to preserve backwards compatibility
@@ -292,6 +312,11 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	let mut rlb = Vec::with_capacity(8000);
 	let mut ltxt:Vec<String> = Vec::new();
 	let mut rltxt = String::new();
+	
+	//reset party variables.
+	reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
+	
+	//This should also be safetified.
 	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
 	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrtxt");
 	let to_open_s = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrp");
@@ -316,7 +341,7 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 			println!("There is a plot");
 			let mut rplot:Vec<u8> = Vec::with_capacity(50000);
 			fp.read_to_end(&mut rplot);
-			let plot_len = rplot.len()/8; //Assumes vec<(u32,u16,u16)>, hence 6 bytes,
+			let plot_len = rplot.len()/8; //Assumes vec<(u32,u16,u16)>, hence 8 bytes,
 			let plot_pointer = unsafe {transmute::<*mut u8,*mut (u32,u16,u16)>(rplot.as_mut_ptr())};
 			forget(rplot);
 			let rplottrans = unsafe {
@@ -330,7 +355,6 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 		},
 		_		=> {
 			println!("There is no plot.");
-			*my_stories = MyStories::new();
 		},
 	};
 
@@ -355,7 +379,6 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 		},
 		_		=> {
 			println!("There are no dungeons.");
-			*my_dungeons = MyDungeons::new();
 		},
 	};
 
@@ -382,7 +405,8 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 		},
 		_		=> {
 			println!("There are no kills.");
-			0},
+			0
+		},
 	};
 	println!("Got here");
 	// NB old files will not have a plot,dungeon,quest or killist files initially
@@ -390,11 +414,6 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	// reformat text file from &str to String.
 	let rrltxt:Vec<&str> = rltxt.split("\n").collect();
 	for i in 0..rrltxt.len(){ltxt.push(rrltxt[i].to_owned())};
-
-	//reset party, party location and party names.
-	*p_names = Vec::with_capacity(5);
-	*party = Vec::with_capacity(5);
-	*coords = [0,0];
 
     let mut indtrack:usize=0;
 //reconstitute party number u8->u64
@@ -541,7 +560,6 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	for i in 0..(kill_n) {
 		killist.push((ltxt[i+indtrack].clone(),kill_n_vector[i]));
 	};
-	*my_kills = KillList::new();
 	my_kills.replace_kills(killist);
 	println!("Killist reconstituted: {:?}",my_kills);
 

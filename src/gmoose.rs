@@ -37,6 +37,7 @@ extern crate time;
 //mod lmoose;
 //mod smoose;
 use shared_moose::*;
+use cmoose;
 use omoose::{parse_music_config,ISEKAIN};
 use smoose::{MyStories,Story,Sage};
 use smoose::{sage_generator,sage_poller};
@@ -1523,38 +1524,17 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			*comm_text = format!("You are here: {}", world[wml-c][r]);
 			set_comm_text(comm_text,ui,ids);
 		}
-
-		set_geographical_button('N',
-								ids,ui,button_n.clone(),
-								world,
-								&square_size,&bp,
-								wml,pl,provisional_loc,
-								comm_text,
-								tt_e_c_i_ll);
-
-		set_geographical_button('S',
-								ids,ui,button_n.clone(),
-								world,
-								&square_size,&bp,
-								wml,pl,provisional_loc,
-								comm_text,
-								tt_e_c_i_ll);
-
-		set_geographical_button('E',
-								ids,ui,button_n.clone(),
-								world,
-								&square_size,&bp,
-								wml,pl,provisional_loc,
-								comm_text,
-								tt_e_c_i_ll);
-
-		set_geographical_button('W',
-								ids,ui,button_n,
-								world,
-								&square_size,&bp,
-								wml,pl,provisional_loc,
-								comm_text,
-								tt_e_c_i_ll);
+		
+		//Set the geographical buttons for lookin at the land around you.
+		for dir in vec!['N','S','E','W'].into_iter() {
+			set_geographical_button(dir,
+									ids,ui,button_n.clone(),
+									world,
+									&square_size,&bp,
+									wml,pl,provisional_loc,
+									comm_text,
+									tt_e_c_i_ll);
+		};
 
 }
 
@@ -3741,7 +3721,12 @@ widget_ids! {
 		header,							//Not used anymore
 		body,							//Am I even using that now?
 		marker_shape, 					//highlight battling monster
-		marker_shape2, 					//highlight battling monster.
+		marker_shape2,					//highlight battling monster.
+		
+		
+		selected_button_marker_canvas,
+		selected_button_marker, 		//A marker of the selected button or field.
+		 					
 		battle_background,				//image background in battle
 		battle_background_time_a,		//matrix for timescape
 		battle_background_time_b,		//matrix for timescape
@@ -3910,13 +3895,25 @@ widget_ids! {
 }
 
 
+//Experiment.
+pub fn set_outer<T:conrod::widget::Widget>(widget: T,
+			 id: conrod::widget::Id,
+			 ref mut ui: conrod::UiCell,
+			 awc:&mut cmoose::AdvWidgetCycler)->T::Event {
+	//Stuff to do with the AdvWidgetCycler goes here...
+	awc.mark_as_set(id);
+	widget.set(id,ui)
+}
+
 //Rework of set widgets with sanity in mind.
 //Will require a rework of the whole module.
 //commented out inputs can be gontrolled by GUIBox.
 fn set_widgets_rework_marker(){}
 pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
+					button_tracker: &mut Option<conrod::widget::Id>,
 					mut gui_box: GUIBox<'a>,
 					mut gui_box_previous: GUIBox<'a>,
+					widget_cycler:&mut cmoose::AdvWidgetCycler,
 					mon_faces: &'a Vec<[conrod::image::Id;3]>,
 					mon_facesz: &Vec<[conrod::Scalar;2]>,
 					comm_text:&mut String,
@@ -3985,7 +3982,17 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
 	let men_wh = [214.0,win_wh[1]];
 	let comm_text_bckup1:String = comm_text.clone();
-
+	
+	//Set marker of selected button (currently not fully functionalised).
+	if let Some((wig,other)) = widget_cycler.current_or() {
+		if ui.wh_of(wig).is_some() & (other!=cmoose::WidgetType::Other) {
+			set_marker_of_button(ui,ids,wig,timer,true);
+		};
+	};
+	
+	//reset the widget cycler set list.
+	widget_cycler.unset_all();
+	
 	match gui_box.clone() {
 
 		GUIBox::Main(init) => {
@@ -4131,24 +4138,25 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			//Get an answer to the previous question and advance things.
 			if answer.0==5 {
 				if !init {
-					*party = Vec::with_capacity(5);
-					*p_names = Vec::with_capacity(5);
-					*p_loc = world[8][6].clone();
-					*pl = (13,5);
+					//reset party variables.
+					reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
+					gui_box = GUIBox::Main(!init);
+				}else{
+					gui_box = GUIBox::Main(init);
 				};
-				gui_box = GUIBox::Main(init);
 			}else{
 				match x {
 
 					0 => {	if init & (answer.0==1) {
 							gui_box = GUIBox::MainNew((0,false));
-							*party = Vec::with_capacity(5);
-							*p_names = Vec::with_capacity(5);
-							*p_loc = world[8][6].clone();
-							*pl = (13,5);
+							//reset party variables.
+							reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
 						};
 					},
 					1 => {	if answer.0==1{
+								//reset party variables.
+								reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
+								
 								gui_box = GUIBox::MainNew((2,init));
 								*comm_text = format!("What would you be, {}?",&p_names[0]);
 								set_comm_text(comm_text,ui,ids);
@@ -4291,7 +4299,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			//If game is not started, or menu entered voluntarily, activate main menu.
 			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
-
+			
 			let mut qt_button:conrod::widget::button::TimesClicked;
 
 			// If game is started and main menu active activate gm_button.
@@ -4367,7 +4375,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				(ids.quit_true_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 				(ids.quit_false_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 			]).border(BORDER).border_color(BORDER_COLOUR).set(ids.master, ui);
-
+			
 			let mut button = widget::Button::new().label_font_size(font_size_chooser_button(win_wh[0]));
 
 			for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
@@ -4397,7 +4405,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			let (travel_button,fight_button,explore_button,
 				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
-
+			
 			//If you've teleported, tells you that you have.
 			if gui_box_previous==GUIBox::GameTravelTeleport {
 				*comm_text = format!("You teleport to {}...", p_loc.name);
@@ -4681,14 +4689,15 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				//If sages are present pick
 				match sage {
 					Some(s) => {
-						*comm_text = format!("We have a sage! The {}!",sages[s].name);
+						*comm_text = format!("Your spell has caught the attention of a sage! The {}!",sages[s].name);
 						gui_box = GUIBox::GameCastSage(sages[s].clone(),GREETING1);
 						*freeze_timer = timer;
 						*pause = true;
 						println!("got to greeting1");
 					},
 					None => {
-						*comm_text = format!("No sage!");
+						println!("No sage!");
+						*comm_text = format!("You cast your spell, and the arcane words dissipate into the dying world...");
 						gui_box = if x.Teleport {
 							GUIBox::GameTravelTeleport
 						}else{
@@ -4834,7 +4843,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			//Generate buttons
 			let (attack_button,defend_button,cast_button,
 				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,&men_wh,&win_wh);
-
+			
 			//println!("GameFight buttons set");
 
 			if tr {
@@ -4938,6 +4947,8 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
 		_					=> {},
 	};
+	
+	//Put button clicker function here.
 	(gui_box,gui_box_previous,sages)
 }
 
@@ -5298,4 +5309,41 @@ fn set_text_input(ui: &mut conrod::UiCell, ids: &mut Ids,player_input:&mut Strin
 		.line_spacing(5.0)
 		.restrict_to_height(false)
 		.set(ids.comm_link, ui)
+}
+
+
+//A function to set the yellow triangle that denoted the selected button.
+fn set_marker_of_button(ui: &mut conrod::UiCell,
+						ids: &Ids,
+						selected_button_id:conrod::widget::Id,
+						timer:usize,
+						marker_active:bool) {
+	
+	let wh_of_button = ui.wh_of(selected_button_id).unwrap_or([0.0,0.0]);
+	let xy_of_button = ui.xy_of(selected_button_id).unwrap_or([0.0,0.0]);
+	
+	//make the edge coordinate of the triangle.
+	let edge = [xy_of_button[0],xy_of_button[1]];
+	let coordinates = if marker_active {
+		vec![[edge[0]+wh_of_button[0]*(-0.5)+1.0,edge[1]-wh_of_button[1]/4.0],
+			 [edge[0]+wh_of_button[0]*(-0.5)+1.0,edge[1]+wh_of_button[1]/4.0],
+			 [edge[0]+wh_of_button[0]*(-0.3)+1.0,edge[1]]]
+	}else{
+		vec![[0.0,0.0],[0.0,0.0],[0.0,0.0]]
+	};
+						   
+	//Make the pulsing colour.
+	let pulsing_colour:color::Color = if marker_active {
+		conrod::color::ORANGE.with_luminance(sync_t(timer))
+	}else{
+		conrod::color::BLACK.with_alpha(0.0)
+	};				   
+		
+	//set the thingy.
+			
+	widget::Polygon::fill_with(coordinates,pulsing_colour)
+		.xy(xy_of_button)
+		.floating(true)
+		.set(ids.selected_button_marker,ui);
+	
 }
