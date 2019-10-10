@@ -2,10 +2,11 @@ use cmoose::{FlowCWin,GUIBox,AdvWidgetCycler};
 use gmoose;
 use lmoose::{Place,Lifeform,Dungeon};
 use smoose::*;
-use conrod_support::{self,convert_event,EventLoop};
+use conrod_support::{convert_event,EventLoop};
 
 use conrod;
 use glium;
+use std::sync::Mutex;
 
 //A function to handle the event loop.
 pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
@@ -25,7 +26,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
                           comm_text: & mut String,
                           gui_box: & mut GUIBox<'a>,
                           gui_box_previous: & mut GUIBox<'a>,
-                          widget_cycler: &mut AdvWidgetCycler,
+                          widget_cycler: &mut Mutex<AdvWidgetCycler>,
                           party: & mut Vec<(Lifeform,usize)>,
                           enemies: & mut Vec<(Lifeform,usize)>,
                           encounter: & mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
@@ -84,7 +85,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
                     },
                     ..
                 } => {  if timer>*freeze_timer+1 {
-							widget_cycler.advance();
+							widget_cycler.lock().unwrap().advance();
 							if !*pause {*freeze_timer = timer;};
 						};
                     //println!("Pageup pressed,wo.wo.ifc={}",wo.wo.ifc);
@@ -97,7 +98,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
                     },
                     ..
                 } => {  if timer>*freeze_timer+1 {
-							widget_cycler.regress();
+							widget_cycler.lock().unwrap().regress();
 							if !*pause {*freeze_timer = timer;};
 						};
                     //println!("Pagedown pressed,wo.ifc={}",wo.ifc);

@@ -38,10 +38,13 @@ extern crate time;
 //mod smoose;
 use shared_moose::*;
 use cmoose;
+use cmoose::AdvWidgetCycler;
 use omoose::{parse_music_config,ISEKAIN};
 use smoose::{MyStories,Story,Sage};
 use smoose::{sage_generator,sage_poller};
 use smoose::*;
+use moose_button::{MooseButton,HeadButts,self};
+use moose_matrix::{MooseElements,MooseMatrix};
 
 use inflector::Inflector;
 use rand::Rng;
@@ -54,6 +57,7 @@ use std::fs::{self};
 use std::io::Write;
 use std::path::{Component, PathBuf};
 use std::sync::mpsc::SyncSender;
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use std::f32;
@@ -329,14 +333,14 @@ fn set_battle_background(ui: &mut conrod::UiCell, ids: &mut Ids,
 }
 
 //function to set the ever shifting time scape. (Simple diffraction for now)
-fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
+fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize,widget_cycler:&Mutex<AdvWidgetCycler>){
 
 	let mut wh = ui.wh_of(ids.middle_column).unwrap();
 	let mut centre:conrod::Point = ui.xy_of(ids.middle_column).unwrap();
 	wh = [wh[0]-6.0,wh[1]-6.0];
 
 
-	let mut mat = widget::Matrix::new((wh[0]/75.0) as usize,(wh[1]/75.0) as usize)
+	let mut mat = MooseMatrix::new((wh[0]/75.0) as usize,(wh[1]/75.0) as usize)
 					.wh(wh)
 					.middle_of(ids.middle_column);
 
@@ -366,7 +370,7 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
-																			1.0)),ui);
+																			1.0)),ui,widget_cycler);
 	}
 	while let Some(elem) = mat_b.next(ui) {
 		border_crawler_b(centre.clone(),wh.clone(),
@@ -377,7 +381,7 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
-																			1.0)),ui);
+																			1.0)),ui,widget_cycler);
 	}
 	while let Some(elem) = mat_c.next(ui) {
 		border_crawler_c(centre.clone(),wh.clone(),
@@ -388,7 +392,7 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
-																			1.0)),ui);
+																			1.0)),ui,widget_cycler);
 	}
 	while let Some(elem) = mat_d.next(ui) {
 		border_crawler_d(centre.clone(),wh.clone(),
@@ -399,14 +403,17 @@ fn set_timescape(ui: &mut conrod::UiCell, ids: &mut Ids,timer:usize){
 		elem.set(widget::Line::abs(start_point,end_point).color(color::rgba(elem.col as f32/9.0 - timer as f32%0.5,
 																			elem.row as f32/18.0 + timer as f32%0.5,
 																			(elem.col + elem.row) as f32/18.0,
-																			1.0)),ui);
+																			1.0)),ui,widget_cycler);
 	}
 
 }
 
 
 //Function to set spell list in battle.
-fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: &mut String,
+fn set_battle_spell_menu(ui: &mut conrod::UiCell,
+						ids: &mut Ids,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
+						mut comm_text: &mut String,
 						spl: &Vec<Spell>,
 						mut party: &mut Vec<(Lifeform,usize)>,
 						mut to_cast: &mut String,
@@ -421,7 +428,7 @@ fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: 
 	let w_mc:f64 = ui.w_of(ids.master).unwrap_or(1080.0);
 
 	//place button matrix of spells on spells_can canvas.
-	let mut spell_menu = conrod::widget::Matrix::new(1,party[battle_ifast].0.Spellist.len())
+	let mut spell_menu = MooseMatrix::new(1,party[battle_ifast].0.Spellist.len())
 			.mid_top_of(ids.spells_can)
 			.wh([spm_wh[0],(party[battle_ifast].0.Spellist.len()*50) as f64])
 			.set(ids.spells_mtrx, ui);
@@ -431,12 +438,12 @@ fn set_battle_spell_menu(ui: &mut conrod::UiCell, ids: &mut Ids, mut comm_text: 
 		let r  = spell.row;
 		let spell_name:String = arcana_name_from_spell_id(spl,party[battle_ifast].0.Spellist[r]);
 		let colour = colour_of_magic(arcana_type_from_spell_id(spl,party[battle_ifast].0.Spellist[r]).unwrap());
-		let magic_butt = widget::Button::new().label(&spell_name)
+		let magic_butt = MooseButton::new(widget_cycler).label(&spell_name)
 											  .label_color(colour.plain_contrast())
 											  .label_font_size(font_size_chooser_button_b(w_mc))
 											  .wh(butt_wh)
 											  .color(colour);
-		for _click in spell.set(magic_butt,ui) {
+		for _click in spell.set(magic_butt,ui,widget_cycler) {
 			*comm_text = format!("{}\nYou prepare to cast {}...",comm_text,&spell_name);
 			*to_cast = spell_name.clone();
 		};
@@ -482,10 +489,14 @@ fn colour_of_monster(monster_type: u8) -> conrod::color::Colour {
 
 //A function to set the mutant menus.
 #[allow(unused_variables)]
-fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,d:&str,e:&str) -> (usize,String) {
+fn set_mutant_menu (ui: &mut conrod::UiCell,
+					ids: &mut Ids,
+					widget_cycler:&Mutex<AdvWidgetCycler>,
+					a:&str,b:&str,c:&str,d:&str,e:&str) -> (usize,String) {
+						
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
-	let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
 	let mut out:usize = 0;
 	//instructions for button 1.
 	let mut comm_text = String::new();
@@ -493,7 +504,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 										  .wh_of(ids.mut1_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut1_box)
-										  .set(ids.mut1_but,ui){
+										  .set_outer(widget_cycler,ids.mut1_but,ui){
 		comm_text = format!("{}",a);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 1;};
@@ -501,7 +512,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 										  .wh_of(ids.mut2_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut2_box)
-										  .set(ids.mut2_but,ui){
+										  .set_outer(widget_cycler,ids.mut2_but,ui){
 		comm_text = format!("{}",b);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 2;};
@@ -509,7 +520,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 										  .wh_of(ids.mut3_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut3_box)
-										  .set(ids.mut3_but,ui){
+										  .set_outer(widget_cycler,ids.mut3_but,ui){
 		comm_text = format!("{}",c);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 3;};
@@ -517,7 +528,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 										  .wh_of(ids.mut4_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut4_box)
-										  .set(ids.mut4_but,ui){
+										  .set_outer(widget_cycler,ids.mut4_but,ui){
 		comm_text = format!("{}",d);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 4;};
@@ -525,7 +536,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 										  .wh_of(ids.mut5_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut5_box)
-										  .set(ids.mut5_but,ui){
+										  .set_outer(widget_cycler,ids.mut5_but,ui){
 		comm_text = format!("{}",e);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 5;};
@@ -534,10 +545,13 @@ fn set_mutant_menu (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,c:&str,
 }
 
 #[allow(unused_variables)]
-fn set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,comm_text:String) -> (usize,String) {
+fn set_mutant_menu_bin (ui: &mut conrod::UiCell,
+						ids: &mut Ids,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
+						a:&str,e:&str,comm_text:String) -> (usize,String) {
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
-	let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
 	let mut out:usize = 0;
 	//instructions for button 1.
 	let mut comm_text = String::new();
@@ -545,14 +559,14 @@ fn set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,com
 										  .wh_of(ids.mut1_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut1_box)
-										  .set(ids.mut1_but,ui){
+										  .set_outer(widget_cycler,ids.mut1_but,ui){
 		comm_text = comm_text;
 		out = 1;};
 	for _click in mut_but.clone().label(e).label_color(color::GREEN.with_luminance(0.66))
 										  .wh_of(ids.mut5_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut5_box)
-										  .set(ids.mut5_but,ui){
+										  .set_outer(widget_cycler,ids.mut5_but,ui){
 		//comm_text = format!("You pressed \"{}\".",e);
 		set_comm_text(&mut comm_text,ui,ids);
 		out = 5;};
@@ -561,10 +575,14 @@ fn set_mutant_menu_bin (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,e:&str,com
 }
 
 #[allow(unused_variables)]
-fn set_mutant_menu_uni (ui: &mut conrod::UiCell, ids: &mut Ids,e:&str) -> (usize,String) {
+fn set_mutant_menu_uni (ui: &mut conrod::UiCell,
+						ids: &mut Ids,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
+						e:&str) -> (usize,String) {
+							
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
-	let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
 	let mut out:usize = 0;
 	//instructions for button 1.
 	let mut comm_text = String::new();
@@ -572,36 +590,40 @@ fn set_mutant_menu_uni (ui: &mut conrod::UiCell, ids: &mut Ids,e:&str) -> (usize
 										  .wh_of(ids.mut5_box)
 										  .label_font_size(font_size)
 										  .middle_of(ids.mut5_box)
-										  .set(ids.mut5_but,ui){
+										  .set_outer(widget_cycler,ids.mut5_but,ui){
 		out = 5;
 	};
 	(out,comm_text)
 }
 
 #[allow(unused_variables)]
-fn set_mutant_menu_tri (ui: &mut conrod::UiCell, ids: &mut Ids,a:&str,b:&str,e:&str) -> (usize,String) {
+fn set_mutant_menu_tri (ui: &mut conrod::UiCell,
+						ids: &mut Ids,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
+						a:&str,b:&str,e:&str) -> (usize,String) {
+							
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
-	let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
 	let mut out:usize = 0;
 	//instructions for button 1.
 	let mut comm_text = String::new();
 	for _click in mut_but.clone().label(a).label_color(color::GREEN.with_luminance(0.66))
 										  .wh_of(ids.mut1_box)
 										  .middle_of(ids.mut1_box)
-										  .set(ids.mut1_but,ui){
+										  .set_outer(widget_cycler,ids.mut1_but,ui){
 		out = 1;
 	};
 	for _click in mut_but.clone().label(b).label_color(color::GREEN.with_luminance(0.66))
 										  .wh_of(ids.mut2_box)
 										  .middle_of(ids.mut2_box)
-										  .set(ids.mut2_but,ui){
+										  .set_outer(widget_cycler,ids.mut2_but,ui){
 		out = 2;
 	};
 	for _click in mut_but.clone().label(e).label_color(color::GREEN.with_luminance(0.66))
 										  .wh_of(ids.mut5_box)
 										  .middle_of(ids.mut5_box)
-										  .set(ids.mut5_but,ui){
+										  .set_outer(widget_cycler,ids.mut5_but,ui){
 		out = 5;
 	};
 	(out,comm_text)
@@ -635,9 +657,11 @@ fn text_maker_m(text: &str, col:Colour, x:u32) -> widget::Text {
 
 //set up the vertically aligned groups.
 //ie group east and west. (See battle_line_h for logic).
-fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+fn battle_line_v (ids: &mut Ids,
+				  ref mut ui: &mut conrod::UiCell,
+				  widget_cycler:&Mutex<AdvWidgetCycler>,
 				mon_faces: &Vec<[conrod::image::Id;3]>,
-				mut mtrx: widget::matrix::Elements,
+				mut mtrx: MooseElements,
 				group: &Vec<(Lifeform,usize)>,
 				mut comm_text: &mut String,
 				timer:usize,
@@ -686,7 +710,13 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 			let x = format!("{}",group[r].0.name);
 			//let y = &x.iwpl();
-			let b = widget::Button::image( if group[r].0.HP_shade/group[r].0.HP>0.0 {mon_faces[group[r].0.id][0]}else{mon_faces[group[r].0.id][2]} )
+			let b = MooseButton::image( if group[r].0.HP_shade/group[r].0.HP>0.0 {
+												mon_faces[group[r].0.id][0]
+											}else{
+												mon_faces[group[r].0.id][2]
+											},
+											widget_cycler
+										  )
 											.hover_image(mon_faces[group[r].0.id][1])
 											.press_image(mon_faces[group[r].0.id][1])
 											.label(&x)
@@ -694,7 +724,7 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 											.label_font_size(font_size)
 											.label_y(conrod::position::Relative::Scalar(bh/2.0))
 											.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
-			for _click in renegade.set(b,ui) {
+			for _click in renegade.set(b,ui,widget_cycler) {
 				if !yt_adcwpe_bw[0] {
 					*comm_text = format!("This {} is {}.",x,sm_rets(&group[r].0));
 					set_comm_text(comm_text,ui,ids);
@@ -717,9 +747,11 @@ fn battle_line_v (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 //Set the threee potential horizontal battle lines of...
 //Grous centre, north and south.
-fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+fn battle_line_h (ids: &mut Ids,
+				  ref mut ui: &mut conrod::UiCell,
+				  widget_cycler:&Mutex<AdvWidgetCycler>,
 				mon_faces: &Vec<[conrod::image::Id;3]>,
-				mut mtrx: widget::matrix::Elements,
+				mut mtrx: MooseElements,
 				group: &Vec<(Lifeform,usize)>,
 				mut comm_text: &mut String,
 				timer:usize,
@@ -772,17 +804,25 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			//set the monster, name and all.
 			let x = format!("{}",group[c].0.name);
 			let y = &x.x_chr_pl2(12);
-			let b = widget::Button::image( if group[c].0.HP_shade/group[c].0.HP>0.0 {mon_faces[group[c].0.id][0]}else{mon_faces[group[c].0.id][2]} )
-											.hover_image(mon_faces[group[c].0.id][1])
-											.press_image(mon_faces[group[c].0.id][1])
-											.label(&y)
-											.label_color(sm_retc(&group[c].0,timer))
-											.label_font_size(font_size)
-											.label_y(conrod::position::Relative::Scalar(bh/2.0+4.0))
-											.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
+			
+			let image_id = if group[c].0.HP_shade/group[c].0.HP>0.0
+			{
+				mon_faces[group[c].0.id][0]
+			}else{
+				mon_faces[group[c].0.id][2]
+			};
+			
+			let b = MooseButton::image(image_id,widget_cycler)
+										.hover_image(mon_faces[group[c].0.id][1])
+										.press_image(mon_faces[group[c].0.id][1])
+										.label(&y)
+										.label_color(sm_retc(&group[c].0,timer))
+										.label_font_size(font_size)
+										.label_y(conrod::position::Relative::Scalar(bh/2.0+4.0))
+										.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
 
 			//depending on phase of player turn, decide what to do on click.
-			for _click in renegade.set(b,ui) {
+			for _click in renegade.set(b,ui,widget_cycler) {
 				if !yt_adcwpe_bw[0] { //If just started
 					//println!("d1");
 					*comm_text = format!("This {} is {}.",x,sm_rets(&group[c].0));
@@ -810,7 +850,9 @@ fn battle_line_h (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 fn marker_of_set_battle_map(){}
 //Layout parties on battlefield: Maybe not too awful.
-fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+fn set_battle_map(ids: &mut Ids,
+				  ref mut ui: &mut conrod::UiCell,
+				  widget_cycler: &Mutex<AdvWidgetCycler>,
 				  mon_faces: &Vec<[conrod::image::Id;3]>,
 				  mon_facesz: &Vec<[conrod::Scalar;2]>,
 				  world: &Vec<[Place;19]>,
@@ -886,7 +928,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 						 //.label("Party"),
 				  Some(0.0)).set(ids.partyc_can,ui);
 
-	let mut enc_c_matrix = widget::Matrix::new(enc_cl,1)
+	let mut enc_c_matrix = MooseMatrix::new(enc_cl,1)
 			.wh([bw*enc_clf,base_h])
 			.mid_bottom_of(ids.partyc_can)
 			.cell_padding(pad_w,0.0)
@@ -925,7 +967,15 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 			let x = format!("\n{}",p_names[c]);
 			let y = &x.x_chr_pl(8);
-			let b = widget::Button::image( if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 {mon_faces[enc_c[c].0.id][0]}else{mon_faces[enc_c[c].0.id][2]} )
+			
+			let image_id = if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 
+			{
+				mon_faces[enc_c[c].0.id][0]
+			}else{
+				mon_faces[enc_c[c].0.id][2]
+			};
+			
+			let b = MooseButton::image(image_id,widget_cycler)
 									.label(&y)
 									.hover_image(mon_faces[enc_c[c].0.id][1])
 									.press_image(mon_faces[enc_c[c].0.id][1])
@@ -934,7 +984,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 									.label_y(conrod::position::Relative::Scalar(bh/2.0))
 									.label_x(conrod::position::Relative::Scalar(-rel_pos as f64));
 
-			for _click in renegade.set(b,ui) {
+			for _click in renegade.set(b,ui,widget_cycler) {
 				if !yt_adcwpe_bw[0] {
 					*comm_text = format!("{} is {}.",p_names[c],sm_rets(&enc_c[c].0));
 					set_comm_text(comm_text,ui,ids);
@@ -961,7 +1011,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							 //.label_color(color::YELLOW)
 							 //.label("Party"),
 							 Some(0.0)).set(ids.enemyn_can,ui);
-		let mut enc_n_matrix = widget::Matrix::new(enc_nl,1)
+		let mut enc_n_matrix = MooseMatrix::new(enc_nl,1)
 			.wh([bw*enc_nlf,base_h])
 			.mid_bottom_of(ids.enemyn_can)
 			.cell_padding(pad_w,0.0)
@@ -972,7 +1022,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		spare_point = ui.xy_of(ids.enemyn_mtrx);
 		let point = ui.xy_of(ids.enemyn_mtrx).unwrap_or([0.0;2]);
 
-		battle_line_h(ids,ui,mon_faces,enc_n_matrix,
+		battle_line_h(ids,ui,widget_cycler,mon_faces,enc_n_matrix,
 					  &enc_n,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
 					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
@@ -985,7 +1035,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							 //.label_color(color::YELLOW)
 							//.label("Party"),
 					Some(0.0)).set(ids.enemye_can,ui);
-		let mut enc_e_matrix = widget::Matrix::new(1,enc_el)
+		let mut enc_e_matrix = MooseMatrix::new(1,enc_el)
 			.wh([bw,bh2*enc_elf])
 			.mid_bottom_of(ids.enemye_can)
 			.cell_padding(pad_w,pad_h/4.0)
@@ -996,7 +1046,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 		//println!("enc_el={}",enc_el);
 
-		battle_line_v(ids,ui,mon_faces,enc_e_matrix,
+		battle_line_v(ids,ui,widget_cycler,mon_faces,enc_e_matrix,
 					  &enc_e,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
 					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
@@ -1009,7 +1059,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							//.label_color(color::YELLOW)
 							//.label("Party"),
 						Some(0.0)).set(ids.enemys_can,ui);
-		let mut enc_s_matrix = widget::Matrix::new(enc_sl,1)
+		let mut enc_s_matrix = MooseMatrix::new(enc_sl,1)
 			.wh([bw*enc_slf,base_h])
 			.mid_bottom_of(ids.enemys_can)
 			.cell_padding(pad_w,0.0)
@@ -1020,7 +1070,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 		//println!("enc_sl={}",enc_sl);
 		//println!("enc_s.len={}",enc_s.len());
-		battle_line_h(ids,ui,mon_faces,enc_s_matrix,
+		battle_line_h(ids,ui,widget_cycler,mon_faces,enc_s_matrix,
 					  &enc_s,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh,shaking_dam,*shaking_timer,battle_ifast,
 					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
@@ -1033,7 +1083,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 							//.label_color(color::YELLOW)
 							//.label("Party"),
 						Some(0.0)).set(ids.enemyw_can,ui);
-		let mut enc_w_matrix = widget::Matrix::new(1,enc_wl)
+		let mut enc_w_matrix = MooseMatrix::new(1,enc_wl)
 			.wh([bw,bh2*enc_wlf])
 			.mid_bottom_of(ids.enemyw_can)
 			.cell_padding(pad_w,pad_h/4.0)
@@ -1044,7 +1094,7 @@ fn set_battle_map(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 
 		//println!("enc_wl={}",enc_wl);
 
-		battle_line_v(ids,ui,mon_faces,enc_w_matrix,
+		battle_line_v(ids,ui,widget_cycler,mon_faces,enc_w_matrix,
 					  &enc_w,comm_text,timer,&mut yt_adcwpe_bw,font_size,
 					  &mut sel_targets,bh2,shaking_dam,*shaking_timer,battle_ifast,
 					  &mut pos_bif,&mut spare_point,sprite_boxer,sprite_pos,point);
@@ -1096,6 +1146,7 @@ fn set_marker_of_go(ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 //A function to set the sage during the sage battle.
 fn set_sage_marker(){}
 fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
+				widget_cycler:&Mutex<AdvWidgetCycler>,
 				sage: &Sage<'a>,
 				party: &mut Vec<(Lifeform,usize)>,
 				p_names:&Vec<String>,
@@ -1120,7 +1171,7 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 								 .set(ids.sage_menu,ui);
 
 	//set the dialog.
-	let button = conrod::widget::Button::new().wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
+	let button = MooseButton::new(widget_cycler).wh([wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0])
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW)
 											  .top_left_of(ids.sage_menu);
@@ -1134,7 +1185,7 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 		WORLD	 => {sage.get_post_world()},
 		TERRAIN	 => {sage.get_post_terrain()},
 		SPELL1	 => {
-			gui_box = set_spell_list_sage(ui,ids,comm_text,
+			gui_box = set_spell_list_sage(ui,ids,widget_cycler,comm_text,
 								   party,
 								   sage,
 								   gui_box,
@@ -1150,12 +1201,12 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	let buy_spells = if (stage==GREETING2) | (stage==GREETING1) {"I want to learn a spell."}else{""};
 
 	//Initialise buttons.
-	let b1 = button.clone().label(strings[0]).set(ids.sage_dialog_but_1,ui);
-	let b2 = button.clone().label(strings[1]).down_from(ids.sage_dialog_but_1,0.0).set(ids.sage_dialog_but_2,ui);
-	let b3 = button.clone().label(strings[2]).down_from(ids.sage_dialog_but_2,0.0).set(ids.sage_dialog_but_3,ui);
-	let b4 = button.clone().label(strings[3]).down_from(ids.sage_dialog_but_3,0.0).set(ids.sage_dialog_but_4,ui);
-	let b5 = button.clone().label(buy_spells).down_from(ids.sage_dialog_but_4,0.0).set(ids.sage_dialog_but_5,ui);
-	let b6 = button.clone().label(strings[4]).down_from(ids.sage_dialog_but_5,0.0).set(ids.sage_dialog_but_6,ui);
+	let b1 = button.clone().label(strings[0]).set_outer(widget_cycler,ids.sage_dialog_but_1,ui);
+	let b2 = button.clone().label(strings[1]).down_from(ids.sage_dialog_but_1,0.0).set_outer(widget_cycler,ids.sage_dialog_but_2,ui);
+	let b3 = button.clone().label(strings[2]).down_from(ids.sage_dialog_but_2,0.0).set_outer(widget_cycler,ids.sage_dialog_but_3,ui);
+	let b4 = button.clone().label(strings[3]).down_from(ids.sage_dialog_but_3,0.0).set_outer(widget_cycler,ids.sage_dialog_but_4,ui);
+	let b5 = button.clone().label(buy_spells).down_from(ids.sage_dialog_but_4,0.0).set_outer(widget_cycler,ids.sage_dialog_but_5,ui);
+	let b6 = button.clone().label(strings[4]).down_from(ids.sage_dialog_but_5,0.0).set_outer(widget_cycler,ids.sage_dialog_but_6,ui);
 
 	if stage != GOODBYE {
 		//Set sage's picture.
@@ -1226,7 +1277,9 @@ fn set_sage<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 /// 	pub exit_nodes: Vec<u16>,
 /// }
 fn set_story_marker(){}
-fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
+fn set_story<'a>(ui:&mut conrod::UiCell,
+				ids:&Ids,
+				widget_cycler:&Mutex<AdvWidgetCycler>,
 				story: &Story<'a>,
 				bestiary: &Vec<Lifeform>,
 				encounter: &mut Vec<(Lifeform,usize,[Option<[usize;2]>;2])>,
@@ -1294,7 +1347,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 	let wh_button = [wh[0]/2.0-BORDER*2.0,(wh[1]-BORDER*2.0)/6.0];
 	let mut offset:f64 = (wh[1]-wh_button[1])/2.0;
 
-	let button = conrod::widget::Button::new().wh(wh_button)
+	let button = MooseButton::new(widget_cycler).wh(wh_button)
 											  .color(BACKGR_COLOUR)
 											  .label_color(color::YELLOW);
 
@@ -1318,7 +1371,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 			for _click in button.clone().label(&content.phrases_by_key.get(x).unwrap().1)
 										.label_font_size(13)
 									    .xy([xy_answers[0],xy_answers[1]+offset])
-									    .set(button_indices[i],ui){
+									    .set_outer(widget_cycler,button_indices[i],ui){
 
 				//On click get the next part of the dialog.
 				println!("Button {} is pressed",i);
@@ -1387,6 +1440,7 @@ fn set_story<'a>(ui:&mut conrod::UiCell,ids:&Ids,
 fn marker_of_set_init_world_map(){}
 #[allow(unused_variables)]
 fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
 						gui_box: &mut GUIBox,
 						gui_box_previous: &mut GUIBox,
 						world: &Vec<[Place;19]>,
@@ -1411,12 +1465,12 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 	let mut map_size = ui.wh_of(ids.middle_column).unwrap();
 	map_size = [map_size[0]-6.0,map_size[1]-6.0];
 
-	let mut world_matrix = widget::Matrix::new(world_len,19)
+	let mut world_matrix = MooseMatrix::new(world_len,19)
 		.wh(map_size)
 		.middle_of(ids.middle_column)
 		.set(ids.global_map_matrix, ui);
 
-	let mut button = widget::Button::new();
+	let mut button = MooseButton::new(widget_cycler);
 	let square_size = [map_size[0]/(world_len as f64),map_size[1]/19.0];
 
 	//Kind of fixed.
@@ -1431,12 +1485,12 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			square.set(button.clone().color(butt_col.with_luminance(sync_t(timer)))
 									 //.label(&world[wml-c][r].name[0..1])
 									// .label_color(butt_txc),
-									,ui)
+									,ui,widget_cycler)
 		}else{
 			square.set(button.clone().color(butt_col)
 									 //.label(&world[wml-c][r].name[0..1])
 									// .label_color(butt_txc)
-									,ui)
+									,ui,widget_cycler)
 		};
 
 		//Functionalise: Just teleport to clicked square.
@@ -1467,6 +1521,7 @@ fn set_init_world_map (	ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 fn marker_of_set_init_world_map2(){}
 #[allow(unused_variables)]
 fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
+						widget_cycler:&Mutex<AdvWidgetCycler>,
 						gui_box: &mut GUIBox<'a>,
 						gui_box_previous: &mut GUIBox<'a>,
 						world: &Vec<[Place;19]>,
@@ -1507,19 +1562,19 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 		let butt_txc = map_tx_colour(&world[wml-c][r]);
 
 		//initiate the invisible buttons.
-		let mut button_n = widget::Button::new().wh(square_size).color(butt_col);
+		let mut button_n = conrod::widget::Button::new().wh(square_size).color(butt_col);
 
 		//initate pulse variable
 		let s_sync = sync_s(timer);
 
-		let mut button_c = widget::Button::image(mon_faces[party[0].0.id][0])
+		let mut button_c = MooseButton::image(mon_faces[party[0].0.id][0],widget_cycler)
 										.wh([square_size[0]*s_sync,square_size[0]*s_sync])
 										.hover_image(mon_faces[party[0].0.id][1])
 										.press_image(mon_faces[party[0].0.id][1]);
 
 		button_c = reposition_geography_button(button_c,c,r,wml,&square_size,&bp);
 
-		for _click in button_c.set(ids.center_button,ui) {
+		for _click in button_c.set_outer(widget_cycler,ids.center_button,ui) {
 			//println!("Hey! {:?}", world[wml-c][r]);
 			*comm_text = format!("You are here: {}", world[wml-c][r]);
 			set_comm_text(comm_text,ui,ids);
@@ -1659,6 +1714,7 @@ fn within_one(r:usize,c:usize,pl:&(usize,usize)) ->bool {
 fn set_options_dialog_marker(){}
 fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 					  ids:&Ids,
+					  widget_cycler:&Mutex<AdvWidgetCycler>,
 					  ipath:&mut Option<(usize,String)>,
 					  song_list: &mut Vec<String>,
 					  silent_sender: &mut SyncSender<bool>,
@@ -1694,7 +1750,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 	let mut wh_butt = ui.wh_of(ids.ng_button).unwrap();
 	wh_butt[0] = wh_muse[0]/2.0-BORDER;
 
-	let opt_button = widget::Button::new().color(color::DARK_RED)
+	let opt_button = MooseButton::new(widget_cycler).color(color::DARK_RED)
 									   .label_font_size(font_size_chooser_button_b(win_wh[0]));
 
 	//*****SET SOUND OPTIONS*******
@@ -1702,7 +1758,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 	for _click in opt_button.clone().wh(wh_butt)
 									.top_left_of(ids.opt_music)
 									.label("Update Playlist")
-									.set(ids.update_song_list_button,ui) {
+									.set_outer(widget_cycler,ids.update_song_list_button,ui) {
 		println!("Updating song list!");
 		parse_music_config(song_list);
 	}
@@ -1712,7 +1768,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 	for _click in opt_button.clone().wh(wh_butt)
 									.right_from(ids.update_song_list_button,0.0)
 									.label(silence_label)
-									.set(ids.toggle_sound_button,ui) {
+									.set_outer(widget_cycler,ids.toggle_sound_button,ui) {
 		print!("Toggling sound. past silence = {}, ",wo.silence);
 		wo.silence = !wo.silence;
 		println!("present silence = {}.",wo.silence);
@@ -1728,10 +1784,10 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						 .set(ids.song_list_can,ui);
 	let slcs = ui.wh_of(ids.song_list_can).unwrap();
 
-	//widget::Scrollbar::y_axis(ids.song_list_can).auto_hide(true).set(ids.songl_scroll, ui);
+	//widget::Scrollbar::y_axis(ids.song_list_can).auto_hide(true).set_outer(widget_cycler,ids.songl_scroll, ui);
 
 	//song matrix
-	let mut song_matrix = widget::Matrix::new(1,song_list.len())
+	let mut song_matrix = MooseMatrix::new(1,song_list.len())
 										.mid_top_of(ids.song_list_can)
 										.wh([slcs[0]-BORDER*2.0,50.0*song_list.len() as f64])
 										.set(ids.song_list, ui);
@@ -1743,7 +1799,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 		let song_button = opt_button.clone()
 									.label(&text)
 									.color(color::DARK_RED);
-		for _click in case.set(song_button,ui) {
+		for _click in case.set(song_button,ui,widget_cycler) {
 
 			println!("Enter function to launch file browser to find a song. What a drag");
 			*ipath = Some((i,song_list[i].clone()));
@@ -1797,7 +1853,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						    .wh(wh_butt)
 						    .down_from(ids.opt_background_brightness_slider,2.0)
 						    .label("Reload Default")
-						    .set(ids.opt_reload_backgrounds_default,ui) {
+						    .set_outer(widget_cycler,ids.opt_reload_backgrounds_default,ui) {
 		print!("Reload backgrounds to default pressed");
 		wo.bgc = 0.0;
 		wo.update_bgc = true;
@@ -1808,7 +1864,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						    .wh(wh_butt)
 						    .right_from(ids.opt_reload_backgrounds_default,0.0)
 						    .label("Reload")
-						    .set(ids.opt_reload_backgrounds,ui) {
+						    .set_outer(widget_cycler,ids.opt_reload_backgrounds,ui) {
 		print!("Reload backgrounds to new value pressed");
 		wo.update_bgc = true;
 	}
@@ -1850,7 +1906,7 @@ fn set_options_canvas(ref mut ui: &mut conrod::UiCell,
 						    .wh(wh_butt)
 						    .down_from(ids.opt_antlers_slider,3.0)
 						    .label("Reset Limit")
-						    .set(ids.opt_antlers_reset_but,ui) {
+						    .set_outer(widget_cycler,ids.opt_antlers_reset_but,ui) {
 		print!("Reset memory pressed.");
 		wo.ai_mem = AI_MEM_DEFAULT;
 	}
@@ -1889,7 +1945,9 @@ fn set_h_slider_f32 (ui: &mut conrod::UiCell,
 // NB this function should ONLY be triggered if ipath.is_some()
 // Or the world will end.
 // the browser now works
-fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
+fn set_music_browser(ref mut ui: &mut conrod::UiCell,
+					 ref ids: &Ids,
+					 widget_cycler:&Mutex<AdvWidgetCycler>,
 					 ipath:&mut Option<(usize,String)>,
 					 song_list: &mut Vec<String>,
 					 wo: &mut FlowCWin) {
@@ -1913,31 +1971,31 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 	b_wh = [sap[0]/4.0,b_wh[1]];
 
 	//Set button for restoring default song for that theme.
-	for _click in widget::Button::new().color(BUTTON_COLOUR)
+	for _click in MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Restore Default")
 									   .bottom_right_of(ids.file_browser_can)
-									   .set(ids.fb_standard_but,ui) {
+									   .set_outer(widget_cycler,ids.fb_standard_but,ui) {
 		*ipath = None;
 		defaultise_song_in_list(song_list,i);
 	};
 
 
 	//set move out of folder. NB, this will crash in windows. (Not any more)
-	for _click in widget::Button::new().color(BUTTON_COLOUR)
+	for _click in MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Cancel")
 									   .left_from(ids.fb_standard_but,0.0)
-									   .set(ids.fb_cancel_but,ui) {
+									   .set_outer(widget_cycler,ids.fb_cancel_but,ui) {
 		*ipath = None;
 	};
 
 	//set move out of folder.
-	for _click in widget::Button::new().color(BUTTON_COLOUR)
+	for _click in MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Descent Directory")
 									   .left_from(ids.fb_cancel_but,0.0)
-									   .set(ids.fb_back_but,ui) {
+									   .set_outer(widget_cycler,ids.fb_back_but,ui) {
 		match wo.mub_path.has_root() {
 			false => {wo.mub_path = PathBuf::from(Component::RootDir.as_os_str())},
 			true  => {wo.mub_path =
@@ -1992,11 +2050,11 @@ fn set_music_browser(ref mut ui: &mut conrod::UiCell, ref ids: &Ids,
 	}
 
 	//set select new track button (or enter folder).
-	for _click in widget::Button::new().color(BUTTON_COLOUR)
+	for _click in MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 									   .wh(b_wh)
 									   .label("Select")
 									   .left_from(ids.fb_back_but,0.0)
-									   .set(ids.fb_select_but,ui) {
+									   .set_outer(widget_cycler,ids.fb_select_but,ui) {
 		println!("Gonna select this shit. Whatever this it.");
 		if wo.new_selection.is_some() {
 			*ipath = None;
@@ -2032,6 +2090,7 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 					mut tt_e_c_i_ll: &mut [bool;8],
 					ref mut ui: &mut conrod::UiCell,
 					ids:&mut Ids,
+					widget_cycler:&Mutex<AdvWidgetCycler>,
 					mut comm_text: &mut String,
 					timer:usize,
 					mut chosen_hero: &mut usize) {
@@ -2095,12 +2154,12 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 
 	//set stat names and stats widgets into the display
 	//make the two halfs.
-	let mut party_matrix_a = widget::Matrix::new(1,p_len*stats)
+	let mut party_matrix_a = MooseMatrix::new(1,p_len*stats)
 			.wh([map_size[0]/3.0-BORDER,matrix_height])
 			.top_left_of(ids.party_stats_c1)
 			//.scroll_kids_vertically()
 			.set(ids.party_stats_a, ui);
-	let mut party_matrix_b = widget::Matrix::new(1,p_len*stats)
+	let mut party_matrix_b = MooseMatrix::new(1,p_len*stats)
 			.wh([map_size[0]*2.0/3.0-BORDER,matrix_height])
 			.top_left_of(ids.party_stats_c2)
 			//.scroll_kids_vertically()
@@ -2144,8 +2203,8 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 															(p_len*stats) as conrod::Scalar,
 															(-w/2.0 + (w as conrod::Scalar/2.0))+baseline,
 															(w/2.0 + (w as conrod::Scalar/2.0))+baseline);
-				let weener = widget::Button::new().wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0]).color(color::RED);
-				stat_box.set(weener,ui);
+				let weener = MooseButton::new(widget_cycler).wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0]).color(color::RED);
+				stat_box.set(weener,ui,widget_cycler);
 			}
 		}
 	}else{
@@ -2171,12 +2230,12 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 					color::RED
 				};
 				if ((party[r/10].0.Exp-party[r/10].0.ExpUsed)>=10.0) & ((r+2)%10==0) {
-					for _click in stat_box.set(widget::Button::new().wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0])
+					for _click in stat_box.set(MooseButton::new(widget_cycler).wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0])
 										 .color(ween_col)
 										 .label("New Arcana")
 										 .label_font_size(font_size_chooser_button_b(m_w))
 										 .label_color(ween_col.invert()),
-					ui) {
+					ui,widget_cycler) {
 						//allow setting of learnable spell list.
 						if !tt_e_c_i_ll[7] {
 							*chosen_hero = r/10;
@@ -2188,8 +2247,8 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 						};
 					};
 				}else{
-					for _click in stat_box.set(widget::Button::new().wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0])
-																	.color(ween_col),ui) {
+					for _click in stat_box.set(MooseButton::new(widget_cycler).wh([weener_lengths[r]*map_size[0]*2.0/3.0,40.0])
+																	.color(ween_col),ui,widget_cycler) {
 						lvl_upg(party,r,tt_e_c_i_ll);
 					};
 				};
@@ -2208,16 +2267,16 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 															//.border(BORDER)
 															//.border_color(BORDER_COLOUR)
 															//.w(map_size[0]-2.0*BORDER);
-			//stat_box.set(text_box,ui);
+			//stat_box.set_outer(widget_cycler,text_box,ui);
 		}else if (r+2)%stats==0 {
 			for _click in stat_box.set(
-				widget::Button::new().label(&trait_vector[r])
+				MooseButton::new(widget_cycler).label(&trait_vector[r])
 									 .label_font_size(font_size_chooser_button_b(m_w))
 									 .border_color(BORDER_COLOUR)
 									 .border(BORDER)
 									 .label_color(color::GREEN.with_luminance(0.66))
 									 .color(BACKGR_COLOUR),
-				ui) {
+				ui,widget_cycler) {
 				//allow setting of spell list.
 				if !tt_e_c_i_ll[7] {
 					*chosen_hero = r/10;
@@ -2233,22 +2292,23 @@ fn show_party_stats(mut party:&mut Vec<(Lifeform,usize)>,
 									   color::GREEN.with_luminance(0.66),
 									   font_size_chooser_button_b(m_w)
 									  ),
-						 ui);
+						 ui,widget_cycler);
 		};
 	};
 
 
 	//set spell list if permitted
 	if tt_e_c_i_ll[7] & tt_e_c_i_ll[6] {
-		set_spell_list_learnable(ui,ids,comm_text,party,tt_e_c_i_ll,spl,p_names,*chosen_hero,m_w);
+		set_spell_list_learnable(ui,ids,widget_cycler,comm_text,party,tt_e_c_i_ll,spl,p_names,*chosen_hero,m_w);
 	}else if tt_e_c_i_ll[7] {
-		set_spell_list(ui,ids,comm_text,party,spl,p_names,*chosen_hero,m_w);
+		set_spell_list(ui,ids,widget_cycler,comm_text,party,spl,p_names,*chosen_hero,m_w);
 	};
 }
 
 //set spell list into party inspector
 fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   mut comm_text:&mut String,
 				   party: &Vec<(Lifeform,usize)>,
 				   spl: &Vec<Spell>,
@@ -2301,7 +2361,7 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	};
 
 	//make matrix containing spell list.
-	let mut spell_list = widget::Matrix::new(1,rows)
+	let mut spell_list = MooseMatrix::new(1,rows)
 					   .w(wh_m[0]-2.0*BORDER)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
@@ -2313,14 +2373,14 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 			let snow = spell.row;
 			if snow==0{
 				let title:String = format!("{} the {}'s Spellbook",p_names[i],party[i].0.name);
-				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui,widget_cycler);
 			}else{
 				let spell_name:String = arcana_name_from_spell_id(spl,party[i].0.Spellist[snow-1]);
 				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,party[i].0.Spellist[snow-1]).unwrap()];
-				let x = widget::Button::new().label(&spell_name)
+				let x = MooseButton::new(widget_cycler).label(&spell_name)
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
-				for _click in spell.set(x,ui){
+				for _click in spell.set(x,ui,widget_cycler){
 					*comm_text = format!("{}",spell_out_spell);
 					set_comm_text(&mut comm_text,ui,ids);
 				};
@@ -2329,10 +2389,10 @@ fn set_spell_list (ref mut ui: &mut conrod::UiCell,
 	}else{
 		while let Some(spell) = spell_list.next(ui) {
 			let spell_button_label:String = format!("{} knows no spells...",p_names[i]);
-			let x = widget::Button::new().label(&spell_button_label)
+			let x = MooseButton::new(widget_cycler).label(&spell_button_label)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
-			spell.set(x,ui);
+			spell.set(x,ui,widget_cycler);
 		};
 	};
 }
@@ -2341,6 +2401,7 @@ fn set_spell_list_sage_marker(){}
 //A function to learn new spells.
 fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   comm_text:&mut String,
 				   party: &mut Vec<(Lifeform,usize)>,
 				   sage: &Sage<'a>,
@@ -2402,7 +2463,7 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 	};
 
 	//make matrix containing spell list.
-	let mut spell_list = widget::Matrix::new(1,rows)
+	let mut spell_list = MooseMatrix::new(1,rows)
 					   .w(wh_m[0]-BORDER*2.0)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
@@ -2414,7 +2475,7 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 			let snow = spell.row;
 			if snow==0{
 				let title:String = format!("{} the {} can learn:",p_names[0],party[0].0.name);
-				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui,widget_cycler);
 			}else{
 				//Cost of spell.
 				let cost:usize = (spl[arcana_index_from_spell_id(spl,sage.spells[snow-1]).unwrap()].MP*100.0) as usize;
@@ -2423,11 +2484,11 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 				//Button label.
 				let label:String = format!("{} ({}gp)",learnable_spells[snow-1],cost);
 
-				let x = widget::Button::new().label(learnable_spells[snow-1])
+				let x = MooseButton::new(widget_cycler).label(learnable_spells[snow-1])
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
 
-				for _click in spell.set(x,ui) {
+				for _click in spell.set(x,ui,widget_cycler) {
 
 					//determine which character's can learn the sage's spells.
 					let mut both_have = true;
@@ -2456,10 +2517,10 @@ fn set_spell_list_sage<'a> (ui: &mut conrod::UiCell,
 	}else{
 		while let Some(spell) = spell_list.next(ui) {
 			let spell_button_label:String = format!("There is no arcana for {} to grasp...",p_names[0]);
-			let x = widget::Button::new().label(&spell_button_label)
+			let x = MooseButton::new(widget_cycler).label(&spell_button_label)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
-			spell.set(x,ui);
+			spell.set(x,ui,widget_cycler);
 		};
 	};
 
@@ -2470,6 +2531,7 @@ fn set_spell_list_learnable_marker(){}
 //A function to learn new spells.
 fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   mut comm_text:&mut String,
 				   mut party: &mut Vec<(Lifeform,usize)>,
 				   mut tt_e_c_i_ll: &mut [bool;8],
@@ -2529,7 +2591,7 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 	};
 
 	//make matrix containing spell list.
-	let mut spell_list = widget::Matrix::new(1,rows)
+	let mut spell_list = MooseMatrix::new(1,rows)
 					   .w(wh_m[0]-BORDER*2.0)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
@@ -2541,13 +2603,13 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 			let snow = spell.row;
 			if snow==0{
 				let title:String = format!("{} the {} can learn:",p_names[i],party[i].0.name);
-				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+				spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui,widget_cycler);
 			}else{
 				let spell_out_spell:&Spell = &spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()];
-				let x = widget::Button::new().label(learnable_spells[snow-1])
+				let x = MooseButton::new(widget_cycler).label(learnable_spells[snow-1])
 											 .label_font_size(font_size_chooser_button_b(w))
 											 .color(colour_of_magic(spell_out_spell.Type));
-				for _click in spell.set(x,ui) {
+				for _click in spell.set(x,ui,widget_cycler) {
 					*comm_text = format!("{} reached out for {} and made it a part of their soul...\n\n{}",p_names[i],spell_out_spell.name,spell_out_spell);
 					set_comm_text(&mut comm_text,ui,ids);
 					party[i].0.Spellist.push(spl[arcana_index_from_spell_name(spl,learnable_spells[snow-1]).unwrap()].id);
@@ -2560,10 +2622,10 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 	}else{
 		while let Some(spell) = spell_list.next(ui) {
 			let spell_button_label:String = format!("There is no arcana for {} to grasp...",p_names[i]);
-			let x = widget::Button::new().label(&spell_button_label)
+			let x = MooseButton::new(widget_cycler).label(&spell_button_label)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
-			spell.set(x,ui);
+			spell.set(x,ui,widget_cycler);
 		};
 	};
 }
@@ -2572,6 +2634,7 @@ fn set_spell_list_learnable (ref mut ui: &mut conrod::UiCell,
 //set spell list into party inspector
 fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   mut comm_text:&mut String,
 				   party: &Vec<(Lifeform,usize)>,
 				   spl: &Vec<Spell>,
@@ -2628,7 +2691,7 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 	};
 
 	//make matrix containing spell list.
-	let mut spell_list = widget::Matrix::new(1,rows)
+	let mut spell_list = MooseMatrix::new(1,rows)
 					   .w(wh_m[0]-2.0*BORDER)
 					   .h(40.0*(rows as f64)-BORDER*2.0)
 					   .mid_top_of(ids.spell_list_can)
@@ -2647,16 +2710,16 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 
 		if let Some(spell) = spell_list.next(ui) {
 			let title:String = "Party Spellbook".to_owned();
-			spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui);
+			spell.set(text_maker_m(&title,color::YELLOW,font_size_chooser_button_b(w)),ui,widget_cycler);
 		}
 		while let Some(spell) = spell_list.next(ui) {
 			let snow = spell.row;
 			let spell_name:String = arcana_name_from_spell_id(spl,joined_list[snow-1].0);
 			let spell_out_spell:&Spell = &spl[arcana_index_from_spell_id(spl,joined_list[snow-1].0).unwrap()];
-			let x = widget::Button::new().label(&spell_name)
+			let x = MooseButton::new(widget_cycler).label(&spell_name)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(colour_of_magic(spell_out_spell.Type));
-			for _click in spell.set(x,ui){
+			for _click in spell.set(x,ui,widget_cycler){
 				*comm_text = format!("{}",spell_out_spell);
 				set_comm_text(&mut comm_text,ui,ids);
 				return Some((joined_list[snow-1].1,joined_list[snow-1].2))
@@ -2665,10 +2728,10 @@ fn set_spell_list_global (ref mut ui: &mut conrod::UiCell,
 	}else{
 		while let Some(spell) = spell_list.next(ui) {
 			let spell_button_label:String = format!("This party has no magic");
-			let x = widget::Button::new().label(&spell_button_label)
+			let x = MooseButton::new(widget_cycler).label(&spell_button_label)
 										 .label_font_size(font_size_chooser_button_b(w))
 										 .color(BUTTON_COLOUR);
-			spell.set(x,ui);
+			spell.set(x,ui,widget_cycler);
 		};
 	};
 	return None
@@ -2688,6 +2751,7 @@ fn get_story_by_id<'a>(stories:&'a Vec<Story<'a>>,id:u32)-> Option<&'a Story<'a>
 
 fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   gui_box:&mut GUIBox,
 				   my_stories:&MyStories,
 				   all_stories:&Vec<Story>,
@@ -2700,14 +2764,14 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 	let mut story_iter = my_stories.iter();
 
 	//Set the diary matrix.
-	let mut story_matrix = widget::Matrix::new(1,s_l)
+	let mut story_matrix = MooseMatrix::new(1,s_l)
 			.w(width)
 			.h(men_wh[1]/10.0*(s_l as f64))
 			.mid_top_of(ids.middle_column)
 			.set(ids.quest_diary_matrix, ui);
 
 
-	let button = widget::Button::new().color(BUTTON_COLOUR)
+	let button = MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 						.h(men_wh[1]/10.0)
 						.w(width)
 						.label_font_size(font_size_chooser_button_b(width));
@@ -2722,7 +2786,7 @@ fn set_quest_diary(ref mut ui: &mut conrod::UiCell,
 				"No quests on this page."
 			};
 
-			for _click in questlet.set(button.clone().label(label),ui) {
+			for _click in questlet.set(button.clone().label(label),ui,widget_cycler) {
 				println!("Story retrieved: {} (q_id={:?}",label,q_id);
 				*gui_box = GUIBox::GameInspectQuests(Some(q_id.0));
 			};
@@ -2743,6 +2807,7 @@ fn get_dungeon_by_id(dungeons:&Vec<Dungeon>,id:u32)-> Option<&Dungeon> {
 fn set_dungeon_diary_marker(){}
 fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 				   ids:& Ids,
+				   widget_cycler:&Mutex<AdvWidgetCycler>,
 				   gui_box:&mut GUIBox,
 				   my_dung:&MyDungeons,
 				   all_dung:&Vec<Dungeon>,
@@ -2755,13 +2820,13 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 	let mut dung_iter = my_dung.iter();
 
 	//Make dungeon matrix.
-	let mut dung_matrix = widget::Matrix::new(1,d_l)
+	let mut dung_matrix = MooseMatrix::new(1,d_l)
 			.w(width)
 			.h(men_wh[1]/10.0*(d_l as f64))
 			.mid_top_of(ids.middle_column)
 			.set(ids.quest_diary_matrix, ui);
 
-	let button = widget::Button::new().color(BUTTON_COLOUR)
+	let button = MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 								.h(men_wh[1]/10.0)
 								.w(width)
 								.label_font_size(font_size_chooser_button_b(width));
@@ -2776,7 +2841,7 @@ fn set_dungeon_diary(ref mut ui: &mut conrod::UiCell,
 				"No entry here."
 			};
 
-			for _click in dunglet.set(button.clone().label(label),ui) {
+			for _click in dunglet.set(button.clone().label(label),ui,widget_cycler) {
 				println!("Dungeon retrieved: {}. (dung={:?})",label,dung);
 				*gui_box = GUIBox::GameInspectDungeons(Some(*dung.0));
 			};
@@ -3130,7 +3195,10 @@ pub fn travel_right<'a>(mut pl:&mut (usize,usize),
 
 //Type A worldwalker function (after taking into account of voidwalking.
 //currently not used.
-fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: &mut Ids,
+fn go_there<'a>(mut comm_text:&mut String,
+							 ref mut ui:&mut conrod::UiCell,
+							 ids: &mut Ids,
+							 widget_cycler:&Mutex<AdvWidgetCycler>,
 							 mut party:&mut Vec<(Lifeform,usize)>,
 							 p_names:&Vec<String>,
 							 mut enemies:&mut Vec<(Lifeform,usize)>,
@@ -3156,12 +3224,12 @@ fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: 
 	};
 	set_comm_text(comm_text,ui,ids);
 
-	let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
 	for _click in mut_but.clone().label("Go there!")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .wh_of(ids.mut1_box)
 								 .middle_of(ids.mut1_box)
-								 .set(ids.mut1_but,ui){
+								 .set_outer(widget_cycler,ids.mut1_but,ui){
 		*pl = (lon,lat);
 		*p_loc = world[wml][lat].clone();
 		*coords = p_loc.xy;
@@ -3179,7 +3247,7 @@ fn go_there<'a>(mut comm_text:&mut String, ref mut ui:&mut conrod::UiCell, ids: 
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .wh_of(ids.mut5_box)
 								 .middle_of(ids.mut5_box)
-								 .set(ids.mut5_but,ui){
+								 .set_outer(widget_cycler,ids.mut5_but,ui){
 		*comm_text = "Ok".to_owned();
 		set_comm_text(&mut comm_text,ui,ids);
 		tt_e_c_i_ll[1] = false;
@@ -3288,6 +3356,7 @@ pub fn names_of(encounter:&Vec<(Lifeform,usize,[Option<[usize;2]>;2])>)->Vec<Str
 //modify layout if start button is pressed.
 fn start_game_pressed_a(ref mut ui: conrod::UiCell,
               ids: &mut Ids,
+              widget_cycler:&Mutex<AdvWidgetCycler>,
               mut comm_text:String) ->  (usize,bool) {
 
 	let mut ans_2:(usize,bool)=(0,false);
@@ -3295,29 +3364,29 @@ fn start_game_pressed_a(ref mut ui: conrod::UiCell,
 
 		set_comm_text(&mut "Which way would you do it?".to_owned(),ui,ids);
     //Difficulty level... Initiate buttons. NOT IMPLEMENTED I think?
-    let mut_but = widget::Button::new().color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
+    let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
     for _click in mut_but.clone().label("Rare")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .middle_of(ids.mut1_box)
-								 .set(ids.mut1_but,ui){
+								 .set_outer(widget_cycler,ids.mut1_but,ui){
 		ans_2 = (1,true);
 		};
     for _click in mut_but.clone().label("Medium Rare")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .middle_of(ids.mut2_box)
-								 .set(ids.mut3_but,ui){
+								 .set_outer(widget_cycler,ids.mut3_but,ui){
 		ans_2 = (1,true);
 		};
     for _click in mut_but.clone().label("Well Done")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .middle_of(ids.mut3_box)
-								 .set(ids.mut3_but,ui){
+								 .set_outer(widget_cycler,ids.mut3_but,ui){
 		ans_2 = (1,true);
 		};
     for _click in mut_but.clone().label("Scorched Earth")
 								 .label_color(color::GREEN.with_luminance(0.66))
 								 .middle_of(ids.mut4_box)
-								 .set(ids.mut4_but,ui){
+								 .set_outer(widget_cycler,ids.mut4_but,ui){
 		ans_2 = (1,true);
 		};
 	ans_2
@@ -3399,6 +3468,7 @@ fn loader(
 		mut comm_text: &mut String,
 		ui: &mut conrod::UiCell,
 		ids: &mut Ids,
+		widget_cycler:&Mutex<AdvWidgetCycler>,
 		men_wh: &[f64;2])->(Option<String>,usize){
 
 	let mut to_load:(Option<String>,usize) = (None,0);
@@ -3440,20 +3510,20 @@ fn loader(
 		let wm:f64 = ui.w_of(ids.master).unwrap();
 
 		widget::Scrollbar::y_axis(ids.middle_column).auto_hide(true).set(ids.load_menu_scroll, ui);
-		let mut saves_matrix = widget::Matrix::new(1,n_saves)
+		let mut saves_matrix = MooseMatrix::new(1,n_saves)
 			.w(width)
 			.h(men_wh[1]/10.0*(n_saves as f64))
 			.mid_top_of(ids.middle_column)
 			.set(ids.load_menu, ui);
 
-		let button = widget::Button::new().color(BUTTON_COLOUR)
+		let button = MooseButton::new(widget_cycler).color(BUTTON_COLOUR)
 										  .h(men_wh[1]/10.0)
 										  .label_font_size(font_size_chooser_button_b(wm));
 
         while let Some(save) = saves_matrix.next(ui) {
             let r = save.row as usize;
 
-            for _click in save.set(button.clone().label(&saves[r]),ui) {
+            for _click in save.set(button.clone().label(&saves[r]),ui,widget_cycler) {
 				println!("Hey! Loading {}", saves[r]);
 				in_to_load.push_str(&saves[r]);
 				*comm_text = format!("Preparing to load {}", in_to_load);
@@ -3895,15 +3965,7 @@ widget_ids! {
 }
 
 
-//Experiment.
-pub fn set_outer<T:conrod::widget::Widget>(widget: T,
-			 id: conrod::widget::Id,
-			 ref mut ui: conrod::UiCell,
-			 awc:&mut cmoose::AdvWidgetCycler)->T::Event {
-	//Stuff to do with the AdvWidgetCycler goes here...
-	awc.mark_as_set(id);
-	widget.set(id,ui)
-}
+
 
 //Rework of set widgets with sanity in mind.
 //Will require a rework of the whole module.
@@ -3913,7 +3975,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					button_tracker: &mut Option<conrod::widget::Id>,
 					mut gui_box: GUIBox<'a>,
 					mut gui_box_previous: GUIBox<'a>,
-					widget_cycler:&mut cmoose::AdvWidgetCycler,
+					widget_cycler:&mut std::sync::Mutex<cmoose::AdvWidgetCycler>,
 					mon_faces: &'a Vec<[conrod::image::Id;3]>,
 					mon_facesz: &Vec<[conrod::Scalar;2]>,
 					comm_text:&mut String,
@@ -3983,15 +4045,30 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 	let men_wh = [214.0,win_wh[1]];
 	let comm_text_bckup1:String = comm_text.clone();
 	
+	
+	//trackers for widget cycler
+	if timer%100==0 {println!("Current AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current());};
+	if timer%100==0 {println!("Potential AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current_or());};
+	if timer%500==0 {println!("AdvWidgetCycler state is:\n:{:?}\n",widget_cycler);};
 	//Set marker of selected button (currently not fully functionalised).
-	if let Some((wig,other)) = widget_cycler.current_or() {
-		if ui.wh_of(wig).is_some() & (other!=cmoose::WidgetType::Other) {
+	
+	if let Some(wig) = widget_cycler.lock().unwrap().current_or() {
+		if ui.wh_of(wig).is_some() {
 			set_marker_of_button(ui,ids,wig,timer,true);
 		};
 	};
 	
 	//reset the widget cycler set list.
-	widget_cycler.unset_all();
+	widget_cycler.lock().unwrap().mark_all_as_unset();
+	
+	//test of moose button.
+	//for _ in MooseButton::new(&widget_cycler).wh([win_wh[0]/2.0,win_wh[1]/2.0])
+	//				  //.middle_of(ids.master)
+	//				  .label("Moosebutton!")
+	//				  .set_outer(&widget_cycler,ids.moosebutton_test,ui) {
+	//					  
+	//	println!("Interaction with Moosebutton detected.");
+	//};
 	
 	match gui_box.clone() {
 
@@ -4002,16 +4079,16 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 
 			//If game is not started, or menu entered voluntarily, activate main menu.
-			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
+			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh);
 
-			let mut qt_button:conrod::widget::button::TimesClicked;
+			let mut qt_button:HeadButts;
 
 			// If game is started and main menu active activate gm_button.
 			// Also set the default view (aka world map view).
 			//NB, sg and gm buttons' reaction directly depend on init.
 			if init {
-				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
-				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
+				let gm_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set_outer(widget_cycler,ids.gm_button,ui);
+				qt_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set_outer(widget_cycler,ids.qt_button,ui);
 
 				for _click in gm_button{
 					println!("Returning to game. Main menu be gone!.");
@@ -4026,7 +4103,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					set_comm_text(comm_text,ui,ids);
 				};
 			}else{
-				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
+				qt_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set_outer(widget_cycler,ids.qt_button,ui);
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
@@ -4076,7 +4153,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				  { if init {
 					  *comm_text = "The game has already begun. \
 					  If you start again now, it will all be lost.".to_owned();
-					  set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
+					  set_mutant_menu_bin(ui,ids,widget_cycler,"That's fine.","Ermm...",comm_text.clone())
 					}else{
 					  *comm_text = "What would you call yourself?".to_owned();
 					  for edit in text_input {
@@ -4091,11 +4168,12 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 							  *player_input = edit.to_owned();
 						  };
 					  };
-					  set_mutant_menu_uni(ui,ids,"Cancel")
+					  set_mutant_menu_uni(ui,ids,widget_cycler,"Cancel")
 					}
 				},
-				1 => { set_mutant_menu_bin(ui,ids,"Yes, it is I!","Cancel",comm_text.clone())},
-				2 => { set_mutant_menu(ui,ids,"Warrior","Witch","Wonderer","Loser","Cancel")},
+				1 => { set_mutant_menu_bin(ui,ids,widget_cycler,"Yes, it is I!","Cancel",comm_text.clone())
+				},
+				2 => { set_mutant_menu(ui,ids,widget_cycler,"Warrior","Witch","Wonderer","Loser","Cancel")},
 				3 => { if comm_text!="That's not even a number... So how many hours?"{
 						*comm_text = "How many hours do you spend thinking happy thoughts?".to_owned();
 					};
@@ -4121,18 +4199,18 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 									};
 								};
 					};
-					set_mutant_menu_uni(ui,ids,"Cancel")
+					set_mutant_menu_uni(ui,ids,widget_cycler,"Cancel")
 				},
 				4 => {	*comm_text = "Are you alone?".to_owned();
-						set_mutant_menu_tri(ui,ids,"All alone.","Never...","Cancel")
+						set_mutant_menu_tri(ui,ids,widget_cycler,"All alone.","Never...","Cancel")
 				},
-				5 => {	set_mutant_menu(ui,ids,"A warrior..","A witch..","A wonderer..","A loser..","Cancel")},
+				5 => {	set_mutant_menu(ui,ids,widget_cycler,"A warrior..","A witch..","A wonderer..","A loser..","Cancel")},
 				6 => {	let follower = if party.len()>1 {format!("a {}",party[1].0.name)}else{"no one".to_owned()};
 						let light_dark = if party[0].0.Attack>party[0].0.Defence {"of darkness"}else{"of light"};
 						*comm_text = format!("So, {}, you are a {} {} followed by {}...",p_names[0],party[0].0.name,light_dark,follower);
-						set_mutant_menu_bin(ui,ids,"Aye..","I don't want to do this.","Then let the adventure begin?".to_owned())
+						set_mutant_menu_bin(ui,ids,widget_cycler,"Aye..","I don't want to do this.","Then let the adventure begin?".to_owned())
 				},
-				_ => {set_mutant_menu_bin(ui,ids,"Into the sunset!","I don't want to do this.","A new moose has begun!".to_owned())},
+				_ => {set_mutant_menu_bin(ui,ids,widget_cycler,"Into the sunset!","I don't want to do this.","A new moose has begun!".to_owned())},
 			};
 
 			//Get an answer to the previous question and advance things.
@@ -4154,12 +4232,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 						};
 					},
 					1 => {	if answer.0==1{
+								//println!("In answer- answered \"Yes it is I\"...");
 								//reset party variables.
-								reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
+								//reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
 								
 								gui_box = GUIBox::MainNew((2,init));
 								*comm_text = format!("What would you be, {}?",&p_names[0]);
 								set_comm_text(comm_text,ui,ids);
+								//println!("Exiting answer- answered \"Yes it is I\"...");
 							};
 					},
 					2 => {	match answer.0 {
@@ -4241,10 +4321,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let answer:(usize,String) =  if init {
 				*comm_text = "The moose has already begun. \
 				If you load another now, it will all be lost.".to_owned();
-				set_mutant_menu_bin(ui,ids,"That's fine.","Ermm...",comm_text.clone())
+				set_mutant_menu_bin(ui,ids,widget_cycler,"That's fine.","Ermm...",comm_text.clone())
 			}else{
-				let a = set_mutant_menu_uni(ui,ids,"Cancel");
-				*to_load = loader(comm_text,ui,ids,&men_wh);
+				let a = set_mutant_menu_uni(ui,ids,widget_cycler,"Cancel");
+				*to_load = loader(comm_text,ui,ids,widget_cycler,&men_wh);
 				if a.0!=5 {(to_load.1,"".to_owned())}else{a}
 			};
 
@@ -4298,16 +4378,16 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 
 			//If game is not started, or menu entered voluntarily, activate main menu.
-			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,&men_wh,&win_wh);
+			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh);
 			
-			let mut qt_button:conrod::widget::button::TimesClicked;
+			let mut qt_button:HeadButts;
 
 			// If game is started and main menu active activate gm_button.
 			// Also set the default view (aka world map view).
 			//NB, sg and gm buttons' reaction directly depend on init.
 			if init {
-				let gm_button = generate_main_menu_button(&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set(ids.gm_button,ui);
-				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set(ids.qt_button,ui);
+				let gm_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Back to Moose").down_from(ids.op_button,0.0).set_outer(widget_cycler,ids.gm_button,ui);
+				qt_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Quit").down_from(ids.gm_button,0.0).set_outer(widget_cycler,ids.qt_button,ui);
 
 				for _click in gm_button{
 					println!("Returning to game. Main menu be gone!.");
@@ -4322,7 +4402,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					set_comm_text(comm_text,ui,ids);
 				};
 			}else{
-				qt_button = generate_main_menu_button(&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set(ids.qt_button,ui);
+				qt_button = generate_main_menu_button(widget_cycler,&men_wh,&win_wh).label("Quit").down_from(ids.op_button,0.0).set_outer(widget_cycler,ids.qt_button,ui);
 				for _click in sg_button{
 					println!("Save Game button pressed.");
 					wo.song_to_swap = None;
@@ -4354,14 +4434,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box = GUIBox::MainQuit(false);
 			};
 
-			set_options_canvas(ui,ids,ipath,gui_song_list,
+			set_options_canvas(ui,ids,widget_cycler,ipath,gui_song_list,
 							   silent_sender,
 						       wo,
 							   mon_faces,
 							   landscapes);
 
 			if ipath.is_some() {
-				set_music_browser(ui,ids,ipath,gui_song_list,wo);
+				set_music_browser(ui,ids,widget_cycler,ipath,gui_song_list,wo);
 			};
 
 
@@ -4376,20 +4456,20 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				(ids.quit_false_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 			]).border(BORDER).border_color(BORDER_COLOUR).set(ids.master, ui);
 			
-			let mut button = widget::Button::new().label_font_size(font_size_chooser_button(win_wh[0]));
+			let mut button = MooseButton::new(&widget_cycler).label_font_size(font_size_chooser_button(win_wh[0]));
 
 			for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
 								.w_of(ids.quit_true_can).h(200.0)
 								.border(BORDER)
 								.border_color(BORDER_COLOUR)
-								.mid_left_of(ids.quit_true_can).set(ids.quit_true_but,ui){
+								.mid_left_of(ids.quit_true_can).set_outer(widget_cycler,ids.quit_true_but,ui){
 				gui_box = GUIBox::MainQuit(true);
 			};
 			for _click in button.color(color::DARK_GREEN).label("Please don't...").label_color(color::DARK_GREEN.complement())
 								.w_of(ids.quit_false_can).h(200.0)
 								.border(BORDER)
 								.border_color(BORDER_COLOUR)
-								.mid_right_of(ids.quit_false_can).set(ids.quit_false_but,ui){
+								.mid_right_of(ids.quit_false_can).set_outer(widget_cycler,ids.quit_false_but,ui){
 				gui_box = gui_box_previous.clone();
 			};
 		},
@@ -4404,7 +4484,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
 
 			let (travel_button,fight_button,explore_button,
-				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,&men_wh,&win_wh);
+				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh);
 			
 			//If you've teleported, tells you that you have.
 			if gui_box_previous==GUIBox::GameTravelTeleport {
@@ -4442,7 +4522,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				gui_box = GUIBox::Main(true);
 			};
 
-			set_init_world_map2(ids,ui,
+			set_init_world_map2(ids,ui,widget_cycler,
 						&mut gui_box,
 						&mut gui_box_previous,
 						world,
@@ -4474,7 +4554,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			set_middle_label(ui,ids,p_loc.name,&win_wh);
 
-			set_init_world_map(ids,ui,
+			set_init_world_map(ids,ui,widget_cycler,
 						&mut gui_box,
 						&mut gui_box_previous,
 						world,
@@ -4511,14 +4591,14 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				};
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
+				set_timescape(ui,ids,timer,widget_cycler);
 			};
 
 			//insert old exploration scheme.
 			if idungeon.is_none() {
 				*comm_text = format!("You explore the nooks and crannies of {}, but find nothing of note.",p_loc.name);
 				*mutm_box_vis = true;
-				let pressed = set_mutant_menu_uni(ui,ids,"...");
+				let pressed = set_mutant_menu_uni(ui,ids,widget_cycler,"...");
 				if pressed.0==5 {
 					*mutm_box_vis = false;
 					gui_box = GUIBox::GameTravel;
@@ -4529,7 +4609,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				if *dungeon_pointer==0 {
 
 					*mutm_box_vis = true;
-					let pressed = set_mutant_menu_bin(ui,ids,
+					let pressed = set_mutant_menu_bin(ui,ids,widget_cycler,
 						"Lets do this!",
 						"I want to live.",
 						format!("{}\nEnter {}?",dungeons[idungeon.unwrap()],dungeons[idungeon.unwrap()].name)
@@ -4606,7 +4686,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				if *dungeon_pointer==dungeons[idungeon.unwrap()].scenes.len()+2 {
 					set_afterstory(ui,ids,dungeons[idungeon.unwrap()].afterstory,dungeon_pointer);
 					*mutm_box_vis = true;
-					let pressed = set_mutant_menu_uni(ui,ids,"...");
+					let pressed = set_mutant_menu_uni(ui,ids,widget_cycler,"...");
 					if pressed.0==5 {
 						*mutm_box_vis = false;
 						gui_box = GUIBox::GameTravel;
@@ -4634,11 +4714,11 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
+				set_timescape(ui,ids,timer,widget_cycler);
 			};
 
 			//maybe_soell.0 is party member. maybe_spell.2 is spell
-			let maybe_spell:Option<(usize,usize)> = set_spell_list_global(ui,ids,
+			let maybe_spell:Option<(usize,usize)> = set_spell_list_global(ui,ids,widget_cycler,
 																  comm_text,
 																  party,
 																  spl,
@@ -4652,7 +4732,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					spl[arcana_index_from_spell_id(spl,party[mem].0.Spellist[spell]).unwrap()].clone());
 			};
 
-			let exit = set_mutant_menu_uni(ui,ids,"Better Not...");
+			let exit = set_mutant_menu_uni(ui,ids,widget_cycler,"Better Not...");
 
 			if exit.0==5 {
 				gui_box = GUIBox::GameTravel;
@@ -4674,12 +4754,12 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
+				set_timescape(ui,ids,timer,widget_cycler);
 			};
 			*comm_text = format!("Cast {}?",x.name);
 
 			//Set mutant menu to cast. Currently a pseudo function.
-			let exit = set_mutant_menu_bin(ui,ids,"Cast","Hmm..",comm_text.clone());
+			let exit = set_mutant_menu_bin(ui,ids,widget_cycler,"Cast","Hmm..",comm_text.clone());
 
 			if exit.0==1 {
 				*comm_text = format!("You cast {}!",x.name);
@@ -4723,10 +4803,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
+				set_timescape(ui,ids,timer,widget_cycler);
 			};
 
-			gui_box = set_sage(ui,ids,&x,party,p_names,spl,gui_box,y,win_wh[0],pause,timer,freeze_timer,comm_text);
+			gui_box = set_sage(ui,ids,widget_cycler,&x,party,p_names,spl,gui_box,y,win_wh[0],pause,timer,freeze_timer,comm_text);
 
 			set_comm_text(comm_text,ui,ids);
 		},
@@ -4738,9 +4818,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			generate_inspect_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh,&mut gui_box);
 
-			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,comm_text,timer,chosen_hero);
+			show_party_stats(party,spl,p_names,tt_e_c_i_ll,ui,ids,widget_cycler,comm_text,timer,chosen_hero);
 			set_comm_text(comm_text,ui,ids);
 		},
 
@@ -4748,7 +4828,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			*p_scape = p_loc.scape;
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			generate_inspect_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh,&mut gui_box);
 
 		},
 
@@ -4757,9 +4837,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			generate_inspect_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh,&mut gui_box);
 
-			set_quest_diary(ui,ids,&mut gui_box,my_stories,stories,&men_wh);
+			set_quest_diary(ui,ids,widget_cycler,&mut gui_box,my_stories,stories,&men_wh);
 
 			if q.is_some() {
 				let q = get_a_story(q.unwrap(),stories);
@@ -4774,9 +4854,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			let bkg_colour = map_sq_colour(p_loc);
 			set_main_canvas(ui,ids,bkg_colour,&men_wh,&win_wh,*mutm_box_vis,false);
 
-			generate_inspect_menu_buttons(ui,ids,&men_wh,&win_wh,&mut gui_box);
+			generate_inspect_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh,&mut gui_box);
 
-			set_dungeon_diary(ui,ids,&mut gui_box,my_dungeons,dungeons,&men_wh);
+			set_dungeon_diary(ui,ids,widget_cycler,&mut gui_box,my_dungeons,dungeons,&men_wh);
 
 			if d.is_some() {
 				let d = get_a_dungeon(d.unwrap(),dungeons);
@@ -4797,10 +4877,10 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			if (*p_scape != VOID) & (*p_scape != TIME) {
 				set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 			}else if *p_scape==TIME {
-				set_timescape(ui,ids,timer);
+				set_timescape(ui,ids,timer,widget_cycler);
 			};
 
-			gui_box = set_story(ui,ids,
+			gui_box = set_story(ui,ids,widget_cycler,
 						 &story,
 						 mons,
 						 encounter,
@@ -4842,7 +4922,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			//Generate buttons
 			let (attack_button,defend_button,cast_button,
-				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,&men_wh,&win_wh);
+				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,widget_cycler,&men_wh,&win_wh);
 			
 			//println!("GameFight buttons set");
 
@@ -4895,7 +4975,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 					};
 					if yt_adcwpe_bw[3] {
 
-						set_battle_spell_menu_wrapper(ui,ids,
+						set_battle_spell_menu_wrapper(ui,ids,widget_cycler,
 														 bkg_colour.clone(),
 														 &men_wh,
 														 &win_wh,
@@ -4912,12 +4992,12 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				if (*p_scape != VOID) & (*p_scape != TIME) {
 					set_battle_background(ui,ids,&landscapes,*p_scape,*scenery_index,centre_w,centre_h);
 				}else if *p_scape==TIME {
-					set_timescape(ui,ids,timer);
+					set_timescape(ui,ids,timer,widget_cycler);
 				};
 				//println!("GameFight background set");
 
 				//println!("gmoose 1114-entering set_battle_map");
-				set_battle_map(ids,ui,
+				set_battle_map(ids,ui,widget_cycler,
 							mon_faces,mon_facesz,
 							world,
 							p_names,
@@ -5091,19 +5171,22 @@ fn set_buttonless_canvas(ui: &mut conrod::UiCell, ids: &mut Ids,bkg_colour: colo
 //A function to generate the 4 constant main menu buttons.
 //The aim is to save space.
 fn generate_main_menu_buttons_marker(){}
-fn generate_main_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
--> (conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked)
+fn generate_main_menu_buttons(ui: &mut conrod::UiCell,
+							  ids: &mut Ids,
+							  widget_cycler:&Mutex<AdvWidgetCycler>,
+							  men_wh:&[f64;2], win_wh:&[f64;2])
+-> (HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts)
 {
-	let main_menu_button = generate_main_menu_button(men_wh,win_wh);
+	let main_menu_button = generate_main_menu_button(widget_cycler,men_wh,win_wh);
 
 	//If game is not started, or menu entered voluntarily, activate main menu.
-	let ng_button = main_menu_button.clone().label("New Moose").mid_top_of(ids.far_left_column).set(ids.ng_button,ui);
-	let lg_button = main_menu_button.clone().label("Load Moose").down_from(ids.ng_button,0.0).set(ids.lg_button,ui);
-	let sg_button = main_menu_button.clone().label("Save Moose").down_from(ids.lg_button,0.0).set(ids.sg_button,ui);
-	let op_button = main_menu_button.label("Options").down_from(ids.sg_button,0.0).set(ids.op_button,ui);
+	let ng_button = main_menu_button.clone().label("New Moose").mid_top_of(ids.far_left_column).set_outer(widget_cycler,ids.ng_button,ui);
+	let lg_button = main_menu_button.clone().label("Load Moose").down_from(ids.ng_button,0.0).set_outer(widget_cycler,ids.lg_button,ui);
+	let sg_button = main_menu_button.clone().label("Save Moose").down_from(ids.lg_button,0.0).set_outer(widget_cycler,ids.sg_button,ui);
+	let op_button = main_menu_button.label("Options").down_from(ids.sg_button,0.0).set_outer(widget_cycler,ids.op_button,ui);
 
 	(ng_button,lg_button,sg_button,op_button)
 
@@ -5111,38 +5194,43 @@ fn generate_main_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f
 
 //A function to generate the 6 game menu buttons.
 fn generate_play_menu_buttons_marker(){}
-fn generate_play_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
--> (conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked)
+fn generate_play_menu_buttons(ui: &mut conrod::UiCell,
+							  ids: &mut Ids,
+							  widget_cycler:&Mutex<AdvWidgetCycler>,
+							  men_wh:&[f64;2], win_wh:&[f64;2])
+-> (HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts)
 {
-	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	let game_menu_button = generate_main_menu_button(widget_cycler,men_wh,win_wh);
 
-	let travel_button = game_menu_button.clone().label("Travel").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);
-	let fight_button = game_menu_button.clone().label("Pick a Fight").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
-	let explore_button = game_menu_button.clone().label("Explore").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);
-	let cast_button = game_menu_button.clone().label("Cast a Spell").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
-	let party_button = game_menu_button.clone().label("Inspect Party").down_from(ids.cast_button,0.0).set(ids.party_button,ui);
-	let gm_button = game_menu_button.clone().label("Main Menu").down_from(ids.party_button,0.0).set(ids.gm_button,ui);
+	let travel_button = game_menu_button.clone().label("Travel").mid_top_of(ids.far_left_column).set_outer(widget_cycler,ids.travel_button,ui);
+	let fight_button = game_menu_button.clone().label("Pick a Fight").down_from(ids.travel_button,0.0).set_outer(widget_cycler,ids.fight_button,ui);
+	let explore_button = game_menu_button.clone().label("Explore").down_from(ids.fight_button,0.0).set_outer(widget_cycler,ids.explore_button,ui);
+	let cast_button = game_menu_button.clone().label("Cast a Spell").down_from(ids.explore_button,0.0).set_outer(widget_cycler,ids.cast_button,ui);
+	let party_button = game_menu_button.clone().label("Inspect Party").down_from(ids.cast_button,0.0).set_outer(widget_cycler,ids.party_button,ui);
+	let gm_button = game_menu_button.clone().label("Main Menu").down_from(ids.party_button,0.0).set_outer(widget_cycler,ids.gm_button,ui);
 
 	(travel_button,fight_button,explore_button,cast_button,party_button,gm_button)
 
 }
 
 fn generate_inspect_menu_buttons_marker(){}
-fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
+fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell,
+								 ids: &mut Ids,
+								 widget_cycler:&Mutex<AdvWidgetCycler>,
 								 men_wh:&[f64;2], win_wh:&[f64;2], gui_box:&mut GUIBox)
 {
-	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	let game_menu_button = generate_main_menu_button(widget_cycler,men_wh,win_wh);
 
-	let inspect_button = game_menu_button.clone().label("Inspect Party").mid_top_of(ids.far_left_column).set(ids.travel_button,ui);
-	let inventory_button = game_menu_button.clone().label("Inventory").down_from(ids.travel_button,0.0).set(ids.fight_button,ui);
-	let dungeon_d_button = game_menu_button.clone().label("Dungeon Diary").down_from(ids.fight_button,0.0).set(ids.explore_button,ui);
-	let quest_d_button = game_menu_button.clone().label("Quest Diary").down_from(ids.explore_button,0.0).set(ids.cast_button,ui);
-	let travel_button = game_menu_button.clone().label("Travel").down_from(ids.cast_button,0.0).set(ids.gm_button,ui);
+	let inspect_button = game_menu_button.clone().label("Inspect Party").mid_top_of(ids.far_left_column).set_outer(widget_cycler,ids.travel_button,ui);
+	let inventory_button = game_menu_button.clone().label("Inventory").down_from(ids.travel_button,0.0).set_outer(widget_cycler,ids.fight_button,ui);
+	let dungeon_d_button = game_menu_button.clone().label("Dungeon Diary").down_from(ids.fight_button,0.0).set_outer(widget_cycler,ids.explore_button,ui);
+	let quest_d_button = game_menu_button.clone().label("Quest Diary").down_from(ids.explore_button,0.0).set_outer(widget_cycler,ids.cast_button,ui);
+	let travel_button = game_menu_button.clone().label("Travel").down_from(ids.cast_button,0.0).set_outer(widget_cycler,ids.gm_button,ui);
 
 	for _click in inspect_button {
 		*gui_box = GUIBox::GameInspectParty(false);
@@ -5170,13 +5258,16 @@ fn generate_inspect_menu_buttons(ui: &mut conrod::UiCell, ids: &mut Ids,
 //A function to make the fight menu canvas
 //and create the canvas.
 fn prepare_fight_buttons_and_menu_marker(){}
-fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh:&[f64;2], win_wh:&[f64;2])
--> (conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked,
-	conrod::widget::button::TimesClicked)
+fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell,
+								  ids: &mut Ids,
+								  widget_cycler:&Mutex<AdvWidgetCycler>,
+								  men_wh:&[f64;2], win_wh:&[f64;2])
+-> (HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts,
+	HeadButts)
 {
 
 	widget::Canvas::new()
@@ -5186,7 +5277,7 @@ fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh
 			.mid_right_of(ids.fight_menu_canvas)
 			.set(ids.fight_menu,ui);
 		//Fight menu button canvases.
-	let game_menu_button = generate_main_menu_button(men_wh,win_wh);
+	let game_menu_button = generate_main_menu_button(widget_cycler,men_wh,win_wh);
 	let fight_buttons = canvas_bord_col(widget::Canvas::new()
 													.mid_top_of(ids.fight_menu)
 													.wh_of(ids.fight_menu_canvas)
@@ -5195,19 +5286,21 @@ fn prepare_fight_buttons_and_menu(ui: &mut conrod::UiCell, ids: &mut Ids, men_wh
 													BORDER_COLOUR)
 							.set(ids.fight_menu_buttons, ui);
 	//Fight menu buttons.
-	let attack_button = game_menu_button.clone().label("Attack").mid_top_of(ids.fight_menu).set(ids.at_button,ui);
-	let defend_button = game_menu_button.clone().label("Defend").down_from(ids.at_button,0.0).set(ids.de_button,ui);
-	let cast_button = game_menu_button.clone().label("Cast a spell").down_from(ids.de_button,0.0).set(ids.ca_button,ui);
-	let wait_button = game_menu_button.clone().label("Wait..").down_from(ids.ca_button,0.0).set(ids.wa_button,ui);
-	let panic_button = game_menu_button.clone().label("Panic!").down_from(ids.wa_button,0.0).set(ids.pa_button,ui);
-	let escape_button = game_menu_button.clone().label("Escape!").down_from(ids.pa_button,0.0).set(ids.es_button,ui);
+	let attack_button = game_menu_button.clone().label("Attack").mid_top_of(ids.fight_menu).set_outer(widget_cycler,ids.at_button,ui);
+	let defend_button = game_menu_button.clone().label("Defend").down_from(ids.at_button,0.0).set_outer(widget_cycler,ids.de_button,ui);
+	let cast_button = game_menu_button.clone().label("Cast a spell").down_from(ids.de_button,0.0).set_outer(widget_cycler,ids.ca_button,ui);
+	let wait_button = game_menu_button.clone().label("Wait..").down_from(ids.ca_button,0.0).set_outer(widget_cycler,ids.wa_button,ui);
+	let panic_button = game_menu_button.clone().label("Panic!").down_from(ids.wa_button,0.0).set_outer(widget_cycler,ids.pa_button,ui);
+	let escape_button = game_menu_button.clone().label("Escape!").down_from(ids.pa_button,0.0).set_outer(widget_cycler,ids.es_button,ui);
 
 	(attack_button,defend_button,cast_button,wait_button,panic_button,escape_button)
 
 }
 
 fn set_battle_spell_menu_wrapper_marker(){}
-fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
+fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell,
+								 ids: &mut Ids,
+								 widget_cycler:&Mutex<AdvWidgetCycler>,
 								 bkg_colour: color::Colour,
 								 men_wh:&[f64;2],
 								 win_wh:&[f64;2],
@@ -5232,7 +5325,7 @@ fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
 			 .set(ids.spells_can,ui);
 
 	//...and enter the battle spell menu function.
-	set_battle_spell_menu(ui,ids,comm_text,
+	set_battle_spell_menu(ui,ids,widget_cycler,comm_text,
 						  spl,party,
 						  to_cast,
 						  battle_ifast);
@@ -5241,12 +5334,12 @@ fn set_battle_spell_menu_wrapper(ui: &mut conrod::UiCell, ids: &mut Ids,
 
 //generate a single main menu button. Template
 fn generate_main_menu_button_marker(){}
-fn generate_main_menu_button<'a>(men_wh:&[f64;2], win_wh:&'a [f64;2])
--> conrod::widget::Button<'a, widget::button::Flat> {
+fn generate_main_menu_button<'a>(widget_cycler:&'a Mutex<AdvWidgetCycler>,men_wh:&[f64;2], win_wh:&'a [f64;2])
+-> MooseButton<'a, moose_button::Flat> {
 
 	let but_h:f64 = men_wh[1]/10.0;
 
-	widget::Button::new().color(color::DARK_RED)
+	MooseButton::new(widget_cycler).color(color::DARK_RED)
 						 .w_h(men_wh[0]-BORDER*2.0,but_h)
 						 .label_font_size(font_size_chooser_button_b(win_wh[0]))
 

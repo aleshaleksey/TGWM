@@ -50,7 +50,7 @@
 extern crate conrod;
 extern crate std;
 
-use std::collections::BTreeMap;
+//use std::collections::BTreeMap;
 
 use lmoose::{Lifeform,Spell,Place,VOID,TIME};
 use smoose::{Sage,MyStories,MyDungeons,KillList,Story,story_poller};
@@ -188,28 +188,24 @@ pub struct Widgetcycler<'a> {
 	pub guibox_state: GUIBox<'a>,
 }
 
-#[derive(Debug,Copy,Clone,PartialEq)]
-pub enum WidgetType {
-	Button,
-	TextBox,
-	Matrix,
-	Other,
-}
+
 //Structure to cycle through all widgets, and keeptrack of whether...
 //...They are set, or have multiple components.
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct AdvWidgetCycler {
-	//Map of widgets (get by index,type, set?,polymorphic?)
+	//Map of widgets (get by index,set?)
 	//Polymorphic widget marking is to be handled by a different process.
-	pub widgets:Vec<(conrod::widget::Id,WidgetType,bool,bool)>,
-	pub current_widget: Option<usize>,
+	pub widgets:std::collections::btree_map::BTreeMap<conrod::widget::Id,bool>,
+	//NB, we need to keep track of whether the current widget is set or not,
+	//To determine whether it needs removed or not.
+	pub current_widget: Option<(bool,conrod::widget::Id)>,
 }
 
 impl AdvWidgetCycler {
 	//Create new widget cycler
 	pub fn new()->AdvWidgetCycler {
 		AdvWidgetCycler {
-			widgets: Vec::with_capacity(500),
+			widgets: std::collections::btree_map::BTreeMap::new(),
 			current_widget: None,
 		}
 	}
@@ -219,14 +215,14 @@ impl AdvWidgetCycler {
 	//So this will handle some aspect of this.
 	//NB, this to some extent reduces flexibility as you are declaring,
 	//Some aspect of widget type in advance (not that conrod allows otherwise anyway).
-	pub fn initialise(&mut self, ids:Vec<(conrod::widget::Id,WidgetType)>) {
-		for (x,y) in ids.into_iter() {
-			self.widgets.push((x,y,false,false));
+	pub fn initialise(&mut self, ids:Vec<(conrod::widget::Id)>) {
+		for x in ids.into_iter() {
+			self.widgets.insert(x,false);
 		};
 		
-		'finder: for (i,(_,_,x,_)) in self.widgets.iter().enumerate() {
+		'finder: for (i,x) in self.widgets.iter() {
 			if *x {
-				self.current_widget = Some(i);
+				self.current_widget = Some((*x,*i));
 				break 'finder;
 			};
 		};
@@ -234,140 +230,120 @@ impl AdvWidgetCycler {
 	
 	//sets current_widget to the next set widget.
 	pub fn advance(&mut self) {
-		let len:usize = self.widgets.len();
+		let mut it = self.widgets.iter();
+		let (mut not_at_current,mut got_next) = (true,false);
 		
-		if self.current_widget.is_none()
-		| (self.current_widget==Some(len-1)) {
-			//Reset active widget to nothing.
-			self.current_widget = None;
-			
-			//Do the search.
-			for (i,(_,_,x,_)) in self.widgets.iter().enumerate() {
+		if self.current_widget.is_none() {
+			while let Some((i,x)) = it.next() {
 				if *x {
-					self.current_widget = Some(i);
+					self.current_widget = Some((*x,*i));
 					return;
 				};
 			};
 		}else{
-			//Get initial length parameters for the search.
-			let current_index:usize = self.current_widget.unwrap();
-			
-			//Reset active widget to nothing.
+			while let Some((i,x)) = it.next() {
+				if Some((true,*i))==self.current_widget {
+					not_at_current = false;
+				};
+				
+				if not_at_current {
+					continue;
+				}else if !not_at_current & *x {
+					self.current_widget = Some((true,*i));
+					return;
+				};
+			};
 			self.current_widget = None;
-			
-			//Do the search (potentially two steps here).
-			for i in (current_index+1)..len {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return;
-				};
-			};
-			for i in 0..(current_index+1) {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return;
-				};
-			};
-		};	
+		};
 	}
 	
 	//sets current_widget to the previous set widget.
 	pub fn regress(&mut self) {
-		let len:usize = self.widgets.len();
+		let mut it = self.widgets.iter().rev();
 		
-		if self.current_widget.is_none()
-		| (self.current_widget==Some(0)) {
-			//Reset active widget to nothing.
-			self.current_widget = None;
-			
-			//Do the search.
-			for (i,(_,_,x,_)) in self.widgets.iter().enumerate().rev() {
+		let (mut not_at_current,mut got_next) = (true,false);
+		
+		if self.current_widget.is_none() {
+			while let Some((i,x)) = it.next() {
 				if *x {
-					self.current_widget = Some(i);
+					self.current_widget = Some((true,*i));
 					return;
 				};
 			};
 		}else{
-			//Get initial length parameters for the search.
-			let current_index:usize = self.current_widget.unwrap();
-			
-			//Reset active widget to nothing.
+			while let Some((i,x)) = it.next() {
+				if Some((true,*i))==self.current_widget {
+					not_at_current = false;
+				};
+				
+				if not_at_current {
+					continue;
+				}else if !not_at_current & *x {
+					self.current_widget = Some((true,*i));
+					return;
+				};
+			};
 			self.current_widget = None;
-			
-			//Do the search (potentially two steps here).
-			for i in (0..(current_index+1)).rev() {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return;
-				};
-			};
-			for i in ((current_index+1)..len).rev() {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return;
-				};
-			};
 		};
 	}
 	
 	//Gets the current widget index or failing that, the next set widget.
 	//If there are no set widgets, return a nun.
-	pub fn current_or(&mut self)-> Option<(conrod::widget::Id,WidgetType)> {
-		let len:usize = self.widgets.len();
-		if self.current_widget.is_some() {
-			return Some((self.widgets[self.current_widget.unwrap()].0,
-						 self.widgets[self.current_widget.unwrap()].1))
-		}else if self.current_widget==Some(len-1) {
-			//Reset active widget to nothing.
-			self.current_widget = None;
-			
-			//Do the search.
-			for (i,(_,_,x,_)) in self.widgets.iter().enumerate() {
-				if *x {
-					self.current_widget = Some(i);
-					return Some((self.widgets[i].0,self.widgets[i].1))
-				};
-			};
+	pub fn current_or(&mut self)-> Option<conrod::widget::Id> {
+		
+		if let Some((true,wid)) = self.current_widget {
+			//If there is an current widget, get it.
+			return Some(wid)
 		}else{
-			//Get initial length parameters for the search.
-			let current_index:usize = self.current_widget.unwrap();
-			
-			//Reset active widget to nothing.
-			self.current_widget = None;
-			
-			//Do the search (potentially two steps here).
-			for i in (current_index+1)..len {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return Some((self.widgets[i].0,self.widgets[i].1))
-				};
-			};
-			for i in 0..(current_index+1) {
-				if self.widgets[i].2 {
-					self.current_widget = Some(i);
-					return Some((self.widgets[i].0,self.widgets[i].1))
+			//If not, get the first active widget.
+			for (i,x) in self.widgets.iter() {
+				if *x {
+					self.current_widget = Some((true,*i));
+					return Some(*i)
 				};
 			};
 		};
 		None
 	}
 	
+	//A faster version of current_or() if we do not care about other widgets.
+	pub fn current(&mut self)->Option<conrod::widget::Id> {
+		if let Some((true,wid)) = self.current_widget {
+			//If there is an current widget, get it.
+			return Some(wid)
+		}else{
+			None
+		}
+	}
+	
 	//Function to mark a widget as set. Not efficient.
 	pub fn mark_as_set(&mut self,widget: conrod::widget::Id) {
-		for i in 0..self.widgets.len() {
-			if self.widgets[i].0==widget {
-				self.widgets[i].2 = true;
-				break
-			};
+		
+		if let Some(mut x) = self.widgets.get_mut(&widget) {
+			*x = true;
+			return;
 		};
+		self.widgets.insert(widget,true);
 	}
 	
 	//Function to mark all widgets as not set.
-	pub fn unset_all(&mut self) {
-		for (_,_,x,_) in self.widgets.iter_mut() {
+	pub fn mark_all_as_unset(&mut self) {
+		if let Some((true,wid)) = self.current_widget.clone() {
+			self.current_widget = Some((false,wid));
+		};
+		for (_,x) in self.widgets.iter_mut() {
 			*x = false;
 		};
 	}
+	
+	
+	//Removes all widgets.
+	pub fn remove_all(&mut self) {
+		self.widgets.clear();
+		self.current_widget = None;
+	}
+	//NB the set outer function is best done from
+	// moose_button.Go there to see it done.
 	
 }
 

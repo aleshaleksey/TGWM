@@ -84,6 +84,8 @@ mod xmoose;
 mod conrod_support;
 mod shared_moose;
 mod tales_of_the_great_white_moose;
+mod moose_button;
+mod moose_matrix;
 
 //Imports
 use emoose::event_loop_handler;
@@ -338,7 +340,8 @@ pub fn main() {
 	let mut centre_h:f64 = 0.0;
 	let mut gui_box = GUIBox::Uninitiated;
 	let mut gui_box_previous = GUIBox::Uninitiated;
-	let mut widget_cycler = cmoose::AdvWidgetCycler::new();
+	let mut widget_cycler_inner = cmoose::AdvWidgetCycler::new();
+	let mut widget_cycler:Mutex<cmoose::AdvWidgetCycler> = Mutex::new(widget_cycler_inner);
 
 	//Initiate Q-ft-M battle variables:
 	let mut dream_time:bool = false;
