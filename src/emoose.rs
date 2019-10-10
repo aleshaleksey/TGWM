@@ -88,7 +88,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
 							widget_cycler.lock().unwrap().advance();
 							if !*pause {*freeze_timer = timer;};
 						};
-                    //println!("Pageup pressed,wo.wo.ifc={}",wo.wo.ifc);
+                    //println!("Pageup pressed,wo.wo.ifc={}",wo.ifc);
                     },
                 //TEST: Decrement widget pointed to..
                 glium::glutin::WindowEvent::KeyboardInput {
