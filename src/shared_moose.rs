@@ -285,7 +285,7 @@ pub fn reset_party_variables(party: &mut Vec<(Lifeform,usize)>,
 							 my_kills: &mut KillList,
 							 my_dungeons: &mut MyDungeons,
 							 world:&Vec<[Place;19]>) {
-								   
+
 	*party = Vec::with_capacity(5);
 	*p_names = Vec::with_capacity(5);
 	*p_loc = world[8][6].clone();
@@ -312,10 +312,10 @@ pub fn load<'a,'b>( file_name:String, spl:&Vec<Spell>, world:&Vec<[Place;19]>, m
 	let mut rlb = Vec::with_capacity(8000);
 	let mut ltxt:Vec<String> = Vec::new();
 	let mut rltxt = String::new();
-	
+
 	//reset party variables.
 	reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
-	
+
 	//This should also be safetified.
 	let to_open_a = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrb");
 	let to_open_b = env::current_dir().unwrap().join("as/saves").join(file_name.clone()+".msqrtxt");
@@ -579,6 +579,11 @@ pub fn save(xx:&Vec<(Lifeform,usize)>,
 		d:&MyDungeons,
 		k:&KillList){
 
+	//Sanity check.
+	if xx.is_empty() || nx.is_empty() {
+		println!("There is no one to save. Why are we saving?");
+		return;
+	};
 	let mut s_name:String = nx[0].to_owned();
 	let dir=env::current_dir().unwrap().join("as/saves");
 	let mut f1 = dir.join(s_name.clone()+".msqrtxt");

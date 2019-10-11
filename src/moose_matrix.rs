@@ -266,7 +266,7 @@ impl MooseElement {
     {
         use {Positionable, Sizeable};
         let MooseElement { widget_id, matrix_id, w, h, rel_x, rel_y, .. } = self;
-        awc.lock().ok().unwrap().mark_as_set(widget_id);
+        awc.lock().ok().unwrap().mark_as_set(widget_id,cmoose::MooseWidgetType::MooseElement);
         widget
             .w_h(w, h)
             .x_y_relative_to(matrix_id, rel_x, rel_y)

@@ -68,7 +68,7 @@ pub struct Style {
     /// The position of the title bar's `Label` widget over the *y* axis.
     #[conrod(default = "position::Relative::Align(Align::Middle)")]
     pub label_y: Option<position::Relative>,
-    
+
     //This bit controls the style of the marker
     #[conrod(default = "position::Relative::Align(Align::Start)")]
     pub marker_x: Option<position::Relative>,
@@ -321,7 +321,7 @@ impl<'a, S> MooseButton<'a, S> {
         self.style.label_y = Some(y);
         self
     }
-    
+
     /// Change the marker's position on x-axis.
     pub fn marker_x(mut self, x: position::Relative) -> Self {
         self.style.marker_x = Some(x);
@@ -333,19 +333,19 @@ impl<'a, S> MooseButton<'a, S> {
         self.style.marker_y = Some(y);
         self
     }
-    
+
 	//Basically to set this kind of button into a shadow UiCell called "AdvWidgetCycler"
 	pub fn set_outer
 	(self, awc:&'a Mutex<cmoose::AdvWidgetCycler>,
 				id: conrod::widget::Id,
 				ui: &mut conrod::UiCell)
 	-> <Self as Widget>::Event
-	
+
 	where MooseButton<'a, S>: conrod::Widget
 	{
 		//Stuff to do with the AdvWidgetCycler goes here...
 		//SAFETIFY THIS.
-		awc.lock().ok().unwrap().mark_as_set(id);
+		awc.lock().ok().unwrap().mark_as_set(id,cmoose::MooseWidgetType::MooseButton);
 		self.set(id,ui)
 	}
 
@@ -424,7 +424,7 @@ impl<'a> Widget for MooseButton<'a, Image> {
         let image_id = match interaction {
             Interaction::Idle|Interaction::EnterHover => image_id,
             Interaction::MouseHover => hover_image_id.unwrap_or(image_id),
-            Interaction::MousePress|Interaction::EnterPress => 
+            Interaction::MousePress|Interaction::EnterPress =>
 				press_image_id.or(hover_image_id).unwrap_or(image_id),
         };
 
@@ -466,9 +466,9 @@ fn interaction_and_times_triggered(button_id: widget::Id,
 								   awc: & Mutex<cmoose::AdvWidgetCycler>,
 								   ui: &UiCell)
 	-> (Interaction, u16,u16) {
-	let global_events = ui.global_input().events();	
+	let global_events = ui.global_input().events();
     let input = ui.widget_input(button_id);
-    
+
     //First phase- if interaction is mouse all is good and we are resolved.
     let mut interaction = input.mouse().map_or(Interaction::Idle, |mouse| {
         let is_pressed =
@@ -477,16 +477,15 @@ fn interaction_and_times_triggered(button_id: widget::Id,
                  .any(|t| t.start.widget == Some(button_id));
         if is_pressed { Interaction::MousePress } else { Interaction::MouseHover }
     });
-    
+
     let mut keyboard_ui_presses:u16 = 0;
     let mut keyboard_raw_presses:u16 = 0;
     //Second phase- if we are idle, we query global input.
-    if interaction==Interaction::Idle {
+    if interaction!=Interaction::MousePress {
 		//SAFETIFY THIS!!!
 		match awc.lock().ok().unwrap().current() {
 			Some(button_id) => {
 				//interaction = Interaction::EnterHover;
-				//
 				'e:for event in global_events {
 					match event {
 						conrod::event::Event::Raw(conrod::event::Input::Release(but)) => {
@@ -516,10 +515,11 @@ fn interaction_and_times_triggered(button_id: widget::Id,
 			_  => {},
 		};
 	};
-	
-	
+
+
     let times_triggered_mouse = (input.clicks().left().count() + input.taps().count()) as u16;
-    let times_triggered_keyboard = keyboard_raw_presses;
+    let times_triggered_keyboard = keyboard_raw_presses + keyboard_ui_presses;
+    let times_triggered_keyboard = if times_triggered_keyboard > 0 {1}else{0};
     (interaction, times_triggered_mouse, times_triggered_keyboard)
 }
 
@@ -561,13 +561,13 @@ fn label(button_id: widget::Id, label_id: widget::Id,
 }
 
 //Function to set the marker triangle.
-//NB requires knowledge fo the current refresh state for pulsing colour.
+//NB requires knowledge of the current refresh state for pulsing colour.
 fn mark(button_id: widget::Id, marker_id: widget::Id,
 		timer:usize,marker_active:bool,style: &Style, ui: &mut UiCell)
 {
 	let wh_of_button = ui.wh_of(button_id).unwrap_or([0.0,0.0]);
 	let xy_of_button = ui.xy_of(button_id).unwrap_or([0.0,0.0]);
-	
+
 	//make the edge coordinate of the triangle.
 	let edge = [xy_of_button[0],xy_of_button[1]];
 	let coordinates = if marker_active {
@@ -577,20 +577,20 @@ fn mark(button_id: widget::Id, marker_id: widget::Id,
 	}else{
 		vec![[0.0,0.0],[0.0,0.0],[0.0,0.0]]
 	};
-						   
+
 	//Make the pulsing colour.
 	let pulsing_colour:color::Color = if marker_active {
 		conrod::color::ORANGE.with_luminance(xmoose::sync_t(timer))
 	}else{
 		conrod::color::BLACK.with_alpha(0.0)
 	};
-	
+
 	//set the thingy.
-			
+
 	widget::Polygon::fill_with(coordinates,pulsing_colour)
 		.xy(xy_of_button)
 		.floating(true)
-		.set(marker_id,ui);			
+		.set(marker_id,ui);
 }
 
 

@@ -493,7 +493,7 @@ fn set_mutant_menu (ui: &mut conrod::UiCell,
 					ids: &mut Ids,
 					widget_cycler:&Mutex<AdvWidgetCycler>,
 					a:&str,b:&str,c:&str,d:&str,e:&str) -> (usize,String) {
-						
+
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
 	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
@@ -579,7 +579,7 @@ fn set_mutant_menu_uni (ui: &mut conrod::UiCell,
 						ids: &mut Ids,
 						widget_cycler:&Mutex<AdvWidgetCycler>,
 						e:&str) -> (usize,String) {
-							
+
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
 	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
@@ -601,7 +601,7 @@ fn set_mutant_menu_tri (ui: &mut conrod::UiCell,
 						ids: &mut Ids,
 						widget_cycler:&Mutex<AdvWidgetCycler>,
 						a:&str,b:&str,e:&str) -> (usize,String) {
-							
+
 	//initiate the general button template.
 	let font_size = font_size_chooser(&ui.wh_of(ids.middle_column).unwrap_or([1080.0,800.0]));
 	let mut_but = MooseButton::new(widget_cycler).color(BACKGR_COLOUR).border(BORDER).border_color(BORDER_COLOUR);
@@ -804,14 +804,14 @@ fn battle_line_h (ids: &mut Ids,
 			//set the monster, name and all.
 			let x = format!("{}",group[c].0.name);
 			let y = &x.x_chr_pl2(12);
-			
+
 			let image_id = if group[c].0.HP_shade/group[c].0.HP>0.0
 			{
 				mon_faces[group[c].0.id][0]
 			}else{
 				mon_faces[group[c].0.id][2]
 			};
-			
+
 			let b = MooseButton::image(image_id,widget_cycler)
 										.hover_image(mon_faces[group[c].0.id][1])
 										.press_image(mon_faces[group[c].0.id][1])
@@ -967,14 +967,14 @@ fn set_battle_map(ids: &mut Ids,
 
 			let x = format!("\n{}",p_names[c]);
 			let y = &x.x_chr_pl(8);
-			
-			let image_id = if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0 
+
+			let image_id = if enc_c[c].0.HP_shade/enc_c[c].0.HP>0.0
 			{
 				mon_faces[enc_c[c].0.id][0]
 			}else{
 				mon_faces[enc_c[c].0.id][2]
 			};
-			
+
 			let b = MooseButton::image(image_id,widget_cycler)
 									.label(&y)
 									.hover_image(mon_faces[enc_c[c].0.id][1])
@@ -1579,7 +1579,7 @@ fn set_init_world_map2<'a> (ids: &mut Ids, ref mut ui: &mut conrod::UiCell,
 			*comm_text = format!("You are here: {}", world[wml-c][r]);
 			set_comm_text(comm_text,ui,ids);
 		}
-		
+
 		//Set the geographical buttons for lookin at the land around you.
 		for dir in vec!['N','S','E','W'].into_iter() {
 			set_geographical_button(dir,
@@ -3792,11 +3792,11 @@ widget_ids! {
 		body,							//Am I even using that now?
 		marker_shape, 					//highlight battling monster
 		marker_shape2,					//highlight battling monster.
-		
-		
+
+
 		selected_button_marker_canvas,
 		selected_button_marker, 		//A marker of the selected button or field.
-		 					
+
 		battle_background,				//image background in battle
 		battle_background_time_a,		//matrix for timescape
 		battle_background_time_b,		//matrix for timescape
@@ -3961,6 +3961,8 @@ widget_ids! {
 		radiant_matrix,
 		time_matrix,
 
+		moosebutton_test,
+
 	}
 }
 
@@ -4044,32 +4046,39 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 	let win_wh = ui.wh_of(ids.master).unwrap_or([1080.0,800.0]);
 	let men_wh = [214.0,win_wh[1]];
 	let comm_text_bckup1:String = comm_text.clone();
-	
-	
-	//trackers for widget cycler
-	if timer%100==0 {println!("Current AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current());};
-	if timer%100==0 {println!("Potential AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current_or());};
+
+
+	//trackers for widget cycler.
+	if timer%100==0 {
+		println!("Current AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current());
+		println!("Potential AdvWidgetCycler selected is: {:?}",widget_cycler.lock().unwrap().current_or());
+		println!("Number of set widgets: {}.",widget_cycler.lock().unwrap().widgets.len());
+	};
 	if timer%500==0 {println!("AdvWidgetCycler state is:\n:{:?}\n",widget_cycler);};
+
 	//Set marker of selected button (currently not fully functionalised).
-	
-	if let Some(wig) = widget_cycler.lock().unwrap().current_or() {
+	if let Some(wig) = widget_cycler.lock().unwrap().current() {
 		if ui.wh_of(wig).is_some() {
 			set_marker_of_button(ui,ids,wig,timer,true);
 		};
 	};
-	
+
 	//reset the widget cycler set list.
-	widget_cycler.lock().unwrap().mark_all_as_unset();
-	
+	widget_cycler.lock().unwrap().hard_unset();
+
 	//test of moose button.
-	//for _ in MooseButton::new(&widget_cycler).wh([win_wh[0]/2.0,win_wh[1]/2.0])
-	//				  //.middle_of(ids.master)
-	//				  .label("Moosebutton!")
-	//				  .set_outer(&widget_cycler,ids.moosebutton_test,ui) {
-	//					  
-	//	println!("Interaction with Moosebutton detected.");
-	//};
-	
+	// {
+	// 	widget::Canvas::new().wh(win_wh).set(ids.master, ui);
+	// 	for _ in MooseButton::new(&widget_cycler).wh([400.0,300.0])
+	// 					  .middle_of(ids.master)
+	// 					  .label("Moosebutton!")
+	// 					  .set_outer(&widget_cycler,ids.moosebutton_test,ui) {
+	//
+	// 		println!("Interaction with Moosebutton detected.");
+	// 	};
+	// 	return (gui_box.clone(),gui_box,sages);
+	// };
+
 	match gui_box.clone() {
 
 		GUIBox::Main(init) => {
@@ -4218,9 +4227,9 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				if !init {
 					//reset party variables.
 					reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
-					gui_box = GUIBox::Main(!init);
+					gui_box = GUIBox::Main(false);
 				}else{
-					gui_box = GUIBox::Main(init);
+					gui_box = GUIBox::Main(true);
 				};
 			}else{
 				match x {
@@ -4235,7 +4244,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 								//println!("In answer- answered \"Yes it is I\"...");
 								//reset party variables.
 								//reset_party_variables(party,p_names,p_loc,pl,my_stories,my_kills,my_dungeons,world);
-								
+
 								gui_box = GUIBox::MainNew((2,init));
 								*comm_text = format!("What would you be, {}?",&p_names[0]);
 								set_comm_text(comm_text,ui,ids);
@@ -4379,7 +4388,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			//If game is not started, or menu entered voluntarily, activate main menu.
 			let (ng_button,lg_button,sg_button,op_button) = generate_main_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh);
-			
+
 			let mut qt_button:HeadButts;
 
 			// If game is started and main menu active activate gm_button.
@@ -4455,7 +4464,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 				(ids.quit_true_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 				(ids.quit_false_can, canvas.clone().color(color::BLACK).pad(BORDER)),
 			]).border(BORDER).border_color(BORDER_COLOUR).set(ids.master, ui);
-			
+
 			let mut button = MooseButton::new(&widget_cycler).label_font_size(font_size_chooser_button(win_wh[0]));
 
 			for _click in button.clone().color(color::DARK_RED).label("QUIT!").label_color(color::DARK_RED.complement())
@@ -4485,7 +4494,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 
 			let (travel_button,fight_button,explore_button,
 				 cast_button,party_button,gm_button) = generate_play_menu_buttons(ui,ids,widget_cycler,&men_wh,&win_wh);
-			
+
 			//If you've teleported, tells you that you have.
 			if gui_box_previous==GUIBox::GameTravelTeleport {
 				*comm_text = format!("You teleport to {}...", p_loc.name);
@@ -4923,7 +4932,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 			//Generate buttons
 			let (attack_button,defend_button,cast_button,
 				 wait_button,panic_button,escape_button) = prepare_fight_buttons_and_menu(ui,ids,widget_cycler,&men_wh,&win_wh);
-			
+
 			//println!("GameFight buttons set");
 
 			if tr {
@@ -5027,7 +5036,7 @@ pub fn set_widgets_rework<'a> (ref mut ui: conrod::UiCell, ids: &mut Ids,
 		GUIBox::Uninitiated	=> {gui_box = GUIBox::Main(false);},
 		_					=> {},
 	};
-	
+
 	//Put button clicker function here.
 	(gui_box,gui_box_previous,sages)
 }
@@ -5411,10 +5420,10 @@ fn set_marker_of_button(ui: &mut conrod::UiCell,
 						selected_button_id:conrod::widget::Id,
 						timer:usize,
 						marker_active:bool) {
-	
+
 	let wh_of_button = ui.wh_of(selected_button_id).unwrap_or([0.0,0.0]);
 	let xy_of_button = ui.xy_of(selected_button_id).unwrap_or([0.0,0.0]);
-	
+
 	//make the edge coordinate of the triangle.
 	let edge = [xy_of_button[0],xy_of_button[1]];
 	let coordinates = if marker_active {
@@ -5424,19 +5433,19 @@ fn set_marker_of_button(ui: &mut conrod::UiCell,
 	}else{
 		vec![[0.0,0.0],[0.0,0.0],[0.0,0.0]]
 	};
-						   
+
 	//Make the pulsing colour.
 	let pulsing_colour:color::Color = if marker_active {
 		conrod::color::ORANGE.with_luminance(sync_t(timer))
 	}else{
 		conrod::color::BLACK.with_alpha(0.0)
-	};				   
-		
+	};
+
 	//set the thingy.
-			
+
 	widget::Polygon::fill_with(coordinates,pulsing_colour)
 		.xy(xy_of_button)
 		.floating(true)
 		.set(ids.selected_button_marker,ui);
-	
+
 }

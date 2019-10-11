@@ -84,7 +84,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
                         ..
                     },
                     ..
-                } => {  if timer>*freeze_timer+1 {
+                } => {  if timer>*freeze_timer+3 {
 							widget_cycler.lock().unwrap().advance();
 							if !*pause {*freeze_timer = timer;};
 						};
@@ -97,7 +97,7 @@ pub fn event_loop_handler<'a,'b>(event_loop: & mut EventLoop,
                         ..
                     },
                     ..
-                } => {  if timer>*freeze_timer+1 {
+                } => {  if timer>*freeze_timer+3 {
 							widget_cycler.lock().unwrap().regress();
 							if !*pause {*freeze_timer = timer;};
 						};

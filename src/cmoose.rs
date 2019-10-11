@@ -54,6 +54,8 @@ extern crate std;
 
 use lmoose::{Lifeform,Spell,Place,VOID,TIME};
 use smoose::{Sage,MyStories,MyDungeons,KillList,Story,story_poller};
+//use moose_button::MooseButton;
+//use moose_matrix::MooseElement;
 use gmoose;
 
 //A vector-like structure for carrying image ids for landscape features.
@@ -180,7 +182,7 @@ pub struct SpellBoxD {
 	pub damage: [bool;25],
 }
 
-//Structure to cycle through a certain predefined subset of widgets. 
+//Structure to cycle through a certain predefined subset of widgets.
 #[derive(Debug)]
 pub struct Widgetcycler<'a> {
 	pub widgets: Vec<conrod::widget::Id>,
@@ -195,10 +197,23 @@ pub struct Widgetcycler<'a> {
 pub struct AdvWidgetCycler {
 	//Map of widgets (get by index,set?)
 	//Polymorphic widget marking is to be handled by a different process.
-	pub widgets:std::collections::btree_map::BTreeMap<conrod::widget::Id,bool>,
+	pub widgets:std::collections::btree_map::BTreeMap<conrod::widget::Id,(bool,MooseWidgetType)>,
 	//NB, we need to keep track of whether the current widget is set or not,
 	//To determine whether it needs removed or not.
-	pub current_widget: Option<(bool,conrod::widget::Id)>,
+	pub current_widget: Option<(bool,conrod::widget::Id,MooseWidgetType)>,
+}
+
+#[derive(Debug,Clone,Copy,PartialEq)]
+pub enum MooseWidgetType {
+	MooseButton,
+	MooseElement,
+	Other,
+}
+
+impl MooseWidgetType {
+	pub fn is_relevant(self) -> bool {
+		self != MooseWidgetType::Other
+	}
 }
 
 impl AdvWidgetCycler {
@@ -209,134 +224,184 @@ impl AdvWidgetCycler {
 			current_widget: None,
 		}
 	}
-		
+
 	//Initialise the advanced cycler with widgets to insert.
 	//I could not find how Graph/Dag knows the widget type,
 	//So this will handle some aspect of this.
 	//NB, this to some extent reduces flexibility as you are declaring,
 	//Some aspect of widget type in advance (not that conrod allows otherwise anyway).
-	pub fn initialise(&mut self, ids:Vec<(conrod::widget::Id)>) {
-		for x in ids.into_iter() {
-			self.widgets.insert(x,false);
+	pub fn initialise(&mut self, ids:Vec<(conrod::widget::Id,MooseWidgetType)>) {
+		for (x,y) in ids.into_iter() {
+			self.widgets.insert(x,(false,y));
 		};
-		
-		'finder: for (i,x) in self.widgets.iter() {
+
+		'finder: for (i,(x,ty)) in self.widgets.iter() {
 			if *x {
-				self.current_widget = Some((*x,*i));
+				self.current_widget = Some((*x,*i,*ty));
 				break 'finder;
 			};
 		};
 	}
-	
+
 	//sets current_widget to the next set widget.
 	pub fn advance(&mut self) {
-		let mut it = self.widgets.iter();
+		let len = self.widgets.len();
+		let mut it = self.widgets.iter().cycle();
 		let (mut not_at_current,mut got_next) = (true,false);
-		
+
 		if self.current_widget.is_none() {
-			while let Some((i,x)) = it.next() {
-				if *x {
-					self.current_widget = Some((*x,*i));
+			while let Some((i,(x,ty))) = it.next() {
+				if *x & ty.is_relevant() {
+					self.current_widget = Some((*x,*i,*ty));
 					return;
 				};
 			};
 		}else{
-			while let Some((i,x)) = it.next() {
-				if Some((true,*i))==self.current_widget {
-					not_at_current = false;
-				};
-				
-				if not_at_current {
+			let mut c = 0;
+			let (bool,index,ty) =self.current_widget.expect("It's nonnullic.");
+			while (it.next()!=Some((&index,&(bool,ty)))) & (c<len) {};
+			println!("Current widget is {:?} upon advancement.",self.current_widget);
+
+			c = 0;
+			while len>=c {
+				c+= 1;
+				let i;
+				let x;
+				let ty;
+				if let Some((j,(y,tz))) = it.next() {
+					i = j;
+					x = y;
+					ty = tz;
+				}else{
 					continue;
-				}else if !not_at_current & *x {
-					self.current_widget = Some((true,*i));
+				};
+				if let Some((bool,index,_)) = self.current_widget  {
+					not_at_current = index!=*i;
+				};
+
+				if !not_at_current {
+					continue;
+				}else if not_at_current & *x & ty.is_relevant() {
+					self.current_widget = Some((true,*i,*ty));
 					return;
 				};
 			};
 			self.current_widget = None;
+			println!("Resetting to spare upon advancement.");
 		};
 	}
-	
+
 	//sets current_widget to the previous set widget.
 	pub fn regress(&mut self) {
-		let mut it = self.widgets.iter().rev();
-		
-		let (mut not_at_current,mut got_next) = (true,false);
-		
+		let len = self.widgets.len();
+		let mut it = self.widgets.iter().rev().cycle();
+
 		if self.current_widget.is_none() {
-			while let Some((i,x)) = it.next() {
-				if *x {
-					self.current_widget = Some((true,*i));
+			println!("Current widget is None upon regression.");
+			while let Some((i,(x,ty))) = it.next() {
+				if *x & ty.is_relevant() {
+					self.current_widget = Some((*x,*i,*ty));
+					println!("Returning with: {:?}",self.current_widget);
 					return;
 				};
 			};
 		}else{
-			while let Some((i,x)) = it.next() {
-				if Some((true,*i))==self.current_widget {
-					not_at_current = false;
-				};
-				
-				if not_at_current {
+			let mut c = 0;
+			let (bool,index,ty) =self.current_widget.expect("It's nonnullic.");
+			while (it.next()!=Some((&index,&(bool,ty)))) & (c<len) {};
+			println!("Current widget is {:?} upon regression.",self.current_widget);
+
+			c = 0;
+			while len>=c {
+				c+= 1;
+				let i;
+				let x;
+				let ty;
+				if let Some((j,(y,tz))) =it.next() {
+					println!("next is: {:?}",Some((j,(y,tz))));
+					i = j;
+					x = y;
+					ty = tz;
+				}else{
+					println!("Next is none.");
 					continue;
-				}else if !not_at_current & *x {
-					self.current_widget = Some((true,*i));
+				};
+
+				if index == *i {
+					continue;
+				}else if *x & ty.is_relevant() {
+					self.current_widget = Some((true,*i,*ty));
+					println!("Returning None upon regression.");
 					return;
 				};
 			};
+			println!("Returning spare upon regression.");
 			self.current_widget = None;
 		};
 	}
-	
+
 	//Gets the current widget index or failing that, the next set widget.
 	//If there are no set widgets, return a nun.
 	pub fn current_or(&mut self)-> Option<conrod::widget::Id> {
-		
-		if let Some((true,wid)) = self.current_widget {
+
+		if let Some((true,wid,_)) = self.current_widget {
 			//If there is an current widget, get it.
 			return Some(wid)
 		}else{
 			//If not, get the first active widget.
 			for (i,x) in self.widgets.iter() {
-				if *x {
-					self.current_widget = Some((true,*i));
+				if x.0 {
+					self.current_widget = Some((true,*i,x.1));
 					return Some(*i)
 				};
 			};
 		};
 		None
 	}
-	
+
 	//A faster version of current_or() if we do not care about other widgets.
 	pub fn current(&mut self)->Option<conrod::widget::Id> {
-		if let Some((true,wid)) = self.current_widget {
+		if let Some((true,wid,_)) = self.current_widget {
 			//If there is an current widget, get it.
 			return Some(wid)
 		}else{
 			None
 		}
 	}
-	
+
 	//Function to mark a widget as set. Not efficient.
-	pub fn mark_as_set(&mut self,widget: conrod::widget::Id) {
-		
+	pub fn mark_as_set(&mut self,widget: conrod::widget::Id, r#type: MooseWidgetType) {
+
+		if let Some((ref mut x, ref mut i,_)) = self.current_widget {
+			if *i==widget {
+				*x = true;
+			};
+		};
 		if let Some(mut x) = self.widgets.get_mut(&widget) {
-			*x = true;
+			x.0 = true;
 			return;
 		};
-		self.widgets.insert(widget,true);
+		self.widgets.insert(widget,(true,r#type));
 	}
-	
+
 	//Function to mark all widgets as not set.
 	pub fn mark_all_as_unset(&mut self) {
-		if let Some((true,wid)) = self.current_widget.clone() {
-			self.current_widget = Some((false,wid));
+		if let Some((true,wid,ty)) = self.current_widget.clone() {
+			self.current_widget = Some((false,wid,ty));
 		};
 		for (_,x) in self.widgets.iter_mut() {
-			*x = false;
+			x.0 = false;
 		};
 	}
-	
-	
+
+	//Function to mark all widgets as not set in a violent manner.
+	pub fn hard_unset(&mut self) {
+		if let Some((true,wid,ty)) = self.current_widget.clone() {
+			self.current_widget = Some((false,wid,ty));
+		};
+		self.widgets.clear();
+	}
+
 	//Removes all widgets.
 	pub fn remove_all(&mut self) {
 		self.widgets.clear();
@@ -344,55 +409,55 @@ impl AdvWidgetCycler {
 	}
 	//NB the set outer function is best done from
 	// moose_button.Go there to see it done.
-	
+
 }
 
 impl <'a>Widgetcycler<'a> {
-	
+
 	//get length of widget vecotr in the widget cycler.
 	fn len(&self)-> usize { self.widgets.len() }
-	
+
 	//Advance to the next widget in the cycle.
 	pub fn advance(&mut self) {
 		let l = self.len();
-		
+
 		if l==0 {return;}; //futile, I know.
-		
+
 		if self.current_index+1<l {
 			self.current_index+= 1;
 		}else{
 			self.current_index = 0;
 		};
 	}
-	
+
 	//Advance to the next widget in the cycle.
 	pub fn regress(&mut self) {
 		let l = self.len();
-		
+
 		if l==0 {return;};
-		
+
 		if self.current_index==0 {
 			self.current_index = l;
 		}else{
 			self.current_index-= 1;
 		};
 	}
-	
+
 	//Get the next widget in the cycle.
 	pub fn next(&mut self)-> Option<&conrod::widget::Id> {
 		let l = self.len();
-		
+
 		if l==0 {return None};
-		
+
 		if self.current_index+1<l {
 			self.current_index+= 1;
 		}else{
 			self.current_index = 0;
 		};
-		
+
 		Some(&self.widgets[self.current_index])
 	}
-	
+
 	//Get the previous widget in the cycle.
 	pub fn previous(&mut self)-> Option<&conrod::widget::Id> {
 		let l = self.len();
@@ -402,10 +467,10 @@ impl <'a>Widgetcycler<'a> {
 		}else{
 			self.current_index-= 1;
 		};
-		
+
 		Some(&self.widgets[self.current_index])
 	}
-	
+
 	//Get the current widget in the cycle.
 	pub fn current(&self)-> Option<&conrod::widget::Id> {
 		if (self.len()>0) & (self.current_index<self.len()) {
@@ -414,10 +479,10 @@ impl <'a>Widgetcycler<'a> {
 			None
 		}
 	}
-	
+
 	//Get a widget at a certain index.
 	pub fn get(&mut self,which:usize)-> Option<&conrod::widget::Id> {
-		
+
 		if which>=self.len() {
 			//Bounds check.
 			None
@@ -427,37 +492,37 @@ impl <'a>Widgetcycler<'a> {
 			Some(&self.widgets[self.current_index])
 		}
 	}
-	
+
 	//function to tell you whether the widgetcycler contains a certain widget,
 	//...and what its index is.
 	pub fn contains(&mut self,widget:&conrod::widget::Id)-> Option<usize> {
-		
+
 		for (i,x) in self.widgets.iter().enumerate() {
 			if x==widget {return Some(i)};
 		}
 		None
 	}
-	
-	
+
+
 	//function to generate list of cyclable widgets and to sanity check them.
 	//Realistically will have this
 	//NB, does not check if widgets are active. Use with care.
 	pub fn new()-> Widgetcycler<'a> {
-	
+
 		Widgetcycler {
 			widgets: Vec::with_capacity(100),
 			current_index:0,
 			guibox_state:GUIBox::Uninitiated,
 		}
 	}
-	
+
 	//Function to update the widget cycler when guibox state chanes or widget number changes.
 	pub fn update_wc(&mut self,widgets_to_cycle:Vec<conrod::widget::Id>,gbs:&GUIBox<'a>) {
-		
+
 		if (*gbs != self.guibox_state) | (self.widgets.len()!=widgets_to_cycle.len()) {
 			self.current_index = 0;
 		};
-		
+
 		self.widgets = widgets_to_cycle;
 		self.guibox_state = gbs.clone();
 	}
