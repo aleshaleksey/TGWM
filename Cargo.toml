@@ -15,7 +15,7 @@ winit = { version = "=0.10", optional = true }
 libc = { version = "=0.2.42", optional = true }
 conrod="=0.57.0"
 conrod_derive="=0.1.0"
-image="=0.18.0"
+image="=0.22.5"
 rodio="=0.7.0"
 
 #hound and cpal are not actually dependencies
