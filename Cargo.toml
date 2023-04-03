@@ -9,7 +9,7 @@ Inflector = "0.10.1"
 num = "0.1.40"
 num_cpus = "0.2.0"
 rand = "0.3.18"
-time = "0.1.38"
+time = "0.2.0"
 glium = { version = "=0.20", optional = true }
 winit = { version = "=0.10", optional = true }
 libc = { version = "=0.2.42", optional = true }
